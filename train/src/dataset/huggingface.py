@@ -8,7 +8,7 @@ class HuggingFace(BaseDataset):
     def __init__(self, dataset_path: str) -> None:
         self.dataset_path = dataset_path
 
-    async def load(self) -> None:
+    async def fetch(self) -> None:
         # TODO: Is there support for async download?
         load_dataset(
             path=self.dataset_path,
@@ -16,4 +16,5 @@ class HuggingFace(BaseDataset):
         )
 
     async def to_torch_dataset(self, split: str) -> Dataset:
-        return load_dataset(self.dataset_path, split=split)
+        # TODO
+        pass

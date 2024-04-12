@@ -3,4 +3,4 @@ FROM ubuntu:latest
 COPY ../common ./project
 COPY src/* ./project
 
-ENTRYPOINT ["python", "main.py", "some_job_id"]
+ENTRYPOINT ["python", "main.py", "...job config"]

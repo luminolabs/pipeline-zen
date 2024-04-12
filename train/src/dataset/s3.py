@@ -11,7 +11,7 @@ class S3(BaseDataset):
         self.object_key = object_key
         self.local_path = local_path
 
-    async def load(self) -> None:
+    async def fetch(self) -> None:
         # TODO: is there support for async download?
         s3 = boto3.client('s3')
         s3.download_file(Bucket=self.bucket_name, Key=self.object_key,

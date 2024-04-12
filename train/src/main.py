@@ -6,7 +6,7 @@
 from dataset.utils import dataset_factory
 
 # Fetch job config
-# ... somehow fetch it...
+# ...get this from args...
 job_config = {}
 
 # Pull dataset and convert to torch dataset
