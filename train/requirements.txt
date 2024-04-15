@@ -1,5 +1,4 @@
 datasets
-boto3
 torch
 torchvision
 transformers
