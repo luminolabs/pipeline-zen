@@ -30,5 +30,4 @@ COPY src .
 # Run workflow
 ENTRYPOINT ["python", "main.py"]
 
-# TODO: Add volume for dataset `.cache`, and results `.results` dirs,
-# so that dirs stay persistent between runs
+# NOTE: `.cache` and `.results` folders should be mounted with the `docker run` command, see readme
