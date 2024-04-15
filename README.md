@@ -7,3 +7,55 @@
 replace `train` above with either `train` or `evaluate` to specify the workflow
 
 Note: `print` statements are delayed and flushed later when run in docker
+
+## Outputs
+
+Examples of workflow outputs. The outputs below are a first iteration.
+
+### Train Workflow
+
+```
+$ docker run --gpus all -v "$PWD/.cache":/project/.cache -v "$PWD/.results":/project/.results train-workflow
+
+Downloading readme:   0%|          | 0.00/2.13k [00:00<?, ?B/s]Loading and configuring dataset!
+Downloading readme: 100%|██████████| 2.13k/2.13k [00:00<00:00, 14.0MB/s]
+Downloading data: 100%|██████████| 22.6M/22.6M [00:00<00:00, 23.1MB/s]
+Downloading data: 100%|██████████| 5.65M/5.65M [00:00<00:00, 22.2MB/s]
+Generating train split: 100%|██████████| 5120/5120 [00:00<00:00, 120169.20 examples/s]
+Generating test split: 100%|██████████| 1280/1280 [00:00<00:00, 193146.82 examples/s]
+Training on (CPU/GPU?) device: cuda
+Fetching the model
+Loss and Optimizer is set
+Training started at 2024-04-15 21:26:40
+Epoch 1/10, Loss: 1.122030958160758
+Epoch 2/10, Loss: 0.41792185306549073
+Epoch 3/10, Loss: 0.17635376430116595
+Epoch 4/10, Loss: 0.09475269303948153
+Epoch 5/10, Loss: 0.0955704029853223
+Epoch 6/10, Loss: 0.045235549423705376
+Epoch 7/10, Loss: 0.050272475185556685
+Epoch 8/10, Loss: 0.05423462625549291
+Epoch 9/10, Loss: 0.03166594500580686
+Epoch 10/10, Loss: 0.03592839671218826
+Training ended at 2024-04-15 21:32:46
+Total training time: 6.09 minutes
+Training loop complete, now saving the model
+Trained model saved!
+```
+
+### Evaluate Workflow
+
+```
+$ docker run -t --gpus all -v "$PWD/.cache":/project/.cache -v "$PWD/.results":/project/.results evaluate-workflow
+
+Loading and configuring dataset!
+Downloading readme: 100%|█████████████████████████████████████████| 2.13k/2.13k [00:00<00:00, 13.0MB/s]
+Training on (CPU/GPU?) device: cuda
+Fetching the model
+config.json: 100%|████████████████████████████████████████████████| 69.6k/69.6k [00:00<00:00, 4.87MB/s]
+model.safetensors: 100%|████████████████████████████████████████████| 102M/102M [00:02<00:00, 35.4MB/s]
+Accuracy: 0.9673828125
+Precision: 0.9375315617398208
+Recall: 0.9708399900096027
+F1 Score: 0.9513985583321037
+```
