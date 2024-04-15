@@ -20,12 +20,21 @@ WORKDIR /project
 # and we don't want them to be build every time we add a new entry in requirements.txt
 RUN pip install torch torchvision transformers
 
-# Install rest of python libraries
-COPY requirements.txt .
+# Install python libraries needed by the shared-lib
+COPY shared-lib/requirements.txt ./requirements-shared.txt
+RUN pip install -r requirements-shared.txt
+
+ARG TARGET_WORKFLOW
+
+# Install python libraries needed by the workflow
+COPY ${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy source code
-COPY src .
+# Copy shared-lib source code
+COPY shared-lib/src .
+
+# Copy workflow source code
+COPY ${TARGET_WORKFLOW}/src .
 
 # Run workflow
 ENTRYPOINT ["python", "main.py"]

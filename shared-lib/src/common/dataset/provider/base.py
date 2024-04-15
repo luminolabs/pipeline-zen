@@ -2,7 +2,7 @@ import os
 from abc import abstractmethod
 from typing import Any
 
-from dataset.base import BaseDataset
+from common.dataset.base import BaseDataset
 
 
 class BaseDatasetProvider(BaseDataset):

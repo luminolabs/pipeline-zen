@@ -1,9 +1,11 @@
 from typing import Any
 
-from dataset.base import BaseDataset
+from torch.utils.data import Dataset
+
+from common.dataset.base import BaseDataset
 
 
-class ImageDataset(BaseDataset):
+class ImageDataset(BaseDataset, Dataset):
     def __init__(self, dataset: BaseDataset, image_col: str, label_col: str):
         self.dataset = dataset
         self.image_col = image_col

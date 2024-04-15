@@ -1,7 +1,7 @@
 from typing import Union
 
-from dataset.preprocessor.torchvision_transforms import TorchvisionTransformsDataset
-from dataset.kind.image_dataset import ImageDataset
+from common.dataset.preprocessor.torchvision_transforms import TorchvisionTransformsDataset
+from common.dataset.kind.image_dataset import ImageDataset
 
 
 def dataset_preprocess_factory(

@@ -1,10 +1,9 @@
 import asyncio
-import os
-from datetime import datetime
 
 import torch
-from torch import nn, optim
 from torch.utils.data import DataLoader
+import numpy as np
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from common.dataset.preprocessor.utils import dataset_preprocess_factory
 from common.dataset.provider.utils import dataset_provider_factory
@@ -83,54 +82,48 @@ async def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("Training on (CPU/GPU?) device:", device)
 
+    # TODO: Deduplicate code above, which is the same as in the train workflow
+
     print("Fetching the model")
     # Instantiate the appropriate model
     model = model_factory(
         model_kind=job_config.get('dataset_kind'),
         model_base=job_config.get('model_base'))
+    model.load_state_dict(torch.load(job_config.get('model_weights_path')))
     model.to(device)
+    model.eval()
 
     # TODO: Make code below configurable; most of the code below will be generalized and put into a lib
-    # TODO: Implement metrics lib, to capture timing, model, etc metrics
-    # TODO: Use logger instead of print
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
-    print("Loss and Optimizer is set")
+    # Variables to store predictions and actual labels
+    all_preds = []
+    all_labels = []
 
-    # Capture the start time
-    start_time = datetime.now()
-    print(f"Training started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    for epoch in range(job_config.get('num_epochs')):
-        model.train()
-        running_loss = 0.0
+    with torch.no_grad():
         for images, labels in dataloader:
             images, labels = images.to(device), labels.to(device)
-            optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs.logits, labels)
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-        print(f'Epoch {epoch+1}/{job_config.get("num_epochs")}, Loss: {running_loss/len(dataloader)}')
+            _, predicted = torch.max(outputs.logits, 1)
 
-    # Capture the end time
-    end_time = datetime.now()
-    print(f"Training ended at {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            # Store predictions and actual labels
+            all_preds.extend(predicted.cpu().numpy())
+            all_labels.extend(labels.cpu().numpy())
 
-    # Calculate and print the total training time
-    total_time = end_time - start_time
-    total_minutes = total_time.total_seconds() / 60
-    print(f"Total training time: {total_minutes:.2f} minutes")
+    # Convert lists to numpy arrays for metric calculation
+    all_preds = np.array(all_preds)
+    all_labels = np.array(all_labels)
 
-    # TODO: Implement different storage strategies; ex. gcp/s3 bucket
-    print("Training loop complete, now saving the model")
-    # Save the trained model
-    os.makedirs('.results', exist_ok=True)
-    model_path = job_config.get('model_weights_path')
-    torch.save(model.state_dict(), model_path)
-    print("Trained model saved!")
+    # Calculate metrics
+    accuracy = accuracy_score(all_labels, all_preds)
+    precision = precision_score(all_labels, all_preds, average='macro')  # Adjust average as needed
+    recall = recall_score(all_labels, all_preds, average='macro')  # Adjust average as needed
+    f1 = f1_score(all_labels, all_preds, average='macro')  # Adjust average as needed
+
+    # Print the metrics
+    print(f'Accuracy: {accuracy}')
+    print(f'Precision: {precision}')
+    print(f'Recall: {recall}')
+    print(f'F1 Score: {f1}')
 
 
 asyncio.run(main())

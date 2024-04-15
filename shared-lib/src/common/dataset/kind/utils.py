@@ -1,7 +1,7 @@
 from typing import Union
 
-from dataset.base import BaseDataset
-from dataset.kind.image_dataset import ImageDataset
+from common.dataset.base import BaseDataset
+from common.dataset.kind.image_dataset import ImageDataset
 
 
 def dataset_kind_factory(dataset_kind: str, dataset: BaseDataset, **kwargs) -> Union[ImageDataset,]:

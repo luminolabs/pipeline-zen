@@ -1,4 +1,4 @@
-from model import image
+from common.model import image
 
 
 def model_factory(model_kind: str, model_base: str):

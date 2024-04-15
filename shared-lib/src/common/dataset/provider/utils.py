@@ -1,5 +1,5 @@
-from dataset.provider.base import BaseDatasetProvider
-from dataset.provider.huggingface import HuggingFace
+from common.dataset.provider.base import BaseDatasetProvider
+from common.dataset.provider.huggingface import HuggingFace
 
 
 def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: str) -> BaseDatasetProvider:
