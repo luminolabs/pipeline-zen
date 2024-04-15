@@ -1,4 +1,4 @@
-### How to run a workflow
+## Running a workflow
 
 - cd to this folder
 - `docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .`
