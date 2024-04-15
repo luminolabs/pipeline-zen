@@ -12,5 +12,5 @@ def transforms_set_1():
 
 def transforms_set_2():
     # TODO: Eventually make transforms configurable,
-    #  for now we can hardcode different configurations in this file
+    # for now we can hardcode different configurations in this file
     return transforms.Compose([])
