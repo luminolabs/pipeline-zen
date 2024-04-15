@@ -3,7 +3,7 @@ from typing import Any
 
 from datasets import load_dataset
 
-from dataset.provider.base import BaseDatasetProvider
+from common.dataset.provider.base import BaseDatasetProvider
 
 
 class HuggingFace(BaseDatasetProvider):

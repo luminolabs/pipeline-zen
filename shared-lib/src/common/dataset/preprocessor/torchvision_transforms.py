@@ -1,10 +1,10 @@
 from typing import Any
 
 from torch.utils.data import Dataset
-from preprocessor import torchvision_transforms
 
-from dataset.provider.base import BaseDataset
-from dataset.kind.image_dataset import ImageDataset
+from common.preprocessor import torchvision_transforms
+from common.dataset.provider.base import BaseDataset
+from common.dataset.kind.image_dataset import ImageDataset
 
 
 class TorchvisionTransformsDataset(BaseDataset, Dataset):
