@@ -88,7 +88,7 @@ async def main():
     model.to(device)
 
     # TODO: Make code below configurable; most of the code below will be moved to the `training` package
-    # TODO: Implement metrics class
+    # TODO: Implement metrics lib, to capture timing, model, etc metrics
     # TODO: Use logger instead of print
 
     criterion = nn.CrossEntropyLoss()
@@ -121,6 +121,7 @@ async def main():
     total_minutes = total_time.total_seconds() / 60
     print(f"Total training time: {total_minutes:.2f} minutes")
 
+    # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     print("Training loop complete, now saving the model")
     # Save the trained model
     os.makedirs('.results', exist_ok=True)
