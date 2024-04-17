@@ -1,15 +1,18 @@
 from typing import Union
 
 from common.dataset.preprocessor.torchvision_transforms import TorchvisionTransformsDataset
-from common.dataset.kind.image_dataset import ImageDataset
+from common.dataset.preprocessor.text_transforms import TextTransformsDataset
+from common.dataset.preprocessor.tokenizer import TokenizerDataset
+from common.dataset.kind.value_label_dataset import ValueLabelDataset
 
 
 def dataset_preprocess_factory(
         dataset_preprocess: str,
-        dataset: Union[ImageDataset,],
-        **kwargs) -> Union[TorchvisionTransformsDataset,]:
+        dataset: Union[ValueLabelDataset,],
+        **kwargs) -> Union[TorchvisionTransformsDataset, TextTransformsDataset, TokenizerDataset,]:
     if dataset_preprocess == 'torchvision_transforms':
         return TorchvisionTransformsDataset(dataset, **kwargs)
-    if dataset_preprocess == '...':
-        # TODO: Implement preprocessors for other kind of model training, ex. LLM
-        pass
+    elif dataset_preprocess == 'text_transforms':
+        return TextTransformsDataset(dataset, **kwargs)
+    elif dataset_preprocess == 'tokenizer':
+        return TokenizerDataset(dataset, **kwargs)

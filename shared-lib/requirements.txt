@@ -2,3 +2,4 @@ datasets
 torch
 torchvision
 transformers
+nltk

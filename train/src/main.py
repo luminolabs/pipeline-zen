@@ -17,30 +17,35 @@ async def main():
     job_config = {
         # Dataset provider configuration
         'dataset_provider': 'huggingface',
-        'dataset_id': 'Falah/Alzheimer_MRI',
+        'dataset_id': 'stanfordnlp/imdb',
 
         # Train / test dataset splits mapping
         'train_split': 'train',
         'test_split': 'test',
 
         # Dataset configuration
-        'dataset_kind': 'image',
-        'image_dataset_config': {
-            'image_col': 'image',
+        'dataset_kind': 'value_label',
+        'value_label_dataset_config': {
+            'value_col': 'image',
             'label_col': 'label',
         },
 
         # Data preprocessing configuration
-        'preprocessor': 'torchvision_transforms',
+        'preprocessor': 'text_transforms',
         'torchvision_transforms_dataset_config': {
             'transforms_func': 'transforms_set_1',
         },
 
+        # Tokenizer configuration
+        'tokenizer_dataset_config': {
+            'tokenizer_name': 'google-bert/bert-base-cased',
+        },
+
         # Model configuration
-        'model_base': 'microsoft/resnet-50',
+        'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
 
         # Training configuration
-        'num_classes': 4,
+        'num_classes': 2,
         'batch_size': 32,
         'num_epochs': 10,
         'learning_rate': 0.001,
@@ -71,6 +76,12 @@ async def main():
         dataset_preprocess=job_config.get('preprocessor'),
         dataset=dataset_kind,
         **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
+
+    if 'tokenizer_dataset_config' in job_config:
+        dataset_preprocess = dataset_preprocess_factory(
+            dataset_preprocess='tokenizer',
+            dataset=dataset_preprocess,
+            **job_config.get('tokenizer_dataset_config'))
 
     # This loads data from the dataset in batches;
     # data requested from the dataloader will return preprocessed
