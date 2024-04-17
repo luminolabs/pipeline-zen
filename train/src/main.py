@@ -117,7 +117,6 @@ async def main():
         running_loss = 0.0
         batch_cnt = 0
         for values, labels in dataloader:
-            batch_cnt += 1
             attention_masks = None
             if tokenizer:
                 tokenized_values = tokenizer(
@@ -141,6 +140,7 @@ async def main():
             optimizer.step()
             running_loss += loss.item()
             print(f'Batch {batch_cnt+1}, Batch Loss: {loss.item()}')
+            batch_cnt += 1
     print(f'Epoch {epoch_cnt+1}/{job_config.get("num_epochs")}, Loss: {running_loss/len(dataloader)}')
 
     # Capture the end time
