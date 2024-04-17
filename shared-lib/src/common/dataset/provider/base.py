@@ -6,8 +6,8 @@ from common.dataset.base import BaseDataset
 
 
 class BaseDatasetProvider(BaseDataset):
-    def __init__(self, dataset_path: str, split: str) -> None:
-        self.dataset_path = dataset_path
+    def __init__(self, dataset_id: str, split: str) -> None:
+        self.dataset_id = dataset_id
         self.split = split
         self.dataset = None
 

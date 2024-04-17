@@ -5,11 +5,14 @@ from datetime import datetime
 import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader
+from transformers.tokenization_utils_base import TruncationStrategy
+from transformers.utils import PaddingStrategy
 
 from common.dataset.preprocessor.utils import dataset_preprocess_factory
 from common.dataset.provider.utils import dataset_provider_factory
 from common.dataset.kind.utils import dataset_kind_factory
 from common.model.utils import model_factory
+from common.tokenizer.utils import tokenizer_factory
 
 
 async def main():
@@ -37,9 +40,7 @@ async def main():
         },
 
         # Tokenizer configuration
-        'tokenizer_dataset_config': {
-            'tokenizer_name': 'google-bert/bert-base-cased',
-        },
+        'tokenizer_id': 'google-bert/bert-base-cased',
 
         # Model configuration
         'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
@@ -77,11 +78,9 @@ async def main():
         dataset=dataset_kind,
         **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
 
-    if 'tokenizer_dataset_config' in job_config:
-        dataset_preprocess = dataset_preprocess_factory(
-            dataset_preprocess='tokenizer',
-            dataset=dataset_preprocess,
-            **job_config.get('tokenizer_dataset_config'))
+    tokenizer = None
+    if 'tokenizer_id' in job_config:
+        tokenizer = tokenizer_factory(job_config.get('tokenizer_id'))
 
     # This loads data from the dataset in batches;
     # data requested from the dataloader will return preprocessed
@@ -113,18 +112,36 @@ async def main():
     start_time = datetime.now()
     print(f"Training started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    for epoch in range(job_config.get('num_epochs')):
+    for epoch_cnt in range(job_config.get('num_epochs')):
         model.train()
         running_loss = 0.0
+        batch_cnt = 0
         for values, labels in dataloader:
-            values, labels = values.to(device), labels.to(device)
+            batch_cnt += 1
+            attention_masks = None
+            if tokenizer:
+                tokenized_values = tokenizer(
+                    values,
+                    padding=PaddingStrategy.MAX_LENGTH,
+                    truncation=TruncationStrategy.ONLY_FIRST,
+                    max_length=512,
+                    # padding=PaddingStrategy.LONGEST,
+                    # truncation=TruncationStrategy.DO_NOT_TRUNCATE,
+                    return_tensors='pt'
+                )
+                values = tokenized_values.get('input_ids')
+                attention_masks = tokenized_values.get('attention_mask')
+
             optimizer.zero_grad()
-            outputs = model(values)
-            loss = criterion(outputs.logits, labels)
+            values, attention_masks, labels = (
+                values.to(device), attention_masks.to(device), labels.to(device))
+            outputs = model(values, attention_mask=attention_masks, labels=labels)
+            loss = outputs[0]
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print(f'Epoch {epoch+1}/{job_config.get("num_epochs")}, Loss: {running_loss/len(dataloader)}')
+            print(f'Batch {batch_cnt+1}, Batch Loss: {loss.item()}')
+    print(f'Epoch {epoch_cnt+1}/{job_config.get("num_epochs")}, Loss: {running_loss/len(dataloader)}')
 
     # Capture the end time
     end_time = datetime.now()
