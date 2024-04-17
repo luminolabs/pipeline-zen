@@ -26,13 +26,13 @@ async def main():
         # Dataset configuration
         'dataset_kind': 'value_label',
         'value_label_dataset_config': {
-            'value_col': 'image',
+            'value_col': 'text',
             'label_col': 'label',
         },
 
         # Data preprocessing configuration
         'preprocessor': 'text_transforms',
-        'torchvision_transforms_dataset_config': {
+        'text_transforms_dataset_config': {
             'transforms_func': 'transforms_set_1',
         },
 
@@ -116,10 +116,10 @@ async def main():
     for epoch in range(job_config.get('num_epochs')):
         model.train()
         running_loss = 0.0
-        for images, labels in dataloader:
-            images, labels = images.to(device), labels.to(device)
+        for values, labels in dataloader:
+            values, labels = values.to(device), labels.to(device)
             optimizer.zero_grad()
-            outputs = model(images)
+            outputs = model(values)
             loss = criterion(outputs.logits, labels)
             loss.backward()
             optimizer.step()
