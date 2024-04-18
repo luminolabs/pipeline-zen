@@ -1,3 +1,4 @@
+import importlib
 import os
 from typing import Tuple, Optional
 from datetime import datetime
@@ -25,6 +26,10 @@ def get_root_path() -> str:
         return os.path.join('..', '..')
     elif environment == 'docker':
         return '.'
+
+
+def load_job_config(job_config_id: str) -> dict:
+    return importlib.import_module(f'job_configs.{job_config_id}').job_config
 
 
 def get_results_path() -> str:

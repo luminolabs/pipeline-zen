@@ -1,6 +1,6 @@
 import asyncio
-import os
-from datetime import datetime, time
+import sys
+from datetime import datetime
 
 import torch
 from torch import nn, optim
@@ -8,14 +8,12 @@ from transformers import TensorType
 from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils import PaddingStrategy
 
-from common import utils
-from common.utils import configure_model_and_dataloader, get_model_weights_path
-from alzheimermri_classification import job_config_
+from common.utils import configure_model_and_dataloader, get_model_weights_path, load_job_config
 
 
-async def main():
+async def main(job_config_id: str):
     # Load job configuration
-    job_config = job_config_
+    job_config = load_job_config(job_config_id)
 
     model, dataloader, tokenizer, device = \
         await configure_model_and_dataloader(job_config)
@@ -95,4 +93,5 @@ async def main():
     print("Trained model saved!")
 
 
-asyncio.run(main())
+job_config_id = sys.argv[1]
+asyncio.run(main(job_config_id))

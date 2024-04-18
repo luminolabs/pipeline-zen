@@ -1,10 +1,10 @@
-job_config_ = job_config = {
+job_config = {
     # Used to associate results and metrics
-    'job_id': 'alzheimer-mri',
+    'job_id': 'imdb-sentiment',
 
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
-    'dataset_id': 'Falah/Alzheimer_MRI',
+    'dataset_id': 'stanfordnlp/imdb',
 
     # Train / test dataset splits mapping
     'train_split': 'train',
@@ -13,30 +13,27 @@ job_config_ = job_config = {
     # Dataset configuration
     'dataset_kind': 'input_label',
     'input_label_dataset_config': {
-        'input_col': 'image',
+        'input_col': 'text',
         'label_col': 'label',
     },
 
     # Data preprocessing configuration
-    'preprocessor': 'torchvision_transforms',
-    'torchvision_transforms_dataset_config': {
+    'preprocessor': 'text_transforms',
+    'text_transforms_dataset_config': {
         'transforms_func': 'transforms_set_1',
     },
 
     # Tokenizer configuration
-    'tokenizer_id': None,
+    'tokenizer_id': 'google-bert/bert-base-cased',
 
     # Model configuration
-    'model_base': 'microsoft/resnet-50',
+    'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
 
     # Training configuration
-    'num_classes': 4,
+    'num_classes': 2,
     'batch_size': 32,
     'num_epochs': 2,
     'learning_rate': 0.001,
     'shuffle': False,
     'num_batches': 5,
-
-    # Evaluation configuration
-    'model_weights_path': 'alzheimer-mri/2024-04-18-15-24-13.pt'
 }

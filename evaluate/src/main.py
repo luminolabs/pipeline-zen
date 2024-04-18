@@ -1,16 +1,16 @@
 import asyncio
+import sys
 
 import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-from common.utils import configure_model_and_dataloader
-from alzheimermri_classification import job_config_
+from common.utils import configure_model_and_dataloader, load_job_config
 
 
-async def main():
+async def main(job_config_id: str):
     # Load job configuration
-    job_config = job_config_
+    job_config = load_job_config(job_config_id)
 
     model, dataloader, tokenizer, device = \
         await configure_model_and_dataloader(job_config, for_inference=True)
@@ -44,4 +44,5 @@ async def main():
     print(f'F1 Score: {f1}')
 
 
-asyncio.run(main())
+job_config_id = sys.argv[1]
+asyncio.run(main(job_config_id))
