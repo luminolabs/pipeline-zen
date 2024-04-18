@@ -1,13 +1,11 @@
 from typing import Any
 
-from torch.utils.data import Dataset
-
 from common.preprocessor import text_transforms
-from common.dataset.kind.value_label_dataset import ValueLabelDataset
+from common.dataset.kind.input_label_dataset import InputLabelDataset
 
 
-class TextTransformsDataset(ValueLabelDataset, Dataset):
-    def __init__(self, dataset: ValueLabelDataset, transforms_func: str):
+class TextTransformsDataset(InputLabelDataset):
+    def __init__(self, dataset: InputLabelDataset, transforms_func: str):
         self.dataset = dataset
         self.transforms_set = getattr(text_transforms, transforms_func)
 

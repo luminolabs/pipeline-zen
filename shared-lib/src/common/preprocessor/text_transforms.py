@@ -6,7 +6,7 @@ from nltk.corpus import stopwords
 nltk.download("stopwords")
 
 
-def transforms_set_1(text: str):
+def transforms_set_1(text: str) -> str:
     """
      - Lowercase the sentence
      - Change "'t" to "not"
@@ -36,7 +36,5 @@ def transforms_set_1(text: str):
     return text
 
 
-def transforms_set_2(text: str):
-    # TODO: Eventually make transforms configurable,
-    # for now we can hardcode different configurations in this file
-    return text
+def transforms_set_2(text: str) -> str:
+    pass
