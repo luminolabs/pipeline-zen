@@ -9,6 +9,7 @@ from imdb_sentiment import job_config_
 
 
 async def main():
+    # Load job configuration
     job_config = job_config_
 
     model, dataloader, tokenizer, device = \
