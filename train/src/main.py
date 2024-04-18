@@ -1,6 +1,6 @@
 import asyncio
 import os
-from datetime import datetime
+from datetime import datetime, time
 
 import torch
 from torch import nn, optim
@@ -8,8 +8,9 @@ from transformers import TensorType
 from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils import PaddingStrategy
 
-from common.utils import configure_model_and_dataloader
-from imdb_sentiment import job_config_
+from common import utils
+from common.utils import configure_model_and_dataloader, get_model_weights_path
+from alzheimermri_classification import job_config_
 
 
 async def main():
@@ -41,6 +42,8 @@ async def main():
         # The dataloader will load a batch of records from the dataset
         for inputs, labels in dataloader:
             batch_cnt += 1
+            # Conditional model args
+            model_args = {}
             # Attention masks are only used with tokenized inputs
             attention_masks = None
             if tokenizer:
@@ -52,18 +55,17 @@ async def main():
                     padding=PaddingStrategy.MAX_LENGTH,
                     truncation=TruncationStrategy.ONLY_FIRST,
                     max_length=tokenizer.model_max_length,
-                    return_tensors=TensorType.PYTORCH
-                )
+                    return_tensors=TensorType.PYTORCH)
                 # Replace original inputs with tokenized inputs
                 inputs = tokenized_values.get('input_ids')
                 # Load attention masks to device
                 attention_masks = tokenized_values.get('attention_mask').to(device)
-
+                model_args['attention_mask'] = attention_masks
             # Load inputs and labels to device
             inputs, labels = inputs.to(device), labels.to(device)
             # Run training logic
             optimizer.zero_grad()
-            outputs = model(inputs, attention_mask=attention_masks)
+            outputs = model(inputs, **model_args)
             loss = criterion(outputs.logits, labels)
             loss.backward()
             optimizer.step()
@@ -72,9 +74,10 @@ async def main():
             print(f'Batch {batch_cnt + 1}/{len(dataloader)}, Batch Loss: {loss.item()}')
             # Exit if `num_batches` is reached. This option is used when testing,
             # to stop training loop before the actual end of the dataset is reached
-            if job_config.get('num_batches'):
+            if job_config.get('num_batches') == batch_cnt:
                 break
-    print(f'Epoch {epoch_cnt + 1}/{job_config.get("num_epochs")}, Loss: {running_loss / len(dataloader)}')
+        # Log training information
+        print(f'Epoch {epoch_cnt + 1}/{job_config.get("num_epochs")}, Loss: {running_loss / len(dataloader)}')
 
     # Capture the end time
     end_time = datetime.now()
@@ -88,9 +91,7 @@ async def main():
     # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     print("Training loop complete, now saving the model")
     # Save the trained model
-    model_path = job_config.get('model_weights_path')
-    os.makedirs(os.path.dirname(model_path), exist_ok=True)
-    torch.save(model.state_dict(), model_path)
+    torch.save(model.state_dict(), get_model_weights_path(job_config.get('job_id')))
     print("Trained model saved!")
 
 

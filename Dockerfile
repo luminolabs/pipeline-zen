@@ -36,6 +36,9 @@ COPY shared-lib/src .
 # Copy workflow source code
 COPY ${TARGET_WORKFLOW}/src .
 
+# Copy job configurations
+COPY job-configs .
+
 # Set environment to `docker`
 # This affects a few runtime options such as cache and results folders
 ENV ENVIRONMENT=docker

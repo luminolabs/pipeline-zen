@@ -1,5 +1,6 @@
 import os
-from typing import Tuple
+from typing import Tuple, Optional
+from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
@@ -10,6 +11,36 @@ from common.dataset.preprocessor.utils import dataset_preprocess_factory
 from common.dataset.provider.utils import dataset_provider_factory
 from common.model.utils import model_factory
 from common.tokenizer.utils import tokenizer_factory
+
+
+# This affects a few runtime options such as cache and results folders
+# Available options so far: `docker`, `local`
+environment = os.environ.get("ENVIRONMENT", 'local')
+
+
+# Returns the path to a common root between workflows
+# This allows workflows to share results, cache, etc
+def get_root_path() -> str:
+    if environment == 'local':
+        return os.path.join('..', '..')
+    elif environment == 'docker':
+        return '.'
+
+
+def get_results_path() -> str:
+    path = os.path.join(get_root_path(), '.results')
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
+def get_model_weights_path(job_id: Optional[str] = None) -> str:
+    path_list = ()
+    if job_id:
+        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        path_list = (job_id, timestamp + '.pt')
+    path = os.path.join(get_results_path(), 'model_weights', *path_list)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
 
 
 async def configure_model_and_dataloader(job_config: dict, for_inference: bool = False) \
@@ -23,7 +54,7 @@ async def configure_model_and_dataloader(job_config: dict, for_inference: bool =
         dataset_id=job_config.get('dataset_id'),
         split=job_config.get('train_split'))
     dataset = await dataset.fetch()
-    # This is the dataset that prepares the dataset data into the data structre
+    # This is the dataset that prepares the dataset data into the data structure
     # that will be used in the training loop
     # ex. the `input_label` dataset converts data structured as an arbitrary dict to tuple(input, label)
     dataset_kind = dataset_kind_factory(
@@ -41,14 +72,14 @@ async def configure_model_and_dataloader(job_config: dict, for_inference: bool =
     # A tokenizer is used when we would like to convert text to tokens,
     # so that the text can be represented as an array of integers
     tokenizer = None
-    if 'tokenizer_id' in job_config:
+    if job_config.get('tokenizer_id'):
         tokenizer = tokenizer_factory(job_config.get('tokenizer_id'))
 
     # This loads data from the dataset in batches;
     # data requested from the dataloader will return preprocessed but not tokenized
     # Tokenization happens in the training loop, a batch at a time
     dataloader = DataLoader(
-        dataset_preprocess,
+        dataset=dataset_preprocess,
         batch_size=job_config.get('batch_size'),
         shuffle=job_config.get('shuffle'))
 
@@ -70,7 +101,9 @@ async def configure_model_and_dataloader(job_config: dict, for_inference: bool =
         model_kind=job_config.get('dataset_kind'),
         model_base=job_config.get('model_base'))
     if for_inference:
-        model.load_state_dict(torch.load(job_config.get('model_weights_path')))
+        model.load_state_dict(torch.load(
+            os.path.join(
+                get_model_weights_path(), job_config.get('model_weights_path'))))
     model.to(device)
     if for_inference:
         model.eval()

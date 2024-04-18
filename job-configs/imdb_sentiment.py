@@ -1,4 +1,7 @@
 job_config_ = {
+    # Used to associate results and metrics
+    'job_id': 'imdb-sentiment',
+
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
     'dataset_id': 'stanfordnlp/imdb',
@@ -29,11 +32,8 @@ job_config_ = {
     # Training configuration
     'num_classes': 2,
     'batch_size': 32,
-    'num_epochs': 1,
+    'num_epochs': 2,
     'learning_rate': 0.001,
     'shuffle': False,
     'num_batches': 5,
-
-    # Output configuration
-    'model_weights_path': './.results/trained_model.pth',
 }

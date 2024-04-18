@@ -1,4 +1,7 @@
 job_config_ = job_config = {
+    # Used to associate results and metrics
+    'job_id': 'alzheimer-mri',
+
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
     'dataset_id': 'Falah/Alzheimer_MRI',
@@ -8,9 +11,9 @@ job_config_ = job_config = {
     'test_split': 'test',
 
     # Dataset configuration
-    'dataset_kind': 'image',
-    'image_dataset_config': {
-        'image_col': 'image',
+    'dataset_kind': 'input_label',
+    'input_label_dataset_config': {
+        'input_col': 'image',
         'label_col': 'label',
     },
 
@@ -20,16 +23,20 @@ job_config_ = job_config = {
         'transforms_func': 'transforms_set_1',
     },
 
+    # Tokenizer configuration
+    'tokenizer_id': None,
+
     # Model configuration
     'model_base': 'microsoft/resnet-50',
 
     # Training configuration
     'num_classes': 4,
     'batch_size': 32,
-    'num_epochs': 10,
+    'num_epochs': 2,
     'learning_rate': 0.001,
-    'shuffle': True,
+    'shuffle': False,
+    'num_batches': 5,
 
-    # Output configuration
-    'model_weights_path': './.results/trained_model.pth',
+    # Evaluation configuration
+    'model_weights_path': 'alzheimer-mri/2024-04-18-15-24-13.pt'
 }

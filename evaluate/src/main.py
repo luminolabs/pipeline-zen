@@ -5,7 +5,7 @@ import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 from common.utils import configure_model_and_dataloader
-from imdb_sentiment import job_config_
+from alzheimermri_classification import job_config_
 
 
 async def main():
