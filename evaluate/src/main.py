@@ -8,12 +8,12 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 from common.utils import configure_model_and_dataloader, load_job_config
 
 
-async def main(job_config_id: str):
+async def main(job_config_id: str, model_weights_id: str):
     # Load job configuration
     job_config = load_job_config(job_config_id)
 
     model, dataloader, tokenizer, device = \
-        await configure_model_and_dataloader(job_config, for_inference=True)
+        await configure_model_and_dataloader(job_config, for_inference=True, model_weights_id=model_weights_id)
 
     # Variables to store predictions and actual labels
     all_preds = []
@@ -45,4 +45,5 @@ async def main(job_config_id: str):
 
 
 job_config_id = sys.argv[1]
-asyncio.run(main(job_config_id))
+model_weights_id = sys.argv[2]
+asyncio.run(main(job_config_id, model_weights_id))

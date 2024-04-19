@@ -48,7 +48,9 @@ def get_model_weights_path(job_id: Optional[str] = None) -> str:
     return path
 
 
-async def configure_model_and_dataloader(job_config: dict, for_inference: bool = False) \
+async def configure_model_and_dataloader(job_config: dict,
+                                         for_inference: bool = False,
+                                         model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
 
     print("Loading and configuring dataset!")
@@ -106,9 +108,10 @@ async def configure_model_and_dataloader(job_config: dict, for_inference: bool =
         model_kind=job_config.get('dataset_kind'),
         model_base=job_config.get('model_base'))
     if for_inference:
-        model.load_state_dict(torch.load(
-            os.path.join(
-                get_model_weights_path(), job_config.get('model_weights_path'))))
+        model_weights_path = os.path.join(
+            get_model_weights_path(), job_config.get('job_id'), model_weights_id)
+        model.load_state_dict(torch.load(model_weights_path))
+        print("Using model weights path: " + model_weights_path)
     model.to(device)
     if for_inference:
         model.eval()

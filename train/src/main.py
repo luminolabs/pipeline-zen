@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from datetime import datetime
 
@@ -89,8 +90,12 @@ async def main(job_config_id: str):
     # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     print("Training loop complete, now saving the model")
     # Save the trained model
-    torch.save(model.state_dict(), get_model_weights_path(job_config.get('job_id')))
-    print("Trained model saved!")
+    model_weights_path = get_model_weights_path(job_config.get('job_id'))
+    torch.save(model.state_dict(), model_weights_path)
+    print("Trained model saved! at: " + model_weights_path)
+    print("... use these arguments to evaluate your model: `" +
+          job_config_id + " " +
+          os.path.basename(model_weights_path) + "`")
 
 
 job_config_id = sys.argv[1]

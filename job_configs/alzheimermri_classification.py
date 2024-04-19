@@ -36,7 +36,4 @@ job_config = {
     'learning_rate': 0.001,
     'shuffle': False,
     'num_batches': 5,
-
-    # Evaluation configuration
-    'model_weights_path': 'alzheimer-mri/2024-04-18-16-12-07.pt'
 }

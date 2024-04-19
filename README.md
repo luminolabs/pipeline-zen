@@ -1,16 +1,48 @@
-## Running a workflow
+## Running with docker
+
+### Running the train workflow
+
+cd to this folder
+`docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .`
+```
+docker run --gpus all \
+-v "$PWD/.cache":/project/.cache \
+-v "$PWD/.results":/project/.results 
+-v "$PWD/job_configs":/project/job_configs \
+train-workflow alzheimermri_classification
+```
+
+### Running the evaluate workflow
+
+cd to this folder
+`docker build --build-arg TARGET_WORKFLOW=evaluate -t evaluate-workflow .`
+```
+docker run --gpus all \
+-v "$PWD/.cache":/project/.cache \
+-v "$PWD/.results":/project/.results 
+-v "$PWD/job_configs":/project/job_configs \
+evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
+```
+
+
+## Running locally
+
+### Running the train workflow
+
+- cd to `train/src` folder
+- `export PYTHONPATH=$(pwd)/../../shared-lib/src:$(pwd)/../..`
+- `python main.py alzheimermri_classification`
+
+### Running the evaluate workflow
 
 - cd to this folder
-- `docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .`
-- `docker run --gpus all -v "$PWD/.cache":/project/.cache -v "$PWD/.results":/project/.results train-workflow`
+- `export PYTHONPATH=$(pwd)/../../shared-lib/src:$(pwd)/../..`
+- `python main.py alzheimermri_classification 2024-04-18-16-57-23.pt`
 
-replace `train` above with either `train` or `evaluate` to specify the workflow
-
-Note: `print` statements are delayed and flushed later when run in docker
 
 ## Outputs
 
-Examples of workflow outputs. The outputs below are a first iteration.
+Examples of workflow outputs
 
 ### Train Workflow
 
