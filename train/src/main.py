@@ -5,9 +5,6 @@ from datetime import datetime
 
 import torch
 from torch import nn, optim
-from transformers import TensorType
-from transformers.tokenization_utils_base import TruncationStrategy
-from transformers.utils import PaddingStrategy
 
 from common.utils import configure_model_and_dataloader, get_model_weights_path, load_job_config, tokenize_inputs
 
