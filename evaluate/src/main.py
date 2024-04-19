@@ -4,9 +4,6 @@ import sys
 import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
-from transformers import TensorType
-from transformers.tokenization_utils_base import TruncationStrategy
-from transformers.utils import PaddingStrategy
 
 from common.utils import configure_model_and_dataloader, load_job_config, tokenize_inputs
 
