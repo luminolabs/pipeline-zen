@@ -7,10 +7,11 @@ cd to this folder
 ```
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results 
+-v "$PWD/.results":/project/.results \
 -v "$PWD/job_configs":/project/job_configs \
 train-workflow alzheimermri_classification
 ```
+NOTE: `alzheimermri_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -19,10 +20,12 @@ cd to this folder
 ```
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results 
+-v "$PWD/.results":/project/.results \ 
 -v "$PWD/job_configs":/project/job_configs \
 evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
 ```
+NOTE: `alzheimermri_classification` above points to a file under `job_configs` and
+`2024-04-18-16-12-07.pt` points to the model weights file under `.results/model_weights/<job_id>`
 
 
 ## Running locally
