@@ -2,12 +2,13 @@ import os
 from abc import abstractmethod
 from typing import Any
 
+from common import utils
 from common.dataset.base import BaseDataset
 
 
 class BaseDatasetProvider(BaseDataset):
-    def __init__(self, dataset_path: str, split: str) -> None:
-        self.dataset_path = dataset_path
+    def __init__(self, dataset_id: str, split: str) -> None:
+        self.dataset_id = dataset_id
         self.split = split
         self.dataset = None
 
@@ -24,4 +25,4 @@ class BaseDatasetProvider(BaseDataset):
         ex: `.cache/huggingface/datasets`
         The dataset name is appended to the path above in the subclasses
         """
-        return os.path.join('.cache', self.__class__.__name__.lower(), 'datasets')
+        return os.path.join(utils.get_root_path(), '.cache', 'datasets', self.__class__.__name__.lower())
