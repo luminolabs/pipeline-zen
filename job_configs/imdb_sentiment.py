@@ -32,8 +32,9 @@ job_config = {
     # Training configuration
     'num_classes': 2,
     'batch_size': 32,
-    'num_epochs': 2,
+    'num_epochs': 10,
     'learning_rate': 0.001,
     'shuffle': False,
-    'num_batches': 5,
+    # On every epoch, stop after this number of batches
+    'num_batches': None,  # ex 5
 }
