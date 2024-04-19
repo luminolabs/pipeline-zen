@@ -36,5 +36,5 @@ job_config = {
     'learning_rate': 0.001,
     'shuffle': False,
     # On every epoch, stop after this number of batches
-    'num_batches': 5,  # ex 5
+    'num_batches': None,  # ex 5
 }
