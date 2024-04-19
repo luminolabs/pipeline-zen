@@ -4,8 +4,11 @@ import sys
 import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from transformers import TensorType
+from transformers.tokenization_utils_base import TruncationStrategy
+from transformers.utils import PaddingStrategy
 
-from common.utils import configure_model_and_dataloader, load_job_config
+from common.utils import configure_model_and_dataloader, load_job_config, tokenize_inputs
 
 
 async def main(job_config_id: str, model_weights_id: str):
@@ -18,14 +21,25 @@ async def main(job_config_id: str, model_weights_id: str):
     # Variables to store predictions and actual labels
     all_preds = []
     all_labels = []
+    batch_cnt = -1
     with torch.no_grad():
         for inputs, labels in dataloader:
+            batch_cnt += 1
+            model_args = {}
+            if tokenizer:
+                inputs = tokenize_inputs(inputs, tokenizer, model_args, device)
             inputs, labels = inputs.to(device), labels.to(device)
-            outputs = model(inputs)
+            outputs = model(inputs, **model_args)
             _, predicted = torch.max(outputs.logits, 1)
             # Store predictions and actual labels
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
+            # Log run information
+            print(f'Batch {batch_cnt + 1}/{len(dataloader)}')
+            # Exit if `num_batches` is reached. This option is used when testing,
+            # to stop training loop before the actual end of the dataset is reached
+            if job_config.get('num_batches') == batch_cnt:
+                break
 
     # Convert lists to numpy arrays for metric calculation
     all_preds = np.array(all_preds)

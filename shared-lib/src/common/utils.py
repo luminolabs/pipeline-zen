@@ -1,11 +1,14 @@
 import importlib
 import os
+import math
 from typing import Tuple, Optional
 from datetime import datetime
 
 import torch
 from torch.utils.data import DataLoader
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
+from transformers import PreTrainedModel, PreTrainedTokenizerBase, TensorType
+from transformers.tokenization_utils_base import TruncationStrategy
+from transformers.utils import PaddingStrategy
 
 from common.dataset.kind.utils import dataset_kind_factory
 from common.dataset.preprocessor.utils import dataset_preprocess_factory
@@ -54,13 +57,24 @@ async def configure_model_and_dataloader(job_config: dict,
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
 
     print("Loading and configuring dataset!")
+
+    # Dataset split to use
+    split = job_config.get('train_split')
+    if for_inference:
+        split = job_config.get('test_split')
+    print(f'Using `{split}` split')
     # This is the dataset that pulls from the content provider
     # ex. huggingface, s3 providers
     dataset = dataset_provider_factory(
         dataset_provider=job_config.get('dataset_provider'),
         dataset_id=job_config.get('dataset_id'),
-        split=job_config.get('train_split'))
+        split=split)
     dataset = await dataset.fetch()
+    print(f'Dataset split has {len(dataset)} records')
+    print(f'Batch size is {job_config.get("batch_size")}, '
+          f'number of batches is {math.ceil(len(dataset)/job_config.get("batch_size"))}')
+    if job_config.get('num_batches'):
+        print(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
     # that will be used in the training loop
     # ex. the `input_label` dataset converts data structured as an arbitrary dict to tuple(input, label)
@@ -117,3 +131,21 @@ async def configure_model_and_dataloader(job_config: dict,
         model.eval()
 
     return model, dataloader, tokenizer, device
+
+
+def tokenize_inputs(inputs, tokenizer: PreTrainedTokenizerBase, model_args: dict, device):
+    # Tokenize batch of inputs
+    # Tensor data need to be of same length, so we need to
+    # set max size and padding options
+    tokenized_values = tokenizer(
+        inputs,
+        padding=PaddingStrategy.MAX_LENGTH,
+        truncation=TruncationStrategy.ONLY_FIRST,
+        max_length=tokenizer.model_max_length,
+        return_tensors=TensorType.PYTORCH)
+    # Replace original inputs with tokenized inputs
+    inputs = tokenized_values.get('input_ids')
+    # Load attention masks to device
+    attention_masks = tokenized_values.get('attention_mask').to(device)
+    model_args['attention_mask'] = attention_masks
+    return inputs
