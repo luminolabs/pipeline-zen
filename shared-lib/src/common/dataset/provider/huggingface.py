@@ -9,9 +9,9 @@ from common.dataset.provider.base import BaseDatasetProvider
 class HuggingFace(BaseDatasetProvider):
     async def fetch(self) -> Any:
         self.dataset = load_dataset(
-            path=self.dataset_path,
+            path=self.dataset_id,
             keep_in_memory=False,
-            cache_dir=os.path.join(self.get_cache_dir(), self.dataset_path),
+            cache_dir=os.path.join(self.get_cache_dir(), self.dataset_id),
             split=self.split
         )
         return self.dataset

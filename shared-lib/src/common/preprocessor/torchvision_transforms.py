@@ -1,7 +1,9 @@
+from typing import Callable
+
 from torchvision.transforms import transforms
 
 
-def transforms_set_1():
+def transforms_set_1() -> Callable:
     return transforms.Compose([
         transforms.Resize((224, 224)),  # Resize image for ResNet-50
         transforms.Grayscale(num_output_channels=3),  # Convert grayscale to 3-channel
@@ -10,7 +12,5 @@ def transforms_set_1():
     ])
 
 
-def transforms_set_2():
-    # TODO: Eventually make transforms configurable,
-    # for now we can hardcode different configurations in this file
-    return transforms.Compose([])
+def transforms_set_2() -> Callable:
+    pass

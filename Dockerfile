@@ -36,6 +36,10 @@ COPY shared-lib/src .
 # Copy workflow source code
 COPY ${TARGET_WORKFLOW}/src .
 
+# Set environment to `docker`
+# This affects a few runtime options such as cache and results folders
+ENV ENVIRONMENT=docker
+
 # Run workflow
 ENTRYPOINT ["python", "main.py"]
 

@@ -1,100 +1,32 @@
 import asyncio
 import os
+import sys
 from datetime import datetime
 
 import torch
 from torch import nn, optim
-from torch.utils.data import DataLoader
+from transformers import TensorType
+from transformers.tokenization_utils_base import TruncationStrategy
+from transformers.utils import PaddingStrategy
 
-from common.dataset.preprocessor.utils import dataset_preprocess_factory
-from common.dataset.provider.utils import dataset_provider_factory
-from common.dataset.kind.utils import dataset_kind_factory
-from common.model.utils import model_factory
+from common.utils import configure_model_and_dataloader, get_model_weights_path, load_job_config
 
 
-async def main():
-    # TODO: This needs to come from external input
-    job_config = {
-        # Dataset provider configuration
-        'dataset_provider': 'huggingface',
-        'dataset_id': 'Falah/Alzheimer_MRI',
+async def main(job_config_id: str):
+    # Load job configuration
+    job_config = load_job_config(job_config_id)
 
-        # Train / test dataset splits mapping
-        'train_split': 'train',
-        'test_split': 'test',
+    model, dataloader, tokenizer, device = \
+        await configure_model_and_dataloader(job_config)
 
-        # Dataset configuration
-        'dataset_kind': 'image',
-        'image_dataset_config': {
-            'image_col': 'image',
-            'label_col': 'label',
-        },
-
-        # Data preprocessing configuration
-        'preprocessor': 'torchvision_transforms',
-        'torchvision_transforms_dataset_config': {
-            'transforms_func': 'transforms_set_1',
-        },
-
-        # Model configuration
-        'model_base': 'microsoft/resnet-50',
-
-        # Training configuration
-        'num_classes': 4,
-        'batch_size': 32,
-        'num_epochs': 10,
-        'learning_rate': 0.001,
-        'shuffle': True,
-
-        # Output configuration
-        'model_weights_path': './.results/trained_model.pth',
-    }
-
-    print("Loading and configuring dataset!")
-    # This is the dataset that pulls from the content provider
-    # ex. huggingface, s3 providers
-    dataset = dataset_provider_factory(
-        dataset_provider=job_config.get('dataset_provider'),
-        dataset_id=job_config.get('dataset_id'),
-        split=job_config.get('train_split'))
-    dataset = await dataset.fetch()
-    # This is the dataset that's specialized for the type of data we're looking to train
-    # ex. image data
-    dataset_kind = dataset_kind_factory(
-        dataset_kind=job_config.get('dataset_kind'),
-        dataset=dataset,
-        **job_config.get(job_config.get('dataset_kind') + '_dataset_config'))
-    # This is the preprocessing dataset,
-    # it will apply transformations and prepare data for training
-    # ex. torchvision transforms
-    dataset_preprocess = dataset_preprocess_factory(
-        dataset_preprocess=job_config.get('preprocessor'),
-        dataset=dataset_kind,
-        **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
-
-    # This loads data from the dataset in batches;
-    # data requested from the dataloader will return preprocessed
-    dataloader = DataLoader(
-        dataset_preprocess,
-        batch_size=job_config.get('batch_size'),
-        shuffle=job_config.get('shuffle'))
-
-    # To run on GPU or not to run on GPU, that is the question
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print("Training on (CPU/GPU?) device:", device)
-
-    print("Fetching the model")
-    # Instantiate the appropriate model
-    model = model_factory(
-        model_kind=job_config.get('dataset_kind'),
-        model_base=job_config.get('model_base'))
-    model.to(device)
-
-    # TODO: Make code below configurable; most of the code below will be generalized and put into a lib
     # TODO: Implement metrics lib, to capture timing, model, etc metrics
     # TODO: Use logger instead of print
 
+    # Loss calculator
+    # TODO: Allow using different loss calculators through configuration
     criterion = nn.CrossEntropyLoss()
+    # Optimizer
+    # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
     print("Loss and Optimizer is set")
 
@@ -102,18 +34,49 @@ async def main():
     start_time = datetime.now()
     print(f"Training started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    for epoch in range(job_config.get('num_epochs')):
-        model.train()
+    for epoch_cnt in range(job_config.get('num_epochs')):
         running_loss = 0.0
-        for images, labels in dataloader:
-            images, labels = images.to(device), labels.to(device)
+        batch_cnt = -1
+        model.train()
+        # The dataloader will load a batch of records from the dataset
+        for inputs, labels in dataloader:
+            batch_cnt += 1
+            # Conditional model args
+            model_args = {}
+            # Attention masks are only used with tokenized inputs
+            attention_masks = None
+            if tokenizer:
+                # Tokenize batch of inputs
+                # Tensor data need to be of same length, so we need to
+                # set max size and padding options
+                tokenized_values = tokenizer(
+                    inputs,
+                    padding=PaddingStrategy.MAX_LENGTH,
+                    truncation=TruncationStrategy.ONLY_FIRST,
+                    max_length=tokenizer.model_max_length,
+                    return_tensors=TensorType.PYTORCH)
+                # Replace original inputs with tokenized inputs
+                inputs = tokenized_values.get('input_ids')
+                # Load attention masks to device
+                attention_masks = tokenized_values.get('attention_mask').to(device)
+                model_args['attention_mask'] = attention_masks
+            # Load inputs and labels to device
+            inputs, labels = inputs.to(device), labels.to(device)
+            # Run training logic
             optimizer.zero_grad()
-            outputs = model(images)
+            outputs = model(inputs, **model_args)
             loss = criterion(outputs.logits, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-        print(f'Epoch {epoch+1}/{job_config.get("num_epochs")}, Loss: {running_loss/len(dataloader)}')
+            # Log training information
+            print(f'Batch {batch_cnt + 1}/{len(dataloader)}, Batch Loss: {loss.item()}')
+            # Exit if `num_batches` is reached. This option is used when testing,
+            # to stop training loop before the actual end of the dataset is reached
+            if job_config.get('num_batches') == batch_cnt:
+                break
+        # Log training information
+        print(f'Epoch {epoch_cnt + 1}/{job_config.get("num_epochs")}, Loss: {running_loss / len(dataloader)}')
 
     # Capture the end time
     end_time = datetime.now()
@@ -127,10 +90,13 @@ async def main():
     # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     print("Training loop complete, now saving the model")
     # Save the trained model
-    os.makedirs('.results', exist_ok=True)
-    model_path = job_config.get('model_weights_path')
-    torch.save(model.state_dict(), model_path)
-    print("Trained model saved!")
+    model_weights_path = get_model_weights_path(job_config.get('job_id'))
+    torch.save(model.state_dict(), model_weights_path)
+    print("Trained model saved! at: " + model_weights_path)
+    print("... use these arguments to evaluate your model: `" +
+          job_config_id + " " +
+          os.path.basename(model_weights_path) + "`")
 
 
-asyncio.run(main())
+job_config_id = sys.argv[1]
+asyncio.run(main(job_config_id))
