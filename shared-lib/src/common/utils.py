@@ -100,7 +100,7 @@ async def configure_model_and_dataloader(job_config: dict,
         os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
         device = 'mps'
     device = torch.device(device)
-    print("Training on (CPU/GPU/MPS?) device:", device)
+    print("Training on (cpu/cuda/mps?) device:", device)
 
     print("Fetching the model")
     # Instantiate the appropriate model

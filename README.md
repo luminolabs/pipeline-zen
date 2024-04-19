@@ -20,7 +20,7 @@ cd to this folder
 ```
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results \ 
+-v "$PWD/.results":/project/.results \
 -v "$PWD/job_configs":/project/job_configs \
 evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
 ```
