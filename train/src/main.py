@@ -9,7 +9,7 @@ from transformers import TensorType
 from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils import PaddingStrategy
 
-from common.utils import configure_model_and_dataloader, get_model_weights_path, load_job_config
+from common.utils import configure_model_and_dataloader, get_model_weights_path, load_job_config, tokenize_inputs
 
 
 async def main(job_config_id: str):
@@ -41,25 +41,9 @@ async def main(job_config_id: str):
         # The dataloader will load a batch of records from the dataset
         for inputs, labels in dataloader:
             batch_cnt += 1
-            # Conditional model args
             model_args = {}
-            # Attention masks are only used with tokenized inputs
-            attention_masks = None
             if tokenizer:
-                # Tokenize batch of inputs
-                # Tensor data need to be of same length, so we need to
-                # set max size and padding options
-                tokenized_values = tokenizer(
-                    inputs,
-                    padding=PaddingStrategy.MAX_LENGTH,
-                    truncation=TruncationStrategy.ONLY_FIRST,
-                    max_length=tokenizer.model_max_length,
-                    return_tensors=TensorType.PYTORCH)
-                # Replace original inputs with tokenized inputs
-                inputs = tokenized_values.get('input_ids')
-                # Load attention masks to device
-                attention_masks = tokenized_values.get('attention_mask').to(device)
-                model_args['attention_mask'] = attention_masks
+                inputs = tokenize_inputs(inputs, tokenizer, model_args, device)
             # Load inputs and labels to device
             inputs, labels = inputs.to(device), labels.to(device)
             # Run training logic
