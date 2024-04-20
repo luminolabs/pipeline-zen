@@ -1,5 +1,5 @@
 import os
-from typing import Any
+from typing import Any, Dict
 
 from datasets import load_dataset
 
@@ -16,7 +16,7 @@ class HuggingFace(BaseDatasetProvider):
         )
         return self.dataset
 
-    def __getitem__(self, item: int) -> Any:
+    def __getitem__(self, item: int) -> Dict:
         return self.dataset[self.split][item]
 
     def __len__(self) -> int:
