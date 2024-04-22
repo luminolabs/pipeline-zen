@@ -31,7 +31,7 @@ job_config = {
 
     # Training configuration
     'num_classes': 2,
-    'batch_size': 32,
+    'batch_size': 16,
     'num_epochs': 10,
     'learning_rate': 0.001,
     'shuffle': False,
