@@ -10,6 +10,6 @@ def unet(model_base: str):
     return smp.Unet(
         encoder_name='efficientnet-b4',
         encoder_weights='imagenet',
-        classes=2,
+        classes=1,  # TODO: Make configurable
         activation='sigmoid',
     )

@@ -30,6 +30,10 @@ NOTE: `alzheimermri_classification` above points to a file under `job_configs` a
 
 ## Running locally
 
+For all workflows, ensure dependencies are installed. From the workflow's `src` folder run the following:
+- `pip install -Ur ../requirements.txt`
+- `pip install -Ur ../../shared-lib/requirements.txt`
+
 ### Running the train workflow
 
 - cd to `train/src` folder

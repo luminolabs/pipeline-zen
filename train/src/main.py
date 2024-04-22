@@ -4,6 +4,7 @@ import sys
 from datetime import datetime
 
 import torch
+from segmentation_models_pytorch.losses import FocalLoss, BINARY_MODE
 from torch import nn, optim
 
 from common.utils import get_model_weights_path, load_job_config
@@ -23,7 +24,7 @@ async def main(job_config_id: str):
 
     # Loss calculator
     # TODO: Allow using different loss calculators through configuration
-    criterion = nn.CrossEntropyLoss()
+    criterion = FocalLoss(BINARY_MODE)
     # Optimizer
     # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
