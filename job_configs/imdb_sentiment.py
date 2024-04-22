@@ -37,4 +37,7 @@ job_config = {
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
+    # Loss function configuration
+    'loss_func_name': 'cross_entropy',
+    'loss_func_args': {},
 }

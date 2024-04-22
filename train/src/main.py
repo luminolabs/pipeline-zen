@@ -4,9 +4,9 @@ import sys
 from datetime import datetime
 
 import torch
-from segmentation_models_pytorch.losses import FocalLoss, BINARY_MODE
-from torch import nn, optim
+from torch import nn, optim, Tensor
 
+from common.loss.utils import loss_factory
 from common.utils import get_model_weights_path, load_job_config
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
@@ -24,7 +24,10 @@ async def main(job_config_id: str):
 
     # Loss calculator
     # TODO: Allow using different loss calculators through configuration
-    criterion = FocalLoss(BINARY_MODE)
+    criterion = loss_factory(
+        job_config.get('loss_func_name'),
+        **job_config.get('loss_func_args', {}))
+    # criterion = CrossEntropyLoss()
     # Optimizer
     # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
@@ -49,7 +52,10 @@ async def main(job_config_id: str):
             # Run training logic
             optimizer.zero_grad()
             outputs = model(inputs, **model_args)
-            loss = criterion(outputs, labels)  # TODO: outputs.logits
+            if isinstance(outputs, Tensor):
+                loss = criterion(outputs, labels)
+            else:
+                loss = criterion(outputs.logits, labels)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()

@@ -42,4 +42,9 @@ job_config = {
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
+    # Loss function configuration
+    'loss_func_name': 'focal',
+    'loss_func_args': {
+        'mode': 'binary',
+    },
 }
