@@ -1,10 +1,14 @@
 job_config = {
     # Used to associate results and metrics
-    'job_id': 'imdb-sentiment',
+    'job_id': 'mri-segmentation',
 
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
-    'dataset_id': 'stanfordnlp/imdb',
+    'dataset_id': 'rainerberger/Mri_segmentation',
+    'dataset_fetch_config': {
+        # If there's a subset name, set it here
+        'name': None,
+    },
 
     # Train / test dataset splits mapping
     'train_split': 'train',
@@ -13,21 +17,22 @@ job_config = {
     # Dataset configuration
     'dataset_kind': 'input_label',
     'input_label_dataset_config': {
-        'input_col': 'text',
-        'label_col': 'label',
+        'input_col': 'image',
+        'label_col': 'annotation',
     },
 
     # Data preprocessing configuration
-    'preprocessor': 'text_transforms',
-    'text_transforms_dataset_config': {
-        'transforms_input_func': 'transforms_set_1'
+    'preprocessor': 'torchvision_transforms',
+    'torchvision_transforms_dataset_config': {
+        'transforms_input_func': 'transforms_set_2',
+        'transforms_label_func': 'transforms_set_2',
     },
 
     # Tokenizer configuration
-    'tokenizer_id': 'google-bert/bert-base-cased',
+    'tokenizer_id': None,
 
     # Model configuration
-    'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+    'model_base': 'unet',
 
     # Training configuration
     'num_classes': 2,

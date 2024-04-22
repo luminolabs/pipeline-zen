@@ -13,4 +13,6 @@ def transforms_set_1() -> Callable:
 
 
 def transforms_set_2() -> Callable:
-    pass
+    return transforms.Compose([
+        transforms.ToTensor(),
+    ])

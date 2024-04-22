@@ -5,7 +5,9 @@ import torch
 import numpy as np
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
-from common.utils import configure_model_and_dataloader, load_job_config, tokenize_inputs
+from common.utils import load_job_config
+from common.helpers import configure_model_and_dataloader
+from common.tokenizer.utils import tokenize_inputs
 
 
 async def main(job_config_id: str, model_weights_id: str):

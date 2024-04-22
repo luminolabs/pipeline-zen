@@ -1,5 +1,9 @@
-datasets
+# These three are installed separatelly in the Dockerfile
+# but we're including them here to allow installing locally
 torch
 torchvision
 transformers
+
+datasets
+segmentation_models_pytorch
 nltk

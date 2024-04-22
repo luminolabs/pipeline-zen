@@ -9,5 +9,7 @@ def model_factory(model_kind: str, model_base: str) -> PreTrainedModel:
             return image.resnet(model_base)
         elif 'sentiment' in model_base:
             return nlp.auto(model_base)
+        elif 'unet' == model_base:
+            return image.unet(model_base)
     if model_kind == '...':
         pass
