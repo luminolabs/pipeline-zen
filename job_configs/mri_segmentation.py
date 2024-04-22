@@ -35,7 +35,7 @@ job_config = {
     'model_base': 'unet',
 
     # Training configuration
-    'num_classes': 2,
+    'num_classes': 1,
     'batch_size': 32,
     'num_epochs': 10,
     'learning_rate': 0.001,
