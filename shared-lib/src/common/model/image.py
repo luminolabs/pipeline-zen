@@ -7,13 +7,9 @@ def resnet(model_base: str) -> ResNetPreTrainedModel:
 
 
 def unet(model_base: str):
-    ENCODER = 'efficientnet-b4'
-    ENCODER_WEIGHTS = 'imagenet'
-    ACTIVATION = 'sigmoid'
-
     return smp.Unet(
-        encoder_name=ENCODER,
-        encoder_weights=ENCODER_WEIGHTS,
+        encoder_name='efficientnet-b4',
+        encoder_weights='imagenet',
         classes=2,
-        activation=ACTIVATION,
+        activation='sigmoid',
     )

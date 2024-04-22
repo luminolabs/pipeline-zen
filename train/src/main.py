@@ -48,7 +48,7 @@ async def main(job_config_id: str):
             # Run training logic
             optimizer.zero_grad()
             outputs = model(inputs, **model_args)
-            loss = criterion(outputs, labels)
+            loss = criterion(outputs, labels)  # TODO: outputs.logits
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
