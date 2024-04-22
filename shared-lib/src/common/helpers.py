@@ -26,7 +26,6 @@ async def configure_model_and_dataloader(job_config: dict,
     split = job_config.get('train_split')
     if for_inference:
         split = job_config.get('test_split')
-    print(f'Using `{split}` split')
     # This is the dataset that pulls from the content provider
     # ex. huggingface, s3 providers
     dataset = dataset_provider_factory(
