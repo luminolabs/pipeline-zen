@@ -6,10 +6,10 @@ def resnet(model_base: str) -> ResNetPreTrainedModel:
     return ResNetForImageClassification.from_pretrained(model_base)
 
 
-def unet(model_base: str):
+def unet(model_base: str, num_classes: int):
     return smp.Unet(
         encoder_name='efficientnet-b4',
         encoder_weights='imagenet',
-        classes=1,  # TODO: Make configurable
+        classes=num_classes,
         activation='sigmoid',
     )

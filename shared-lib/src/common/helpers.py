@@ -83,7 +83,8 @@ async def configure_model_and_dataloader(job_config: dict,
     # Instantiate the appropriate model
     model = model_factory(
         model_kind=job_config.get('dataset_kind'),
-        model_base=job_config.get('model_base'))
+        model_base=job_config.get('model_base'),
+        **job_config.get('model_base_args', {}))
     if for_inference:
         model_weights_path = os.path.join(
             get_model_weights_path(), job_config.get('job_id'), model_weights_id)

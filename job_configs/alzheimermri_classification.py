@@ -31,7 +31,6 @@ job_config = {
     'model_base': 'microsoft/resnet-50',
 
     # Training configuration
-    'num_classes': 4,
     'batch_size': 16,
     'num_epochs': 10,
     'learning_rate': 0.001,
