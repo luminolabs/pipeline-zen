@@ -30,9 +30,9 @@ job_config = {
     'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
 
     # Training configuration
-    'batch_size': 16,
+    'batch_size': 42,
     'num_epochs': 10,
-    'learning_rate': 0.001,
+    'learning_rate': 0.00001,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
