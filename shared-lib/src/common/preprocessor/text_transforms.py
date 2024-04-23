@@ -37,4 +37,4 @@ def transforms_set_1(text: str) -> str:
 
 
 def transforms_set_2(text: str) -> str:
-    pass
+    return text.strip()
