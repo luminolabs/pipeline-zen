@@ -3,8 +3,9 @@ import sys
 
 import torch
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+from torch import Tensor
 
+from common.metrics.utils import mask_metrics, scalar_metrics
 from common.utils import load_job_config
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
@@ -29,7 +30,10 @@ async def main(job_config_id: str, model_weights_id: str):
                 inputs = tokenize_inputs(inputs, tokenizer, model_args, device)
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs, **model_args)
-            _, predicted = torch.max(outputs.logits, 1)
+            if isinstance(outputs, Tensor):
+                predicted = outputs
+            else:
+                _, predicted = torch.max(outputs.logits, 1)
             # Store predictions and actual labels
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
@@ -45,10 +49,10 @@ async def main(job_config_id: str, model_weights_id: str):
     all_labels = np.array(all_labels)
 
     # Calculate metrics
-    accuracy = accuracy_score(all_labels, all_preds)
-    precision = precision_score(all_labels, all_preds, average='macro')  # Adjust average as needed
-    recall = recall_score(all_labels, all_preds, average='macro')  # Adjust average as needed
-    f1 = f1_score(all_labels, all_preds, average='macro')  # Adjust average as needed
+    if len(all_preds.shape) == 1:
+        accuracy, precision, recall, f1 = scalar_metrics(all_preds, all_labels)
+    else:
+        accuracy, precision, recall, f1 = mask_metrics(torch.tensor(all_preds), torch.tensor(all_labels))
 
     # Print the metrics
     print(f'Accuracy: {accuracy}')
