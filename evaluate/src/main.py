@@ -35,12 +35,13 @@ async def main(job_config_id: str, model_weights_id: str):
             else:
                 _, predicted = torch.max(outputs.logits, 1)
             # Store predictions and actual labels
+            # TODO: Can we avoid converting to numpy?
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
             # Log run information
             print(f'Batch {batch_cnt}/{len(dataloader)}')
             # Exit if `num_batches` is reached. This option is used when testing,
-            # to stop training loop before the actual end of the dataset is reached
+            # to stop the loop before the actual end of the dataset is reached
             if job_config.get('num_batches') == batch_cnt:
                 break
 

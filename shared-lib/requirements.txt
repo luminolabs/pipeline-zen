@@ -6,3 +6,4 @@ transformers
 
 datasets
 segmentation_models_pytorch
+numpy
