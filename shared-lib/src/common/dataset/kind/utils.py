@@ -3,9 +3,6 @@ from common.dataset.kind.single_label_dataset import SingleLabelDataset
 from common.dataset.provider.base import BaseDatasetProvider
 
 
-
-
-
 def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
                          **kwargs) -> BaseDatasetKind:
     """
