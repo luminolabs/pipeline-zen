@@ -1,18 +1,14 @@
-from typing import Any, Tuple
+from types import ModuleType
 
+from common.dataset.preprocessor.base import BaseDatasetPreprocessor
 from common.preprocessor import text_transforms
-from common.dataset.kind.input_label_dataset import InputLabelDataset
 
 
-class TextTransformsDataset(InputLabelDataset):
-    def __init__(self, dataset: InputLabelDataset, transforms_input_func: str):
-        self.dataset = dataset
-        self.transforms_input = getattr(text_transforms, transforms_input_func)
+class TextTransformsDataset(BaseDatasetPreprocessor):
+    """
+    Text transformations preprocessor.
+    """
 
-    def __getitem__(self, item: int) -> Tuple[str, int]:
-        text, label = self.dataset[item]
-        transformed_text = self.transforms_input(text)
-        return transformed_text, label
-
-    def __len__(self) -> int:
-        return len(self.dataset)
+    @staticmethod
+    def get_transforms_module() -> ModuleType:
+        return text_transforms

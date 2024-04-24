@@ -1,12 +1,19 @@
-from typing import Union
+from common.dataset.kind.base import BaseDatasetKind
+from common.dataset.kind.single_label_dataset import SingleLabelDataset
+from common.dataset.provider.base import BaseDatasetProvider
 
-from common.dataset.base import BaseDataset
-from common.dataset.kind.input_label_dataset import InputLabelDataset
 
+def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
+                         **kwargs) -> BaseDatasetKind:
+    """
+    Factory function for instantiating a dataset kind.
 
-def dataset_kind_factory(dataset_kind: str, dataset: BaseDataset, **kwargs) -> Union[InputLabelDataset,]:
-    if dataset_kind == 'input_label':
-        return InputLabelDataset(dataset, **kwargs)
+    :param dataset_kind: Short name of the dataset kind
+    :param dataset: Dataset to iterate on; must be a `BaseDatasetProvider`
+    :param kwargs: Additional keyword arguments to pass to the dataset kind
+    :return: A dataset kind
+    """
+    if dataset_kind == 'single_label':
+        return SingleLabelDataset(dataset, **kwargs)
     if dataset_kind == '...':
-        # TODO: Implement dataset for other kind of model training, ex. LLM
         pass

@@ -6,13 +6,28 @@ from common.tokenizer import nlp
 
 
 def tokenizer_factory(tokenizer_id: str) -> PreTrainedTokenizerBase:
+    """
+    Factory method for tokenizers.
+
+    :param tokenizer_id: The tokenizer name
+    :return: Tokenizer instance
+    """
     print(f'Using `{tokenizer_id}` tokenizer')
     if 'bert' in tokenizer_id:
         return nlp.auto(tokenizer_id)
 
 
 def tokenize_inputs(inputs, tokenizer: PreTrainedTokenizerBase, model_args: dict, device):
-    # Tokenize batch of inputs
+    """
+    Tokenize inputs using the tokenizer, and place attention masks on device.
+
+    :param inputs: The inputs to be tokenized
+    :param tokenizer: The tokenizer to use
+    :param model_args: Additional model arguments
+    :param device: The device to load the attentions masks to
+    :return:
+    """
+
     # Tensor data need to be of same length, so we need to
     # set max size and padding options
     tokenized_values = tokenizer(

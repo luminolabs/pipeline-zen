@@ -11,8 +11,8 @@ job_config = {
     'test_split': 'test',
 
     # Dataset configuration
-    'dataset_kind': 'input_label',
-    'input_label_dataset_config': {
+    'dataset_kind': 'single_label',
+    'single_label_dataset_config': {
         'input_col': 'image',
         'label_col': 'label',
     },

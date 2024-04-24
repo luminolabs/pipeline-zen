@@ -1,6 +1,9 @@
 from transformers import ResNetForImageClassification, ResNetPreTrainedModel
 import segmentation_models_pytorch as smp
 
+"""
+Collection of model factories for image classification and segmentation models
+"""
 
 def resnet(model_base: str) -> ResNetPreTrainedModel:
     return ResNetForImageClassification.from_pretrained(model_base)

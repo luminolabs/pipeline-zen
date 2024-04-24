@@ -19,6 +19,14 @@ async def configure_model_and_dataloader(job_config: dict,
                                          for_inference: bool = False,
                                          model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
+    """
+    Configure model and dataloader from a job configuration.
+
+    :param job_config: The job configuration. Configurations are found under `job_configs`
+    :param for_inference: Whether we are running inference or training
+    :param model_weights_id: Model weights to use for inference
+    :return: Configured objects to be used in the workflow
+    """
 
     print("Loading and configuring dataset!")
 

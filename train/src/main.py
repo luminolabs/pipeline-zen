@@ -23,7 +23,6 @@ async def main(job_config_id: str):
     # TODO: Use logger instead of print
 
     # Loss calculator
-    # TODO: Allow using different loss calculators through configuration
     criterion = loss_factory(
         job_config.get('loss_func_name'),
         **job_config.get('loss_func_args', {}))

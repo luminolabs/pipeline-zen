@@ -2,6 +2,10 @@ from typing import Callable
 
 from torchvision.transforms import transforms
 
+"""
+Collection of preprocessing functions for torchvision datasets.
+"""
+
 
 def transforms_set_1() -> Callable:
     return transforms.Compose([

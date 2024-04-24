@@ -6,4 +6,3 @@ transformers
 
 datasets
 segmentation_models_pytorch
-nltk
