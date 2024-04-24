@@ -20,7 +20,7 @@ job_config = {
     # Data preprocessing configuration
     'preprocessor': 'text_transforms',
     'text_transforms_dataset_config': {
-        'transforms_func': 'transforms_set_1',
+        'transforms_input_func': 'transforms_set_1'
     },
 
     # Tokenizer configuration
@@ -30,11 +30,13 @@ job_config = {
     'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
 
     # Training configuration
-    'num_classes': 2,
-    'batch_size': 32,
-    'num_epochs': 2,
-    'learning_rate': 0.001,
+    'batch_size': 42,
+    'num_epochs': 10,
+    'learning_rate': 0.00001,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
+    # Loss function configuration
+    'loss_func_name': 'cross_entropy',
+    'loss_func_args': {},
 }

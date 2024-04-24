@@ -13,7 +13,7 @@ class BaseDatasetProvider(BaseDataset):
         self.dataset = None
 
     @abstractmethod
-    async def fetch(self) -> Any:
+    async def fetch(self, **kwargs) -> Any:
         """
         This should download the dataset on disk
         but not load it in memory
