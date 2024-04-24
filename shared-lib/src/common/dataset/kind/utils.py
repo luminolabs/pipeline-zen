@@ -3,6 +3,9 @@ from common.dataset.kind.single_label_dataset import SingleLabelDataset
 from common.dataset.provider.base import BaseDatasetProvider
 
 
+
+
+
 def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
                          **kwargs) -> BaseDatasetKind:
     """
@@ -15,5 +18,7 @@ def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
     """
     if dataset_kind == 'single_label':
         return SingleLabelDataset(dataset, **kwargs)
-    if dataset_kind == '...':
+    elif dataset_kind == '...':
         pass
+    else:
+        raise TypeError(f'dataset_kind: {dataset_kind} is not a valid option')

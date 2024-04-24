@@ -15,6 +15,10 @@ class SingleLabelDataset(BaseDatasetKind):
         :param label_col: The name of the label key (ex. `annotation` or `category`)
         """
         super().__init__(*args)
+
+        if not isinstance(label_col, str):
+            raise TypeError('`label_col` must be of type `str`')
+
         self.label_col = label_col
 
     def _num_labels(self) -> int:

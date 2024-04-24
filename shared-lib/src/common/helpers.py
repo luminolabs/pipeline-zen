@@ -28,6 +28,13 @@ async def configure_model_and_dataloader(job_config: dict,
     :return: Configured objects to be used in the workflow
     """
 
+    if for_inference:
+        model_weights_path = os.path.join(
+            get_model_weights_path(), job_config.get('job_id'), model_weights_id)
+        if not os.path.isfile(model_weights_path):
+            raise FileNotFoundError(f'model_weights_id: {model_weights_id} '
+                                    f'not found; look at: {model_weights_path}')
+
     print("Loading and configuring dataset!")
 
     # Dataset split to use
@@ -57,7 +64,7 @@ async def configure_model_and_dataloader(job_config: dict,
     # it will apply transformations and prepare data for training
     # ex. `text_transforms` can remove whitespaces, usernames, etc from the input string
     dataset_preprocess = dataset_preprocess_factory(
-        dataset_preprocess=job_config.get('preprocessor'),
+        dataset_preprocessor=job_config.get('preprocessor'),
         dataset=dataset_kind,
         **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
 
@@ -94,8 +101,6 @@ async def configure_model_and_dataloader(job_config: dict,
         model_base=job_config.get('model_base'),
         **job_config.get('model_base_args', {}))
     if for_inference:
-        model_weights_path = os.path.join(
-            get_model_weights_path(), job_config.get('job_id'), model_weights_id)
         model.load_state_dict(torch.load(model_weights_path))
         print("Using model weights path: " + model_weights_path)
     model.to(device)

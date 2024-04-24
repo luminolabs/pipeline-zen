@@ -5,18 +5,20 @@ from common.dataset.kind.single_label_dataset import SingleLabelDataset
 
 
 def dataset_preprocess_factory(
-        dataset_preprocess: str,
+        dataset_preprocessor: str,
         dataset: SingleLabelDataset,
         **kwargs) -> BaseDatasetPreprocessor:
     """
     Factory method for creating a dataset preprocessor.
 
-    :param dataset_preprocess: Short name of the preprocessor to use
+    :param dataset_preprocessor: Short name of the preprocessor to use
     :param dataset: Dataset to iterate on; must be a `SingleLabelDataset`
     :param kwargs: Additional keyword arguments to pass to the dataset preprocessor
     :return: A preprocessor dataset
     """
-    if dataset_preprocess == 'torchvision_transforms':
+    if dataset_preprocessor == 'torchvision_transforms':
         return TorchvisionTransformsDataset(dataset, **kwargs)
-    elif dataset_preprocess == 'text_transforms':
+    elif dataset_preprocessor == 'text_transforms':
         return TextTransformsDataset(dataset, **kwargs)
+    else:
+        raise TypeError(f'dataset_preprocessor: {dataset_preprocessor} is not a valid option')

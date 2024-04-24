@@ -16,6 +16,11 @@ class BaseDatasetProvider(BaseDataset):
         :param dataset_id: The dataset ID to download
         :param split: The dataset split to download (ex. train, valid, test)
         """
+        if not isinstance(dataset_id, str):
+            raise TypeError('`dataset_id` must be of type `str`')
+        if not isinstance(split, str):
+            raise TypeError('`split` must be of type `str`')
+
         self.dataset_id = dataset_id
         self.split = split
 

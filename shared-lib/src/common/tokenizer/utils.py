@@ -15,6 +15,8 @@ def tokenizer_factory(tokenizer_id: str) -> PreTrainedTokenizerBase:
     print(f'Using `{tokenizer_id}` tokenizer')
     if 'bert' in tokenizer_id:
         return nlp.auto(tokenizer_id)
+    else:
+        raise TypeError(f'tokenizer_id: {tokenizer_id} is not a valid option')
 
 
 def tokenize_inputs(inputs, tokenizer: PreTrainedTokenizerBase, model_args: dict, device):

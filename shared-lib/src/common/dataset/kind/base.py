@@ -33,7 +33,7 @@ class BaseDatasetKind(BaseDataset, ABC):
 
     def __getitem__(self, item: int):
         r = self._getitem(item)
-        # Validate correct number of items was returned
+        # Validate correct number of elements was returned
         num_elements_to_return = 1 + self._num_labels()
         if isinstance(r, tuple) and len(r) == num_elements_to_return:
             return r

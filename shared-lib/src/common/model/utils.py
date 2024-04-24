@@ -20,5 +20,10 @@ def model_factory(model_kind: str, model_base: str, **kwargs) -> PreTrainedModel
             return nlp.auto(model_base)
         elif 'unet' == model_base:
             return image.unet(model_base, **kwargs)
+        else:
+            raise TypeError(f'model_base: {model_base} is not a valid option '
+                            f'for model_kind: {model_kind}')
     if model_kind == '...':
         pass
+    else:
+        raise TypeError(f'model_kind: {model_kind} is not a valid option')
