@@ -14,6 +14,6 @@ def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
     :return: A dataset kind
     """
     if dataset_kind == 'single_label':
-        return SingleLabelDataset(dataset, **kwargs)
+        return SingleLabelDataset(dataset=dataset, **kwargs)
     if dataset_kind == '...':
         pass

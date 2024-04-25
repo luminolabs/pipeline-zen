@@ -10,11 +10,11 @@ class SingleLabelDataset(BaseDatasetKind):
     but it won't work with a dataset with multiple columns, such as `annotation` and `category`.
     """
 
-    def __init__(self, *args, label_col: str):
+    def __init__(self, label_col: str, **kwargs):
         """
         :param label_col: The name of the label key (ex. `annotation` or `category`)
         """
-        super().__init__(*args)
+        super().__init__(**kwargs)
         self.label_col = label_col
 
     def _num_labels(self) -> int:
