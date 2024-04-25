@@ -62,6 +62,7 @@ def test_text_transforms_dataset(load_dataset, text_transforms_dataset):
 
 @patch('common.dataset.provider.huggingface.load_dataset')
 def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dataset):
+    # Configure images to run tests with
     image_in = Image.new('L', (1, 1))
     image_out = Image.new('L', (1, 1))
 
@@ -73,6 +74,7 @@ def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dat
     # Confirm that `torchvision_transforms_dataset` properly preprocesses items
     # Note that `torchvision_transforms_dataset` is a fixture that is
     # configured to use the `to_tensor()` preprocessor function
+    # Assert we went from PIL image to Tensor
     assert len(torchvision_transforms_dataset[0]) == 2
     assert isinstance(torchvision_transforms_dataset[0][0], Tensor)
     assert isinstance(torchvision_transforms_dataset[0][1], Tensor)
