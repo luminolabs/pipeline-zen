@@ -1,11 +1,12 @@
 from unittest.mock import patch
 
-import PIL.Image
 import pytest
 from PIL import Image
 from torch import Tensor
 
 from common.dataset.preprocessor.base import BaseDatasetPreprocessor
+from common.dataset.preprocessor.text_transforms import TextTransformsDataset
+from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.preprocessor import text_transforms, torchvision_transforms
 
 
@@ -92,3 +93,17 @@ def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dat
     # must raise error
     with pytest.raises(AttributeError):
         _ = torchvision_transforms_dataset[0]
+
+
+def test_dataset_preprocessor_factory(single_label_dataset):
+    # Invalid `dataset_provider` raises error
+    with pytest.raises(TypeError):
+        dataset_preprocessor_factory(dataset_preprocessor='foo',
+                                     dataset=single_label_dataset,
+                                     transforms_input_func='strip')
+
+    # Valid function arguments return a new object
+    r = dataset_preprocessor_factory(dataset_preprocessor='text_transforms',
+                                     dataset=single_label_dataset,
+                                     transforms_input_func='strip')
+    assert isinstance(r, TextTransformsDataset)
