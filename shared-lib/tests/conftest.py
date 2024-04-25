@@ -31,8 +31,17 @@ def text_transforms_dataset(single_label_dataset):
 
 
 @pytest.fixture
+def torchvision_transforms_dataset(single_label_dataset):
+    return dataset_preprocessor_factory(
+        dataset_preprocessor='torchvision_transforms',
+        dataset=single_label_dataset,
+        transforms_input_func='to_tensor',
+        transforms_label_func='to_tensor')
+
+
+@pytest.fixture
 def mock_dataset_item():
-    return {'input': 1, 'label': 2}
+    return {'input': 'in', 'label': 'out'}
 
 
 @pytest.fixture

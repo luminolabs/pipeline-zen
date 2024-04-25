@@ -42,6 +42,9 @@ class BaseDatasetProvider(BaseDataset):
 
     @staticmethod
     def _validate_init(dataset_id: str, split: str):
+        """
+        This was separated from `__init__()` so that it can be unit tested
+        """
         if not isinstance(dataset_id, str):
             raise TypeError('`dataset_id` must be of type `str`')
         if not isinstance(split, str):

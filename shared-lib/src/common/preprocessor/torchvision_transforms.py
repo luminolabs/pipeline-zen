@@ -1,5 +1,3 @@
-from typing import Callable
-
 from torchvision.transforms import transforms
 
 """
@@ -7,8 +5,7 @@ Collection of preprocessing functions for torchvision datasets.
 """
 
 
-def transforms_set_1() -> Callable:
-    return transforms.Compose([
+transforms_set_1 = transforms.Compose([
         transforms.Resize((224, 224)),  # Resize image for ResNet-50
         transforms.Grayscale(num_output_channels=3),  # Convert grayscale to 3-channel
         transforms.ToTensor(),
@@ -16,7 +13,6 @@ def transforms_set_1() -> Callable:
     ])
 
 
-def transforms_set_2() -> Callable:
-    return transforms.Compose([
+to_tensor = transforms.Compose([
         transforms.ToTensor(),
     ])

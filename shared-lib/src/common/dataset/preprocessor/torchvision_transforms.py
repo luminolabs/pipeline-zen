@@ -12,7 +12,7 @@ class TorchvisionTransformsDataset(BaseDatasetPreprocessor):
     """
 
     @staticmethod
-    def get_transforms_module() -> ModuleType:
+    def _get_transforms_module() -> ModuleType:
         return torchvision_transforms
 
     def _getitem(self, item: int):

@@ -9,7 +9,7 @@ class BaseDatasetKind(BaseDataset, ABC):
     Base class for all kinds of datasets
     """
 
-    def __init__(self, dataset: BaseDataset, input_col: str):
+    def __init__(self, dataset: BaseDatasetProvider, input_col: str):
         """
         :param dataset: The dataset to work with. It has to be of type `BaseDatasetProvider`
         :param input_col: The name of the input key (ex. `image`)
@@ -36,7 +36,7 @@ class BaseDatasetKind(BaseDataset, ABC):
         return len(self.dataset)
 
     @staticmethod
-    def _validate_init(dataset: BaseDataset, input_col: str):
+    def _validate_init(dataset: BaseDatasetProvider, input_col: str):
         """
         This was separated from `__init__()` so that it can be unit tested
         """

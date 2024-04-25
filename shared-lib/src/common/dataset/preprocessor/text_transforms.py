@@ -10,7 +10,7 @@ class TextTransformsDataset(BaseDatasetPreprocessor):
     """
 
     @staticmethod
-    def get_transforms_module() -> ModuleType:
+    def _get_transforms_module() -> ModuleType:
         return text_transforms
 
     def _getitem(self, item: int):
