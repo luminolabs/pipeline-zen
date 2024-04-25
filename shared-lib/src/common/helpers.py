@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from common.dataset.kind.utils import dataset_kind_factory
-from common.dataset.preprocessor.utils import dataset_preprocess_factory
+from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.dataset.provider.utils import dataset_provider_factory
 from common.model.utils import model_factory
 from common.tokenizer.utils import tokenizer_factory
@@ -63,7 +63,7 @@ async def configure_model_and_dataloader(job_config: dict,
     # This is the preprocessing dataset,
     # it will apply transformations and prepare data for training
     # ex. `text_transforms` can remove whitespaces, usernames, etc from the input string
-    dataset_preprocess = dataset_preprocess_factory(
+    dataset_preprocess = dataset_preprocessor_factory(
         dataset_preprocessor=job_config.get('preprocessor'),
         dataset=dataset_kind,
         **job_config.get(job_config.get('preprocessor') + '_dataset_config'))

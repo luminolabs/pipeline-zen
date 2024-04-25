@@ -16,27 +16,33 @@ class BaseDatasetProvider(BaseDataset):
         :param dataset_id: The dataset ID to download
         :param split: The dataset split to download (ex. train, valid, test)
         """
-        if not isinstance(dataset_id, str):
-            raise TypeError('`dataset_id` must be of type `str`')
-        if not isinstance(split, str):
-            raise TypeError('`split` must be of type `str`')
+        self._validate_init(dataset_id, split)
 
         self.dataset_id = dataset_id
         self.split = split
+        self.dataset = None  # To be set in subclasses
 
     @abstractmethod
-    async def fetch(self, **kwargs) -> Any:
+    def fetch(self, **kwargs) -> Any:
         """
         This should download the dataset on disk
         but not load it in memory
         """
         pass
 
-    def get_cache_dir(self):
+    @classmethod
+    def get_cache_dir(cls):
         """
         Where to store the dataset locally
         ex: `.cache/huggingface/datasets`
 
         The dataset name is appended to the path above in the subclasses
         """
-        return os.path.join(utils.get_root_path(), '.cache', 'datasets', self.__class__.__name__.lower())
+        return os.path.join(utils.get_root_path(), '.cache', 'datasets', cls.__name__.lower())
+
+    @staticmethod
+    def _validate_init(dataset_id: str, split: str):
+        if not isinstance(dataset_id, str):
+            raise TypeError('`dataset_id` must be of type `str`')
+        if not isinstance(split, str):
+            raise TypeError('`split` must be of type `str`')

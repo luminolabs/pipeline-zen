@@ -11,12 +11,13 @@ class HuggingFace(BaseDatasetProvider):
     HuggingFace Dataset Provider
     """
 
-    async def fetch(self, **kwargs):
+    def fetch(self, **kwargs):
         # Some huggingface datasets consist of multiple subsets;
         # use the `name` kwarg to specify which to use
         if kwargs.get('name'):
             print(f'... subset: `{kwargs.get("name")}`')
         # Download the dataset
+        # `load_dataset()` has builtin retries (1 retry by default)
         self.dataset = load_dataset(
             path=self.dataset_id,
             # Only store in disk
