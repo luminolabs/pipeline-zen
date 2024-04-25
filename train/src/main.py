@@ -17,7 +17,7 @@ async def main(job_config_id: str):
     job_config = load_job_config(job_config_id)
 
     model, dataloader, tokenizer, device = \
-        await configure_model_and_dataloader(job_config)
+        configure_model_and_dataloader(job_config)
 
     # TODO: Store model training checkpoints frequently
     # TODO: Implement metrics lib, to capture timing, model, etc metrics
