@@ -14,8 +14,8 @@ def dataset_kind_factory(dataset_kind: str, dataset: BaseDatasetProvider,
     :return: A dataset kind
     """
     if dataset_kind == 'single_label':
-        return SingleLabelDataset(dataset, **kwargs)
-    elif dataset_kind == '...':
+        return SingleLabelDataset(dataset=dataset, **kwargs)
+    if dataset_kind == '...':
         pass
     else:
         raise TypeError(f'dataset_kind: {dataset_kind} is not a valid option')

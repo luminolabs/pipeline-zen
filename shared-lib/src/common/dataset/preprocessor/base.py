@@ -36,7 +36,7 @@ class BaseDatasetPreprocessor(BaseDataset, ABC):
         self.dataset = dataset
         self.transforms_input = getattr(self.get_transforms_module(), transforms_input_func)
         self.transforms_label = \
-            getattr(self.get_transforms_module(), transforms_label_func)() \
+            getattr(self.get_transforms_module(), transforms_label_func) \
                 if transforms_label_func \
                 else None
 
