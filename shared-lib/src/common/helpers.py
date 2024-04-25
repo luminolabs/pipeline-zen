@@ -15,6 +15,19 @@ from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 
 
+def get_device():
+    device = 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda'
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
+        # see: https://pytorch.org/docs/stable/notes/mps.html
+        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
+        device = 'mps'
+    device = torch.device(device)
+    print("Training on (cpu/cuda/mps?) device:", device)
+
+
 async def configure_model_and_dataloader(job_config: dict,
                                          for_inference: bool = False,
                                          model_weights_id: str = None) \
@@ -83,16 +96,7 @@ async def configure_model_and_dataloader(job_config: dict,
         shuffle=job_config.get('shuffle'))
 
     # To run on GPU or not to run on GPU, that is the question
-    device = 'cpu'
-    if torch.cuda.is_available():
-        device = 'cuda'
-    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
-        # see: https://pytorch.org/docs/stable/notes/mps.html
-        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
-        device = 'mps'
-    device = torch.device(device)
-    print("Training on (cpu/cuda/mps?) device:", device)
+    device = get_device()
 
     print("Fetching the model")
     # Instantiate the appropriate model
