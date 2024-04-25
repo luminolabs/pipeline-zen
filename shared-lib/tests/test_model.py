@@ -1,7 +1,6 @@
 from unittest.mock import patch
 
 import pytest
-from transformers import ResNetPreTrainedModel
 
 from common.model.utils import model_factory
 
