@@ -39,7 +39,7 @@ async def main(job_config_id: str):
 
     for epoch_cnt in range(job_config.get('num_epochs')):
         running_loss = 0.0
-        batch_cnt = -1
+        batch_cnt = 0
         model.train()
         # The dataloader will load a batch of records from the dataset
         for inputs, labels in dataloader:
@@ -60,7 +60,7 @@ async def main(job_config_id: str):
             optimizer.step()
             running_loss += loss.item()
             # Log training information
-            print(f'Batch {batch_cnt + 1}/{len(dataloader)}, Batch Loss: {loss.item()}')
+            print(f'Batch {batch_cnt}/{len(dataloader)}, Batch Loss: {loss.item()}')
             # Exit if `num_batches` is reached. This option is used when testing,
             # to stop training loop before the actual end of the dataset is reached
             if job_config.get('num_batches') == batch_cnt:
