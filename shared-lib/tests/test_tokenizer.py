@@ -24,6 +24,7 @@ def test_tokenizer_factory(nlp_auto):
 
 
 def test_tokenize_inputs():
+    # Tokenize a string, confirm function returns a tensor
     tokenizer = tokenizer_factory('google-bert/bert-base-cased')
     device = get_device()
     r = tokenize_inputs(['some input...'], tokenizer, {}, device)
