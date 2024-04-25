@@ -56,10 +56,12 @@ async def configure_model_and_dataloader(job_config: dict,
     # This is the preprocessing dataset,
     # it will apply transformations and prepare data for training
     # ex. `text_transforms` can remove whitespaces, usernames, etc from the input string
-    dataset_preprocess = dataset_preprocess_factory(
-        dataset_preprocess=job_config.get('preprocessor'),
-        dataset=dataset_kind,
-        **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
+    dataset_preprocess = None
+    if job_config.get('preprocessor'):
+        dataset_preprocess = dataset_preprocess_factory(
+            dataset_preprocess=job_config.get('preprocessor'),
+            dataset=dataset_kind,
+            **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
 
     # A tokenizer is used when we would like to convert text to tokens,
     # so that the text can be represented as an array of integers
@@ -71,7 +73,7 @@ async def configure_model_and_dataloader(job_config: dict,
     # data requested from the dataloader will return preprocessed but not tokenized
     # Tokenization happens in the training loop, a batch at a time
     dataloader = DataLoader(
-        dataset=dataset_preprocess,
+        dataset=dataset_preprocess if dataset_preprocess else dataset_kind,
         batch_size=job_config.get('batch_size'),
         shuffle=job_config.get('shuffle'))
 
