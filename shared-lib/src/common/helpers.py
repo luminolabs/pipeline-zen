@@ -15,7 +15,16 @@ from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 
 
+# TODO: Rename file to setup.py
+
+
 def get_device():
+    """
+    Returns a torch device with the following priority (highest to lowest):
+    cuda -> mps -> cpu
+
+    :return: Torch device
+    """
     device = 'cpu'
     if torch.cuda.is_available():
         device = 'cuda'
