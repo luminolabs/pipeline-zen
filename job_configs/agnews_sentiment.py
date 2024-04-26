@@ -23,7 +23,7 @@ job_config = {
     # Data preprocessing configuration
     'preprocessor': 'text_transforms',
     'text_transforms_dataset_config': {
-        'transforms_input_func': 'transforms_set_2',
+        'transforms_input_func': 'strip',
         'transforms_label_func': None,
     },
 

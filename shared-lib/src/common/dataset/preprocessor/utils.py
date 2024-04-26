@@ -1,13 +1,12 @@
-from common.dataset.preprocessor.base import BaseDatasetPreprocessor
 from common.dataset.preprocessor.torchvision_transforms import TorchvisionTransformsDataset
 from common.dataset.preprocessor.text_transforms import TextTransformsDataset
 from common.dataset.kind.single_label_dataset import SingleLabelDataset
 
 
-def dataset_preprocess_factory(
+def dataset_preprocessor_factory(
         dataset_preprocessor: str,
         dataset: SingleLabelDataset,
-        **kwargs) -> BaseDatasetPreprocessor:
+        **kwargs):
     """
     Factory method for creating a dataset preprocessor.
 

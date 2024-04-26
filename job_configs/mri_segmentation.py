@@ -24,8 +24,8 @@ job_config = {
     # Data preprocessing configuration
     'preprocessor': 'torchvision_transforms',
     'torchvision_transforms_dataset_config': {
-        'transforms_input_func': 'transforms_set_2',
-        'transforms_label_func': 'transforms_set_2',
+        'transforms_input_func': 'to_tensor',
+        'transforms_label_func': 'to_tensor',
     },
 
     # Tokenizer configuration

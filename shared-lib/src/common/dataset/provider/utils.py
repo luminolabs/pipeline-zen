@@ -1,8 +1,7 @@
-from common.dataset.provider.base import BaseDatasetProvider
 from common.dataset.provider.huggingface import HuggingFace
 
 
-def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: str) -> BaseDatasetProvider:
+def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: str):
     """
     Factory method for creating a dataset provider instance
 
@@ -11,7 +10,7 @@ def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: str)
     :param split:
     :return:
     """
-    print(f'Pulling `{dataset_id}.{split}` from `{dataset_provider}`')
+    print(f'Using `{dataset_id}.{split}` from `{dataset_provider}`')
     if dataset_provider == 'huggingface':
         return HuggingFace(dataset_id, split)
     if dataset_provider == '...':

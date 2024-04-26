@@ -8,16 +8,39 @@ from torch.utils.data import DataLoader
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from common.dataset.kind.utils import dataset_kind_factory
-from common.dataset.preprocessor.utils import dataset_preprocess_factory
+from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.dataset.provider.utils import dataset_provider_factory
 from common.model.utils import model_factory
 from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 
 
-async def configure_model_and_dataloader(job_config: dict,
-                                         for_inference: bool = False,
-                                         model_weights_id: str = None) \
+# TODO: Rename file to setup.py
+
+
+def get_device():
+    """
+    Returns a torch device with the following priority (highest to lowest):
+    cuda -> mps -> cpu
+
+    :return: Torch device
+    """
+    device = 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda'
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
+        # see: https://pytorch.org/docs/stable/notes/mps.html
+        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
+        device = 'mps'
+    device = torch.device(device)
+    print("Training on (cpu/cuda/mps?) device:", device)
+    return device
+
+
+def configure_model_and_dataloader(job_config: dict,
+                                   for_inference: bool = False,
+                                   model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
     """
     Configure model and dataloader from a job configuration.
@@ -47,10 +70,10 @@ async def configure_model_and_dataloader(job_config: dict,
         dataset_provider=job_config.get('dataset_provider'),
         dataset_id=job_config.get('dataset_id'),
         split=split)
-    await dataset.fetch(**job_config.get('dataset_fetch_config', {}))
+    dataset.fetch(**job_config.get('dataset_fetch_config', {}))
     print(f'Dataset split has {len(dataset)} records')
     print(f'Batch size is {job_config.get("batch_size")}, '
-          f'number of batches is {math.ceil(len(dataset)/job_config.get("batch_size"))}')
+          f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
     if job_config.get('num_batches'):
         print(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
@@ -63,9 +86,9 @@ async def configure_model_and_dataloader(job_config: dict,
     # This is the preprocessing dataset,
     # it will apply transformations and prepare data for training
     # ex. `text_transforms` can remove whitespaces, usernames, etc from the input string
-    dataset_preprocess = None
+    dataset_preprocessor = None
     if job_config.get('preprocessor'):
-        dataset_preprocess = dataset_preprocess_factory(
+        dataset_preprocessor = dataset_preprocessor_factory(
             dataset_preprocessor=job_config.get('preprocessor'),
             dataset=dataset_kind,
             **job_config.get(job_config.get('preprocessor') + '_dataset_config'))
@@ -80,21 +103,12 @@ async def configure_model_and_dataloader(job_config: dict,
     # data requested from the dataloader will return preprocessed but not tokenized
     # Tokenization happens in the training loop, a batch at a time
     dataloader = DataLoader(
-        dataset=dataset_preprocess if dataset_preprocess else dataset_kind,
+        dataset=dataset_preprocessor if dataset_preprocessor else dataset_kind,
         batch_size=job_config.get('batch_size'),
         shuffle=job_config.get('shuffle'))
 
     # To run on GPU or not to run on GPU, that is the question
-    device = 'cpu'
-    if torch.cuda.is_available():
-        device = 'cuda'
-    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
-        # see: https://pytorch.org/docs/stable/notes/mps.html
-        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
-        device = 'mps'
-    device = torch.device(device)
-    print("Training on (cpu/cuda/mps?) device:", device)
+    device = get_device()
 
     print("Fetching the model")
     # Instantiate the appropriate model

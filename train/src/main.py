@@ -13,20 +13,20 @@ from common.tokenizer.utils import tokenize_inputs
 
 
 async def main(job_config_id: str):
+    # TODO: Store model training checkpoints frequently
+    # TODO: Implement metrics lib, to capture timing, model, etc metrics
+    # TODO: Use logger instead of print
+
     # Load job configuration
     job_config = load_job_config(job_config_id)
 
     model, dataloader, tokenizer, device = \
-        await configure_model_and_dataloader(job_config)
-
-    # TODO: Implement metrics lib, to capture timing, model, etc metrics
-    # TODO: Use logger instead of print
+        configure_model_and_dataloader(job_config)
 
     # Loss calculator
     criterion = loss_factory(
         job_config.get('loss_func_name'),
         **job_config.get('loss_func_args', {}))
-    # criterion = CrossEntropyLoss()
     # Optimizer
     # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))

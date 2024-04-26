@@ -31,12 +31,11 @@ def load_job_config(job_config_id: str) -> dict:
     :param job_config_id: Job config name; this is the file name without the `.py` extension
     :return: Job config dict
     """
-    job_config_exists = os.path.isfile(os.path.join(
-        get_root_path(), job_config_dir, job_config_id + '.py'))
-    if not job_config_exists:
+    try:
+        return importlib.import_module(f'{job_config_dir}.{job_config_id}').job_config
+    except ModuleNotFoundError:
+        # Raise `FileNotFoundError` as it's more intuitive message to give to the user
         raise FileNotFoundError(f'job_config_id: {job_config_id} not found under {job_config_dir}')
-
-    return importlib.import_module(f'{job_config_dir}.{job_config_id}').job_config
 
 
 def get_results_path() -> str:
