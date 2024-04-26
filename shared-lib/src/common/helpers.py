@@ -15,9 +15,32 @@ from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 
 
+# TODO: Rename file to setup.py
+
+
+def get_device():
+    """
+    Returns a torch device with the following priority (highest to lowest):
+    cuda -> mps -> cpu
+
+    :return: Torch device
+    """
+    device = 'cpu'
+    if torch.cuda.is_available():
+        device = 'cuda'
+    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
+        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
+        # see: https://pytorch.org/docs/stable/notes/mps.html
+        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
+        device = 'mps'
+    device = torch.device(device)
+    print("Training on (cpu/cuda/mps?) device:", device)
+    return device
+
+
 def configure_model_and_dataloader(job_config: dict,
-                                         for_inference: bool = False,
-                                         model_weights_id: str = None) \
+                                   for_inference: bool = False,
+                                   model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
     """
     Configure model and dataloader from a job configuration.
@@ -50,7 +73,7 @@ def configure_model_and_dataloader(job_config: dict,
     dataset.fetch(**job_config.get('dataset_fetch_config', {}))
     print(f'Dataset split has {len(dataset)} records')
     print(f'Batch size is {job_config.get("batch_size")}, '
-          f'number of batches is {math.ceil(len(dataset)/job_config.get("batch_size"))}')
+          f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
     if job_config.get('num_batches'):
         print(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
@@ -85,16 +108,7 @@ def configure_model_and_dataloader(job_config: dict,
         shuffle=job_config.get('shuffle'))
 
     # To run on GPU or not to run on GPU, that is the question
-    device = 'cpu'
-    if torch.cuda.is_available():
-        device = 'cuda'
-    elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
-        # see: https://pytorch.org/docs/stable/notes/mps.html
-        os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
-        device = 'mps'
-    device = torch.device(device)
-    print("Training on (cpu/cuda/mps?) device:", device)
+    device = get_device()
 
     print("Fetching the model")
     # Instantiate the appropriate model
