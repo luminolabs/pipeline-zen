@@ -2,8 +2,10 @@
 
 ### Running the train workflow
 
-cd to this folder
-`docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .`
+cd to this folder (repo root) and run:
+```
+docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .
+```
 ```
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
@@ -15,8 +17,10 @@ NOTE: `alzheimermri_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
-cd to this folder
-`docker build --build-arg TARGET_WORKFLOW=evaluate -t evaluate-workflow .`
+cd to this folder (repo root) and run:
+```
+docker build --build-arg TARGET_WORKFLOW=evaluate -t evaluate-workflow .
+```
 ```
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
@@ -27,23 +31,32 @@ evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
 NOTE: `alzheimermri_classification` above points to a file under `job_configs` and
 `2024-04-18-16-12-07.pt` points to the model weights file under `.results/model_weights/<job_id>`
 
+IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
+run the following command to change filesystem permissions back to your user:
+```
+sudo chown $(whoami) -R .results .cache
+```
+
 
 ## Running locally
 
-For all workflows, ensure dependencies are installed. From the workflow's `src` folder run the following:
+Set PYTHONPATH to include `share-lib` and `job_configs`; cd to this folder (repo root) and run:
+```
+export PYTHONPATH=$(pwd)/shared-lib/src:$(pwd)
+```
+
+For all workflows, ensure dependencies are installed; cd to the workflow's `src` folder run the following:
 - `pip install -Ur ../requirements.txt`
 - `pip install -Ur ../../shared-lib/requirements.txt`
 
 ### Running the train workflow
 
-- cd to `train/src` folder
-- `export PYTHONPATH=$(pwd)/../../shared-lib/src:$(pwd)/../..`
+- cd to the `train/src` folder
 - `python main.py alzheimermri_classification`
 
 ### Running the evaluate workflow
 
-- cd to this folder
-- `export PYTHONPATH=$(pwd)/../../shared-lib/src:$(pwd)/../..`
+- cd to the `evaluate/src` folder
 - `python main.py alzheimermri_classification 2024-04-18-16-57-23.pt`
 
 
