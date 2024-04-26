@@ -14,8 +14,8 @@ job_config = {
     'test_split': 'test',
 
     # Dataset configuration
-    'dataset_kind': 'input_label',
-    'input_label_dataset_config': {
+    'dataset_kind': 'single_label',
+    'single_label_dataset_config': {
         'input_col': 'text',
         'label_col': 'label',
     },
@@ -32,6 +32,21 @@ job_config = {
 
     # Model configuration
     'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+    'model_base_args': {
+        'ignore_mismatched_sizes': True,
+        'id2label': {
+            "0": "World",
+            "1": "Sports",
+            "2": "Business",
+            "3": "Sci/Tech"
+        },
+        'label2id': {
+            'World': 0,
+            'Sports': 1,
+            'Business': 2,
+            'Sci/Tech': 3,
+        }
+    },
 
     # Training configuration
     'batch_size': 32,
@@ -41,6 +56,6 @@ job_config = {
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
     # Loss function configuration
-    'loss_func_name': 'cross_entropy',
+    'loss_func_name': 'CrossEntropyLoss',
     'loss_func_args': {},
 }

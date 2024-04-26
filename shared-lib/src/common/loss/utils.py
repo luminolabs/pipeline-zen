@@ -13,9 +13,9 @@ def loss_factory(loss_func_name: str, **kwargs) -> Callable:
     :return: Instantiated loss function
     """
     print(f'Using `{loss_func_name}` loss function')
-    if 'focal' == loss_func_name:
+    if 'FocalLoss' == loss_func_name:
         return FocalLoss(**kwargs)
-    elif 'cross_entropy' == loss_func_name:
+    elif 'CrossEntropyLoss' == loss_func_name:
         return CrossEntropyLoss(**kwargs)
     else:
         raise TypeError(f'loss_func_name: {loss_func_name} is not a valid option')

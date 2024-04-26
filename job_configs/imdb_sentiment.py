@@ -30,13 +30,13 @@ job_config = {
     'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
 
     # Training configuration
-    'batch_size': 42,
+    'batch_size': 20,
     'num_epochs': 2,
-    'learning_rate': 0.00001,
+    'learning_rate': 0.001,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
     # Loss function configuration
-    'loss_func_name': 'cross_entropy',
+    'loss_func_name': 'CrossEntropyLoss',
     'loss_func_args': {},
 }
