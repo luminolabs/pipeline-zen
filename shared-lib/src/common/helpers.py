@@ -35,11 +35,12 @@ def get_device():
         device = 'mps'
     device = torch.device(device)
     print("Training on (cpu/cuda/mps?) device:", device)
+    return device
 
 
 def configure_model_and_dataloader(job_config: dict,
-                                         for_inference: bool = False,
-                                         model_weights_id: str = None) \
+                                   for_inference: bool = False,
+                                   model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
     """
     Configure model and dataloader from a job configuration.
@@ -72,7 +73,7 @@ def configure_model_and_dataloader(job_config: dict,
     dataset.fetch(**job_config.get('dataset_fetch_config', {}))
     print(f'Dataset split has {len(dataset)} records')
     print(f'Batch size is {job_config.get("batch_size")}, '
-          f'number of batches is {math.ceil(len(dataset)/job_config.get("batch_size"))}')
+          f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
     if job_config.get('num_batches'):
         print(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
