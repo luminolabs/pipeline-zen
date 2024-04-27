@@ -27,7 +27,8 @@ async def main(job_config_id: str, model_weights_id: str):
             batch_cnt += 1
             model_args = {}
             if tokenizer:
-                inputs = tokenize_inputs(inputs, tokenizer, model_args, device)
+                inputs = tokenize_inputs(inputs, tokenizer, model_args, device,
+                                         **job_config.get('tokenizer_args'))
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs, **model_args)
             if isinstance(outputs, Tensor):

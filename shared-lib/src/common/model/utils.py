@@ -16,7 +16,7 @@ def model_factory(model_kind: str, model_base: str, **kwargs) -> PreTrainedModel
     if model_kind == 'single_label':
         if 'resnet' in model_base:
             return image.resnet(model_base, **kwargs)
-        elif 'bert' in model_base:
+        elif any(x in model_base for x in ('bert', 't5')):
             return nlp.auto(model_base, **kwargs)
         elif 'unet' == model_base:
             return image.unet(model_base, **kwargs)
