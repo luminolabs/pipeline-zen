@@ -1,6 +1,3 @@
-# This job won't work yet because of this issue:
-# https://linear.app/luminoai/issue/LUM-84/error-while-training-using-the-agnews-sentiment-job-config
-
 job_config = {
     # Used to associate results and metrics
     'job_id': 'imdb-sentiment',
