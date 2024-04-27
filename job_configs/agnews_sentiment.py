@@ -49,9 +49,9 @@ job_config = {
     },
 
     # Training configuration
-    'batch_size': 32,
-    'num_epochs': 10,
-    'learning_rate': 0.001,
+    'batch_size': 18,  # ~13.5GB memory use
+    'num_epochs': 5,
+    'learning_rate': 0.0005,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
