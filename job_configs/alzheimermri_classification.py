@@ -1,6 +1,6 @@
 job_config = {
     # Used to associate results and metrics
-    'job_id': 'alzheimer-mri',
+    'job_id': 'alzheimermri-classification',
 
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
