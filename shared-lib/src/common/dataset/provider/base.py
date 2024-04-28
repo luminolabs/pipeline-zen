@@ -1,5 +1,6 @@
 import os
 from abc import abstractmethod
+from logging import Logger
 from typing import Any
 
 from common import utils
@@ -23,8 +24,10 @@ class BaseDatasetProvider(BaseDataset):
         self.dataset = None  # To be set in subclasses
 
     @abstractmethod
-    def fetch(self, **kwargs) -> Any:
+    def fetch(self, logger: Logger, **kwargs) -> Any:
         """
+        :param logger: The logger instance
+
         This should download the dataset on disk
         but not load it in memory
         """

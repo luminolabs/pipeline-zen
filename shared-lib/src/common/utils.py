@@ -1,5 +1,7 @@
 import importlib
+import logging
 import os
+import sys
 from typing import Optional
 from datetime import datetime
 
@@ -59,3 +61,40 @@ def get_model_weights_path(job_id: Optional[str] = None) -> str:
     path = os.path.join(get_results_path(), 'model_weights', *path_list)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
+
+
+def get_logs_path(job_id: Optional[str] = None) -> str:
+    """
+    :return: Returns the path to the logs directory
+    """
+    path = os.path.join(get_root_path(), '.logs', job_id or '')
+    os.makedirs(path, exist_ok=True)
+    return path
+
+
+def setup_logger(name: str, job_id: Optional[str] = None):
+    """
+    Sets up a logger
+
+    :param name: The name of the logger
+    :param job_id: Job id to use as part of the logger path
+    :return:
+    """
+    timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    log_format = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
+
+    # Log to stdout and to file
+    stdout_handler = logging.StreamHandler(sys.stdout)
+    file_handler = logging.FileHandler("{0}/{1}.log".format(get_logs_path(job_id), f'{name}_{timestamp}'))
+
+    # Set the logger format
+    stdout_handler.setFormatter(log_format)
+    file_handler.setFormatter(log_format)
+
+    # Configure logger
+    pg_logger = logging.getLogger(name)
+    # Set default logging level to `INFO`
+    pg_logger.setLevel(logging.INFO)
+    pg_logger.addHandler(stdout_handler)
+    pg_logger.addHandler(file_handler)
+    return pg_logger
