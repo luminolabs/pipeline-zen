@@ -72,13 +72,13 @@ def get_logs_path(job_id: Optional[str] = None) -> str:
     return path
 
 
-def setup_logger(name: str, job_id: Optional[str] = None):
+def setup_logger(name: str, job_id: Optional[str] = None) -> logging.Logger:
     """
     Sets up a logger
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
-    :return:
+    :return: A logger instance
     """
     timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
     log_format = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
