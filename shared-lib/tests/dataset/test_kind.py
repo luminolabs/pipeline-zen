@@ -25,17 +25,23 @@ def test_base_dataset_kind(huggingface_dataset, text_transforms_dataset):
 @patch.object(HuggingFace, '_getitem')
 def test_single_label_dataset(
         _getitem,
-        huggingface_dataset, mock_dataset_item):
+        huggingface_dataset, mock_dataset_item, mock_dataset_item_with_master_col):
     # Correct `label_col` type passed
     r = SingleLabelDataset(dataset=huggingface_dataset,
                            input_col='input',
                            label_col='label')
     assert isinstance(r, SingleLabelDataset)
 
-    # Incorrect `input_col` type passed
+    # Incorrect `label_col` type passed
     with pytest.raises(TypeError):
         SingleLabelDataset(dataset=huggingface_dataset,
                            input_col='input',
+                           label_col=1)
+
+    # Incorrect `master_col` type passed
+    with pytest.raises(TypeError):
+        SingleLabelDataset(dataset=huggingface_dataset,
+                           master_col='master',
                            label_col=1)
 
     # Correct number of labels is set
@@ -46,6 +52,12 @@ def test_single_label_dataset(
     _getitem.return_value = mock_dataset_item
     # ex: (1, 2) == (1, 2)
     assert r[0] == tuple([v for _, v in mock_dataset_item.items()])
+
+    # Same as above, but emulate dataset with a single col
+    _getitem.return_value = mock_dataset_item_with_master_col
+    r.master_col = 'master'
+    assert r[0] == tuple([v for _, v in mock_dataset_item.items()])
+
 
 
 def test_dataset_kind_factory(huggingface_dataset):

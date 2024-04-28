@@ -45,5 +45,10 @@ def mock_dataset_item():
 
 
 @pytest.fixture
+def mock_dataset_item_with_master_col():
+    return {'master': {'input': 'in', 'label': 'out'}}
+
+
+@pytest.fixture
 def mock_dataset(mock_dataset_item):
     return [mock_dataset_item]

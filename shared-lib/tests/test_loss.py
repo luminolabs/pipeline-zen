@@ -10,5 +10,5 @@ def test_loss_factory():
         loss_factory(loss_func_name='foo', mode='binary')
 
     # Valid function arguments return a new object
-    r = loss_factory(loss_func_name='focal', mode='binary')
+    r = loss_factory(loss_func_name='FocalLoss', mode='binary')
     assert isinstance(r, FocalLoss)
