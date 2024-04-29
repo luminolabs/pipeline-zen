@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-from datetime import datetime
 
 import torch
 from torch import nn, optim, Tensor
@@ -14,8 +13,6 @@ from common.agents import TrainScoresAgent
 
 
 async def main(job_config_id: str):
-    # TODO: Store model training checkpoints frequently
-
     # Load job configuration
     job_config = load_job_config(job_config_id)
     job_id = job_config["job_id"]
@@ -36,7 +33,6 @@ async def main(job_config_id: str):
         job_config.get('loss_func_name'), logger,
         **job_config.get('loss_func_args', {}))
     # Optimizer
-    # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
     logger.info("Loss and Optimizer is set")
 
@@ -76,11 +72,9 @@ async def main(job_config_id: str):
 
     # Log the end time
     scores_agent.mark_time_end()
-
     # Log the total training time
     scores_agent.log_time_elapsed()
 
-    # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     logger.info("Training loop complete, now saving the model")
     # Save the trained model
     model_weights_path = get_model_weights_path(job_config.get('job_id'))

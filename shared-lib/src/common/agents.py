@@ -28,6 +28,7 @@ class BaseScoresAgent(ABC):
         self.bq_table = self._get_bq_table()
         bq_project = self.bq_table.split('.')[0]
         self.bq = bigquery.Client(bq_project)
+        self.bq_table_defaults = self._get_bq_table_defaults()
 
     def mark_time_start(self):
         """
@@ -66,18 +67,13 @@ class BaseScoresAgent(ABC):
         :return:
         """
         row = {
-            **{
-                'job_id': self.job_id,
+            # Create a new dict from the dicts below;
+            # the new dict represents the target table structure
+            **{'job_id': self.job_id,
                 'create_ts': str(datetime.now()),
                 'operation': operation,
-                'result': result,
-                'batch_num': None,
-                'batch_len': None,
-                'batch_loss': None,
-                'epoch_num': None,
-                'epoch_len': None,
-                'epoch_loss': None
-            },
+                'result': result},
+            **self.bq_table_defaults,
             **kwargs}
         errors = self.bq.insert_rows_json(self.bq_table, [row])
         if errors:
@@ -85,6 +81,10 @@ class BaseScoresAgent(ABC):
 
     @abstractmethod
     def _get_bq_table(self) -> str:
+        pass
+
+    @abstractmethod
+    def _get_bq_table_defaults(self) -> dict:
         pass
 
 
@@ -95,6 +95,16 @@ class TrainScoresAgent(BaseScoresAgent):
 
     def _get_bq_table(self) -> str:
         return bq_table_train
+
+    def _get_bq_table_defaults(self) -> dict:
+        return {
+            'batch_num': None,
+            'batch_len': None,
+            'batch_loss': None,
+            'epoch_num': None,
+            'epoch_len': None,
+            'epoch_loss': None
+        }
 
     def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, epoch_num: int, epoch_len: int):
         """
@@ -140,3 +150,27 @@ class EvaluateScoresAgent(BaseScoresAgent):
 
     def _get_bq_table(self) -> str:
         return bq_table_evaluate
+
+    def _get_bq_table_defaults(self) -> dict:
+        return {
+            'accuracy': None,
+            'precision': None,
+            'recall': None,
+            'f1': None,
+        }
+
+    def log_scores(
+            self, accuracy: float, precision: float, recall: float, f1: float,
+            stopped_at: int, num_batches: int):
+        self.logger.info(
+            f'Stopped at batch: {stopped_at}/{num_batches}\n'
+            f'Accuracy: {accuracy:.4f}, \n' +
+            f'Precision: {precision:.4f}, \n' +
+            f'Recall: {recall:.4f}, \n' +
+            f'F1: {f1:.4f}')
+        self.bq_insert(operation='log_scores', **{
+            'accuracy': accuracy,
+            'precision': precision,
+            'recall': recall,
+            'f1': f1
+        })

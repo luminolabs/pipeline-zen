@@ -4,7 +4,7 @@ import torch
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 
-def scalar_metrics(all_labels: np.array, all_preds: np.array):
+def scalar_scores(all_labels: np.array, all_preds: np.array):
     """
     Computes scalar scores between predictions and ground truth
     """
@@ -15,7 +15,7 @@ def scalar_metrics(all_labels: np.array, all_preds: np.array):
     return accuracy, precision, recall, f1
 
 
-def mask_metrics(pred_mask: torch.Tensor, label_mask: torch.Tensor, threshold: float = 0.5):
+def mask_scores(pred_mask: torch.Tensor, label_mask: torch.Tensor, threshold: float = 0.5):
     """
     Computes mask scores between predictions and ground truth
     """
