@@ -15,7 +15,6 @@ from common.agents import TrainScoresAgent
 
 async def main(job_config_id: str):
     # TODO: Store model training checkpoints frequently
-    # TODO: Implement scores lib, to capture timing, model, etc scores
 
     # Load job configuration
     job_config = load_job_config(job_config_id)
