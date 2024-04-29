@@ -1,4 +1,4 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from datetime import datetime
 from logging import Logger
 from typing import Optional
@@ -7,6 +7,7 @@ from google.cloud import bigquery
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
+bq_table_evaluate = 'neat-airport-407301.pipeline_zen.evaluate'
 
 
 class BaseScoresAgent(ABC):
@@ -23,8 +24,10 @@ class BaseScoresAgent(ABC):
         self.logger = logger
         self.time_start = None
         self.time_end = None
-        project = bq_table_train.split('.')[0]
-        self.bq = bigquery.Client(project)
+
+        self.bq_table = self._get_bq_table()
+        bq_project = self.bq_table.split('.')[0]
+        self.bq = bigquery.Client(bq_project)
 
     def mark_time_start(self):
         """
@@ -76,15 +79,22 @@ class BaseScoresAgent(ABC):
                 'epoch_loss': None
             },
             **kwargs}
-        errors = self.bq.insert_rows_json(bq_table_train, [row])
+        errors = self.bq.insert_rows_json(self.bq_table, [row])
         if errors:
             raise SystemError('Encountered errors while inserting rows: {}'.format(errors))
+
+    @abstractmethod
+    def _get_bq_table(self) -> str:
+        pass
 
 
 class TrainScoresAgent(BaseScoresAgent):
     """
     An agent used to log training scores on the filesystem and on bigquery
     """
+
+    def _get_bq_table(self) -> str:
+        return bq_table_train
 
     def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, epoch_num: int, epoch_len: int):
         """
@@ -127,4 +137,6 @@ class EvaluateScoresAgent(BaseScoresAgent):
     """
     An agent used to log evaluate scores on the filesystem and on bigquery
     """
-    pass
+
+    def _get_bq_table(self) -> str:
+        return bq_table_evaluate
