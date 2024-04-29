@@ -32,8 +32,8 @@ def get_device(logger: Logger):
         # see: https://pytorch.org/docs/stable/notes/mps.html
         os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
         device = 'mps'
+    logger.info("Training on (cpu/cuda/mps?) device:" + device)
     device = torch.device(device)
-    logger.info("Training on (cpu/cuda/mps?) device:", device)
     return device
 
 

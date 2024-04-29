@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from torch import Tensor
 
-from common.metrics.utils import mask_metrics, scalar_metrics
+from common.scores.utils import mask_metrics, scalar_metrics
 from common.utils import load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
@@ -16,7 +16,7 @@ async def main(job_config_id: str, model_weights_id: str):
     job_config = load_job_config(job_config_id)
     job_id = job_config["job_id"]
 
-    # A logger for logging metrics
+    # A logger for logging scores
     metrics = setup_logger('evaluate_metrics', job_id)
     # and a logger for logging everything else
     logger = setup_logger('evaluate_logger', job_id)
@@ -57,13 +57,13 @@ async def main(job_config_id: str, model_weights_id: str):
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
 
-    # Calculate metrics
+    # Calculate scores
     if len(all_preds.shape) == 1:
         accuracy, precision, recall, f1 = scalar_metrics(all_preds, all_labels)
     else:
         accuracy, precision, recall, f1 = mask_metrics(torch.tensor(all_preds), torch.tensor(all_labels))
 
-    # Log metrics
+    # Log scores
     metrics.info(f'Accuracy: {accuracy}')
     metrics.info(f'Precision: {precision}')
     metrics.info(f'Recall: {recall}')

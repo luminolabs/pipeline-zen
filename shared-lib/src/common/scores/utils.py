@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 def scalar_metrics(all_labels: np.array, all_preds: np.array):
     """
-    Computes scalar metrics between predictions and ground truth
+    Computes scalar scores between predictions and ground truth
     """
     accuracy = accuracy_score(all_labels, all_preds)
     precision = precision_score(all_labels, all_preds, average='macro')
@@ -17,7 +17,7 @@ def scalar_metrics(all_labels: np.array, all_preds: np.array):
 
 def mask_metrics(pred_mask: torch.Tensor, label_mask: torch.Tensor, threshold: float = 0.5):
     """
-    Computes mask metrics between predictions and ground truth
+    Computes mask scores between predictions and ground truth
     """
     pred_flattened = pred_mask.flatten()
     pred_flattened = pred_flattened[:, None]
