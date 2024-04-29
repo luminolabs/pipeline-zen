@@ -1,5 +1,6 @@
 from datetime import datetime
 from logging import Logger
+from typing import Optional
 
 from google.cloud import bigquery
 
@@ -50,7 +51,7 @@ class TrainScoresAgent:
         self.logger.info(f'Elapsed time: {time_delta_m}')
         self.bq_insert(operation='log_time_elapsed', metric=time_delta_m)
 
-    def bq_insert(self, operation: str, metric: str, **kwargs):
+    def bq_insert(self, operation: str, metric: Optional[str] = None, **kwargs):
         row = {
             **{
                 'job_id': self.job_id,
