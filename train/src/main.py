@@ -67,7 +67,7 @@ async def main(job_config_id: str):
             optimizer.step()
             running_loss += loss.item()
             # Log training information
-            scores_agent.log_batch(batch_num, len(dataloader), loss.item())
+            scores_agent.log_batch(batch_num, len(dataloader), loss.item(), epoch_num, job_config.get("num_epochs"))
             # Exit if `num_batches` is reached. This option is used when testing,
             # to stop training loop before the actual end of the dataset is reached
             if job_config.get('num_batches') == batch_num:
