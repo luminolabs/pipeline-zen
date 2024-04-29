@@ -1,3 +1,4 @@
+from abc import ABC
 from datetime import datetime
 from logging import Logger
 from typing import Optional
@@ -8,11 +9,7 @@ datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
 
 
-class TrainScoresAgent:
-    """
-    An agent used to log training scores on the filesystem and on bigquery
-    """
-
+class BaseScoresAgent(ABC):
     def __init__(self, job_id: str, logger: Logger):
         """
         :param job_id: The id of the job
@@ -43,42 +40,6 @@ class TrainScoresAgent:
         str_time = self.time_end.strftime("%Y-%m-%d %H:%M:%S")
         self.logger.info(f'Process ended at: {str_time}')
         self.bq_insert(operation='mark_time_end', metric=str_time)
-
-    def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, epoch_num: int, epoch_len: int):
-        """
-        Log the training batch metrics
-
-        :param batch_num: The batch number
-        :param batch_len: The batch length
-        :param batch_loss: The training batch loss
-        :param epoch_num: The epoch number
-        :param epoch_len: The epoch length
-        :return:
-        """
-        self.logger.info(f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}')
-        self.bq_insert(operation='log_batch', **{
-            'batch_num': batch_num,
-            'batch_len': batch_len,
-            'batch_loss': batch_loss,
-            'epoch_num': epoch_num,
-            'epoch_len': epoch_len,
-        })
-
-    def log_epoch(self, epoch_num: int, epoch_len: int, epoch_loss: float):
-        """
-        Log the training epoch metrics
-
-        :param epoch_num: The epoch number
-        :param epoch_len: The epoch length
-        :param epoch_loss: The training epoch loss
-        :return:
-        """
-        self.logger.info(f'Epoch #{epoch_num}/{epoch_len}, Loss: {epoch_loss:.4f}')
-        self.bq_insert(operation='log_epoch', **{
-            'epoch_num': epoch_num,
-            'epoch_len': epoch_len,
-            'epoch_loss': epoch_loss
-        })
 
     def log_time_elapsed(self):
         """
@@ -115,3 +76,45 @@ class TrainScoresAgent:
         errors = self.bq.insert_rows_json(bq_table_train, [row])
         if errors:
             raise SystemError('Encountered errors while inserting rows: {}'.format(errors))
+
+
+class TrainScoresAgent(BaseScoresAgent):
+    """
+    An agent used to log training scores on the filesystem and on bigquery
+    """
+
+    def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, epoch_num: int, epoch_len: int):
+        """
+        Log the training batch metrics
+
+        :param batch_num: The batch number
+        :param batch_len: The batch length
+        :param batch_loss: The training batch loss
+        :param epoch_num: The epoch number
+        :param epoch_len: The epoch length
+        :return:
+        """
+        self.logger.info(f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}')
+        self.bq_insert(operation='log_batch', **{
+            'batch_num': batch_num,
+            'batch_len': batch_len,
+            'batch_loss': batch_loss,
+            'epoch_num': epoch_num,
+            'epoch_len': epoch_len,
+        })
+
+    def log_epoch(self, epoch_num: int, epoch_len: int, epoch_loss: float):
+        """
+        Log the training epoch metrics
+
+        :param epoch_num: The epoch number
+        :param epoch_len: The epoch length
+        :param epoch_loss: The training epoch loss
+        :return:
+        """
+        self.logger.info(f'Epoch #{epoch_num}/{epoch_len}, Loss: {epoch_loss:.4f}')
+        self.bq_insert(operation='log_epoch', **{
+            'epoch_num': epoch_num,
+            'epoch_len': epoch_len,
+            'epoch_loss': epoch_loss
+        })
