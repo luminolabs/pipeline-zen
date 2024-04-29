@@ -10,6 +10,9 @@ bq_table_train = 'neat-airport-407301.pipeline_zen.train'
 
 
 class BaseScoresAgent(ABC):
+    """
+    Base class for capturing model related scores
+    """
     def __init__(self, job_id: str, logger: Logger):
         """
         :param job_id: The id of the job
@@ -30,7 +33,7 @@ class BaseScoresAgent(ABC):
         self.time_start = datetime.now()
         str_time = self.time_start.strftime("%Y-%m-%d %H:%M:%S")
         self.logger.info(f'Process started at: {str_time}')
-        self.bq_insert(operation='mark_time_start', metric=str_time)
+        self.bq_insert(operation='mark_time_start', result=str_time)
 
     def mark_time_end(self):
         """
@@ -39,7 +42,7 @@ class BaseScoresAgent(ABC):
         self.time_end = datetime.now()
         str_time = self.time_end.strftime("%Y-%m-%d %H:%M:%S")
         self.logger.info(f'Process ended at: {str_time}')
-        self.bq_insert(operation='mark_time_end', metric=str_time)
+        self.bq_insert(operation='mark_time_end', result=str_time)
 
     def log_time_elapsed(self):
         """
@@ -48,14 +51,14 @@ class BaseScoresAgent(ABC):
         """
         time_delta_m = (self.time_start - self.time_end).seconds / 60
         self.logger.info(f'Elapsed time: {time_delta_m}')
-        self.bq_insert(operation='log_time_elapsed', metric=time_delta_m)
+        self.bq_insert(operation='log_time_elapsed', result=time_delta_m)
 
-    def bq_insert(self, operation: str, metric: Optional[str] = None, **kwargs):
+    def bq_insert(self, operation: str, result: Optional[str] = None, **kwargs):
         """
-        Insert metrics into BigQuery table
+        Insert scores into BigQuery table
 
-        :param operation: The operation name of the metrics to be inserted
-        :param metric: The value of the metric to be inserted (optional)
+        :param operation: The operation name of the score to be inserted
+        :param result: The value of the score to be inserted (optional)
         :param kwargs: Dict with scores to be inserted (see `row` contents below)
         :return:
         """
@@ -64,7 +67,7 @@ class BaseScoresAgent(ABC):
                 'job_id': self.job_id,
                 'create_ts': str(datetime.now()),
                 'operation': operation,
-                'metric': metric,
+                'result': result,
                 'batch_num': None,
                 'batch_len': None,
                 'batch_loss': None,
@@ -85,7 +88,7 @@ class TrainScoresAgent(BaseScoresAgent):
 
     def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, epoch_num: int, epoch_len: int):
         """
-        Log the training batch metrics
+        Log the training batch scores
 
         :param batch_num: The batch number
         :param batch_len: The batch length
@@ -105,7 +108,7 @@ class TrainScoresAgent(BaseScoresAgent):
 
     def log_epoch(self, epoch_num: int, epoch_len: int, epoch_loss: float):
         """
-        Log the training epoch metrics
+        Log the training epoch scores
 
         :param epoch_num: The epoch number
         :param epoch_len: The epoch length
@@ -118,3 +121,10 @@ class TrainScoresAgent(BaseScoresAgent):
             'epoch_len': epoch_len,
             'epoch_loss': epoch_loss
         })
+
+
+class EvaluateScoresAgent(BaseScoresAgent):
+    """
+    An agent used to log evaluate scores on the filesystem and on bigquery
+    """
+    pass
