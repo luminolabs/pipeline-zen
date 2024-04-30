@@ -18,9 +18,9 @@ async def main(job_config_id: str, model_weights_id: str):
     job_id = job_config["job_id"]
 
     # A logger for logging scores
-    scores_logger = setup_logger('evaluate_metrics', job_id)
+    scores_logger = setup_logger('evaluate_workflow_metrics', job_id)
     # and a logger for logging everything else
-    logger = setup_logger('evaluate_logger', job_id)
+    logger = setup_logger('evaluate_workflow', job_id)
 
     # Setup logging and bigquery agent for scores
     scores_agent = EvaluateScoresAgent(job_id, scores_logger)
@@ -73,7 +73,7 @@ async def main(job_config_id: str, model_weights_id: str):
 
     # Log scores
     scores_agent.log_scores(accuracy, precision, recall, f1,
-                            stopped_at=batch_cnt, num_batches=len(dataloader),)
+                            stopped_at=batch_cnt + 1, num_batches=len(dataloader))
 
     # Log the end time
     scores_agent.mark_time_end()
