@@ -30,6 +30,9 @@ ARG TARGET_WORKFLOW
 COPY ${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
 
+# Copy scripts
+COPY scripts .
+
 # Copy shared-lib source code
 COPY shared-lib/src .
 

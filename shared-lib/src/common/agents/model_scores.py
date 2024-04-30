@@ -5,6 +5,8 @@ from typing import Optional
 
 from google.cloud import bigquery
 
+from common.agents.system_metrics import SystemSpecs
+
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
 bq_table_evaluate = 'neat-airport-407301.pipeline_zen.evaluate'
@@ -25,10 +27,13 @@ class BaseScoresAgent(ABC):
         self.time_start = None
         self.time_end = None
 
+        # Configure bigquery
         self.bq_table = self._get_bq_table()
         bq_project = self.bq_table.split('.')[0]
         self.bq = bigquery.Client(bq_project)
         self.bq_table_defaults = self._get_bq_table_defaults()
+        # Get a copy of the system specs
+        self.system_specs = SystemSpecs.get_specs()
 
     def mark_time_start(self):
         """
@@ -56,6 +61,14 @@ class BaseScoresAgent(ABC):
         time_delta_m = f'{(self.time_end - self.time_start).total_seconds() / 60:.2f} minutes'
         self.logger.info(f'Elapsed time: {time_delta_m}')
         self.bq_insert(operation='log_time_elapsed', result=time_delta_m)
+
+    def log_system_specs(self):
+        """
+        Log system specs
+        :return:
+        """
+        self.logger.info(f'System specs: {self.system_specs}')
+        self.bq_insert(operation='log_system_specs', result=self.system_specs)
 
     def bq_insert(self, operation: str, result: Optional[str] = None, **kwargs):
         """

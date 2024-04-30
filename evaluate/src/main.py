@@ -5,7 +5,7 @@ import torch
 import numpy as np
 from torch import Tensor
 
-from common.agents import EvaluateScoresAgent
+from common.agents.model_scores import EvaluateScoresAgent
 from common.scores.utils import mask_scores, scalar_scores
 from common.utils import load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
@@ -24,6 +24,9 @@ async def main(job_config_id: str, model_weights_id: str):
 
     # Setup logging and bigquery agent for scores
     scores_agent = EvaluateScoresAgent(job_id, scores_logger)
+
+    # Log system specs
+    scores_agent.log_system_specs()
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger,
