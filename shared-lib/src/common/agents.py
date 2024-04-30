@@ -53,7 +53,7 @@ class BaseScoresAgent(ABC):
         Log the training time length in minutes
         :return:
         """
-        time_delta_m = (self.time_start - self.time_end).seconds / 60
+        time_delta_m = f'{(self.time_end - self.time_start).total_seconds() / 60:.2f} minutes'
         self.logger.info(f'Elapsed time: {time_delta_m}')
         self.bq_insert(operation='log_time_elapsed', result=time_delta_m)
 

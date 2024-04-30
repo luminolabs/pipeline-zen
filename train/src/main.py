@@ -18,7 +18,7 @@ async def main(job_config_id: str):
     job_id = job_config["job_id"]
 
     # A logger for logging scores
-    scores_logger = setup_logger('train_workflow_scores', job_id)
+    scores_logger = setup_logger('train_workflow_metrics', job_id)
     # and a logger for logging everything else
     logger = setup_logger('train_workflow', job_id)
 
