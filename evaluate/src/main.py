@@ -1,5 +1,6 @@
 import asyncio
 import sys
+from logging import Logger
 
 import torch
 import numpy as np
@@ -11,15 +12,12 @@ from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
 
 
-async def main(job_config_id: str, model_weights_id: str):
-    # Load job configuration
-    job_config = load_job_config(job_config_id)
+def _evaluate(job_config: dict,  model_weights_id: str, logger: Logger):
+
     job_id = job_config["job_id"]
 
     # A logger for logging metrics
     metrics = setup_logger('evaluate_metrics', job_id)
-    # and a logger for logging everything else
-    logger = setup_logger('evaluate_logger', job_id)
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger,
@@ -35,7 +33,7 @@ async def main(job_config_id: str, model_weights_id: str):
             model_args = {}
             if tokenizer:
                 inputs = tokenize_inputs(inputs, tokenizer, model_args, device,
-                                         **job_config.get('tokenizer_args'))
+                                         **job_config.get('tokenizer_args', {}))
             inputs, labels = inputs.to(device), labels.to(device)
             outputs = model(inputs, **model_args)
             if isinstance(outputs, Tensor):
@@ -70,6 +68,24 @@ async def main(job_config_id: str, model_weights_id: str):
     metrics.info(f'F1 Score: {f1}')
 
 
-job_config_id = sys.argv[1]
-model_weights_id = sys.argv[2]
-asyncio.run(main(job_config_id, model_weights_id))
+def main(job_config_id: str, model_weights_id: str):
+    """
+    Workflow entry point, mainly for catching unhandled exceptions
+
+    :param job_config_id: The job configuration id; configuration files are found under `job_configs`
+    :return:
+    """
+    # Load job configuration
+    job_config = load_job_config(job_config_id)
+    job_id = job_config["job_id"]
+    # Instantiate the main logger
+    logger = setup_logger('evaluate_logger', job_id)
+    # Run the `evaluate` workflow, and handle unexpected exceptions
+    try:
+        _evaluate(job_config, model_weights_id, logger)
+    except Exception as ex:
+        logger.error(f"Exception occurred: {ex}")
+        raise ex
+
+
+main(job_config_id=sys.argv[1], model_weights_id=sys.argv[2])
