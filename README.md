@@ -12,9 +12,9 @@ docker run --gpus all \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/job_configs":/project/job_configs \
-train-workflow alzheimermri_classification
+train-workflow mri_segmentation
 ```
-NOTE: `alzheimermri_classification` above points to a file under `job_configs`
+NOTE: `mri_segmentation` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -28,9 +28,9 @@ docker run --gpus all \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/job_configs":/project/job_configs \
-evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
+evaluate-workflow mri_segmentation 2024-04-18-16-12-07.pt
 ```
-NOTE: `alzheimermri_classification` above points to a file under `job_configs` and
+NOTE: `mri_segmentation` above points to a file under `job_configs` and
 `2024-04-18-16-12-07.pt` points to the model weights file under `.results/model_weights/<job_id>`
 
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
@@ -54,12 +54,12 @@ For all workflows, ensure dependencies are installed; cd to the workflow's `src`
 ### Running the train workflow
 
 - cd to the `train/src` folder
-- `python main.py alzheimermri_classification`
+- `python main.py mri_segmentation`
 
 ### Running the evaluate workflow
 
 - cd to the `evaluate/src` folder
-- `python main.py alzheimermri_classification 2024-04-18-16-57-23.pt`
+- `python main.py mri_segmentation 2024-04-18-16-57-23.pt`
 
 
 ## Outputs
