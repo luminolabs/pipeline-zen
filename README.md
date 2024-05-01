@@ -10,6 +10,7 @@ docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
+-v "$PWD/.logs":/project/.logs \
 -v "$PWD/job_configs":/project/job_configs \
 train-workflow alzheimermri_classification
 ```
@@ -25,6 +26,7 @@ docker build --build-arg TARGET_WORKFLOW=evaluate -t evaluate-workflow .
 docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
+-v "$PWD/.logs":/project/.logs \
 -v "$PWD/job_configs":/project/job_configs \
 evaluate-workflow alzheimermri_classification 2024-04-18-16-12-07.pt
 ```
@@ -34,7 +36,7 @@ NOTE: `alzheimermri_classification` above points to a file under `job_configs` a
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
 run the following command to change filesystem permissions back to your user:
 ```
-sudo chown $(whoami) -R .results .cache
+sudo chown $(whoami) -R .results .cache .logs
 ```
 
 

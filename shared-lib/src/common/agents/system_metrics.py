@@ -9,6 +9,7 @@ import xmltodict
 class SystemSpecs:
     """
     Helpers for pulling system specs, such as cpu, memory, gpu, etc
+
     Note: these commands aren't supported on OSX, but they are on Ubuntu.
     """
 
@@ -18,7 +19,7 @@ class SystemSpecs:
     def get_gpu_spec(self) -> Optional[List[dict]]:
         """
         :return: GPU specs,
-        ex. `{'model': 'NVIDIA GeForce RTX 3080 Laptop GPU', 'memory': '16384 MiB', 'pwr_limit': '80.00 W'}`
+        ex. `[{'model': 'NVIDIA GeForce RTX 3080 Laptop GPU', 'memory': '16384 MiB', 'pwr_limit': '80.00 W'}]`
         """
         try:
             r = subprocess.run(args=['nvidia-smi', '-x', '-q'], capture_output=True)
