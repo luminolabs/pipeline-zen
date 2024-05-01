@@ -1,8 +1,8 @@
 import json
-import os
 import subprocess
+from typing import List
 
-from common.utils import get_root_path
+import xmltodict
 
 
 class SystemSpecs:
@@ -11,14 +11,27 @@ class SystemSpecs:
     """
 
     @staticmethod
-    def get_gpu_spec() -> dict:
+    def get_gpu_spec() -> List[dict]:
         """
         :return: GPU specs,
         ex. `{'model': 'NVIDIA GeForce RTX 3080 Laptop GPU', 'memory': '16384 MiB', 'pwr_limit': '80.00 W'}`
         """
-        r = subprocess.run(args=[os.path.join(get_root_path(), 'scripts', 'gpu_specs.sh')],
-                           capture_output=True)
-        return json.loads(r.stdout.decode('utf-8'))
+        r = subprocess.run(args=['nvidia-smi', '-x', '-q'], capture_output=True)
+        j = xmltodict.parse(r.stdout.decode('utf-8'))
+
+        nvidia_smi_specs = j['nvidia_smi_log']['gpu']
+        is_single_gpu = isinstance(j['nvidia_smi_log']['gpu'], dict)
+        if is_single_gpu:
+            nvidia_smi_specs = [j['nvidia_smi_log']['gpu']]
+
+        gpu_specs = []
+        for gpu_spec in nvidia_smi_specs:
+            model = gpu_spec['product_name']
+            memory = gpu_spec['fb_memory_usage']['total']
+            pwr_limit = gpu_spec['gpu_power_readings']['default_power_limit']
+            gpu_specs.append({'model': model, 'memory': memory, 'pwr_limit': pwr_limit})
+
+        return gpu_specs
 
     @staticmethod
     def get_cpu_spec() -> dict:
