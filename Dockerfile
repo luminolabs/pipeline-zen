@@ -40,8 +40,8 @@ COPY ${TARGET_WORKFLOW}/src .
 # This affects a few runtime options such as cache and results folders
 ENV ENVIRONMENT=docker
 
-# Set GCP credentials
-# These are mounted on the container at run time,
+# Set GCP credentials file location;
+# these are mounted on the container at run time,
 # they aren't bundled in the image
 ENV GOOGLE_APPLICATION_CREDENTIALS=/project/google_key.json
 
