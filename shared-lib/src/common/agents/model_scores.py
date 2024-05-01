@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from logging import Logger
 from typing import Optional, Union
+import json
 
 from google.cloud import bigquery
 
@@ -67,7 +68,7 @@ class BaseScoresAgent(ABC):
         Log system specs
         :return:
         """
-        self.logger.info(f'System specs: {self.system_specs}')
+        self.logger.info(f'System specs: {self.system_specs.get_specs()}')
         self.bq_insert(operation='log_system_specs', result=self.system_specs.get_specs())
 
     def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
@@ -79,15 +80,26 @@ class BaseScoresAgent(ABC):
         :param kwargs: Dict with scores to be inserted (see `row` contents below)
         :return:
         """
+
+        # Normalize result
+        result_json = None
+        if result:
+            if not isinstance(result, dict):
+                result = {'value': result}
+            result_json = json.dumps(result)
+
+        # Construct row
         row = {
             # Create a new dict from the dicts below;
             # the new dict represents the target table structure
             **{'job_id': self.job_id,
                 'create_ts': str(datetime.now()),
                 'operation': operation,
-                'result': result},
+                'result': result_json},
             **self.bq_table_defaults,
             **kwargs}
+
+        # Handle errors
         errors = self.bq.insert_rows_json(self.bq_table, [row])
         if errors:
             raise SystemError('Encountered errors while inserting rows: {}'.format(errors))
