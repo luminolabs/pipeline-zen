@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from logging import Logger
-from typing import Optional
+from typing import Optional, Union
 
 from google.cloud import bigquery
 
@@ -33,7 +33,7 @@ class BaseScoresAgent(ABC):
         self.bq = bigquery.Client(bq_project)
         self.bq_table_defaults = self._get_bq_table_defaults()
         # Get a copy of the system specs
-        self.system_specs = SystemSpecs.get_specs()
+        self.system_specs = SystemSpecs(logger)
 
     def mark_time_start(self):
         """
@@ -68,9 +68,9 @@ class BaseScoresAgent(ABC):
         :return:
         """
         self.logger.info(f'System specs: {self.system_specs}')
-        self.bq_insert(operation='log_system_specs', result=self.system_specs)
+        self.bq_insert(operation='log_system_specs', result=self.system_specs.get_specs())
 
-    def bq_insert(self, operation: str, result: Optional[str] = None, **kwargs):
+    def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
         """
         Insert scores into BigQuery table
 

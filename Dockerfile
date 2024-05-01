@@ -1,8 +1,8 @@
 FROM python
 
 # Install essentials
-RUN apt-get update \
-	&& apt-get install -y \
+RUN apt update \
+	&& apt install -y \
 		build-essential \
 		ca-certificates \
 		curl \
@@ -29,9 +29,6 @@ ARG TARGET_WORKFLOW
 # Install python libraries needed by the workflow
 COPY ${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
-
-# Copy scripts
-COPY scripts .
 
 # Copy shared-lib source code
 COPY shared-lib/src .
