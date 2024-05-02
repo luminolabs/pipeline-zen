@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 import sys
+from enum import Enum
 from json import JSONEncoder
 from typing import Optional
 from datetime import datetime
@@ -112,3 +113,11 @@ class AutoJSONEncoder(JSONEncoder):
             return obj._json()
         except AttributeError:
             return JSONEncoder.default(self, obj)
+
+
+class JsonEnum(Enum):
+    """
+    Base class for JSON serializable enums.
+    """
+    def _json(self):
+        return str(self.value)
