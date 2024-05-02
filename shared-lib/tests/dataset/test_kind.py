@@ -59,7 +59,6 @@ def test_single_label_dataset(
     assert r[0] == tuple([v for _, v in mock_dataset_item.items()])
 
 
-
 def test_dataset_kind_factory(huggingface_dataset):
     # Invalid `dataset_kind` raises error
     with pytest.raises(TypeError):

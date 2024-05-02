@@ -1,3 +1,5 @@
+from logging import Logger
+
 from transformers import PreTrainedTokenizerBase, TensorType
 from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils import PaddingStrategy
@@ -5,14 +7,15 @@ from transformers.utils import PaddingStrategy
 from common.tokenizer import nlp
 
 
-def tokenizer_factory(tokenizer_id: str) -> PreTrainedTokenizerBase:
+def tokenizer_factory(tokenizer_id: str, logger: Logger) -> PreTrainedTokenizerBase:
     """
     Factory method for tokenizers.
 
     :param tokenizer_id: The tokenizer name
+    :param logger: The logger instance
     :return: Tokenizer instance
     """
-    print(f'Using `{tokenizer_id}` tokenizer')
+    logger.info(f'Using `{tokenizer_id}` tokenizer')
     if any(x in tokenizer_id for x in ('bert', 't5')):
         return nlp.auto(tokenizer_id)
     else:
