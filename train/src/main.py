@@ -104,7 +104,7 @@ def main(job_config_id: str):
     job_config = load_job_config(job_config_id)
     job_id = job_config["job_id"]
     # Instantiate the main logger
-    logger = setup_logger('train_logger', job_id)
+    logger = setup_logger('train_workflow', job_id)
     # Run the `train` workflow, and handle unexpected exceptions
     try:
         _train(job_config, job_id, job_config_id, logger)
