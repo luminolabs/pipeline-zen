@@ -7,6 +7,7 @@ import json
 from google.cloud import bigquery
 
 from common.agents.system_metrics import SystemSpecs
+from common.utils import AutoJSONEncoder
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
@@ -72,6 +73,16 @@ class BaseScoresAgent(ABC):
         self.logger.info(f'System specs: {system_specs}')
         self.bq_insert(operation='log_system_specs', result=system_specs)
 
+    def log_job_config(self, job_config: dict):
+        """
+        Log job configuration
+
+        :param job_config: The job configuration
+        :return:
+        """
+        self.logger.info(f'Training job type: `{job_config["category"]}` - `{job_config["type"]}`')
+        self.bq_insert(operation='log_job_config', result=job_config)
+
     def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
         """
         Insert scores into BigQuery table
@@ -87,7 +98,7 @@ class BaseScoresAgent(ABC):
         if result:
             if not isinstance(result, dict):
                 result = {'value': result}
-            result_json = json.dumps(result)
+            result_json = json.dumps(result, cls=AutoJSONEncoder)
 
         # Construct row
         row = {

@@ -34,6 +34,9 @@ def _train(job_config: dict, job_id: str, job_config_id: str, logger: Logger):
     # Log system specs
     scores_agent.log_system_specs()
 
+    # Log job configuration
+    scores_agent.log_job_config(job_config)
+
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger)
 

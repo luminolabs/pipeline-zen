@@ -36,6 +36,9 @@ def _evaluate(job_config: dict,  model_weights_id: str, logger: Logger):
     # Log system specs
     scores_agent.log_system_specs()
 
+    # Log job configuration
+    scores_agent.log_job_config(job_config)
+
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger,
                                        for_inference=True, model_weights_id=model_weights_id)
