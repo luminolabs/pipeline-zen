@@ -11,11 +11,11 @@ docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
+-v "$PWD/.secrets":/project/.secrets \
 -v "$PWD/job_configs":/project/job_configs \
--v $GOOGLE_APPLICATION_CREDENTIALS:/project/google_key.json:ro \
-train-workflow mri_segmentation
+train-workflow imdb_sentiment
 ```
-NOTE: `mri_segmentation` above points to a file under `job_configs`
+NOTE: `imdb_sentiment` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -28,17 +28,17 @@ docker run --gpus all \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
+-v "$PWD/.secrets":/project/.secrets \
 -v "$PWD/job_configs":/project/job_configs \
--v $GOOGLE_APPLICATION_CREDENTIALS:/project/google_key.json:ro \
-evaluate-workflow mri_segmentation 2024-04-18-16-12-07.pt
+evaluate-workflow imdb_sentiment 2024-04-18-16-12-07.pt
 ```
-NOTE: `mri_segmentation` above points to a file under `job_configs` and
+NOTE: `imdb_sentiment` above points to a file under `job_configs` and
 `2024-04-18-16-12-07.pt` points to the model weights file under `.results/model_weights/<job_id>`
 
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
 run the following command to change filesystem permissions back to your user:
 ```
-sudo chown $(whoami) -R .results .cache .logs
+sudo chown $(whoami) -R .results .cache .logs .secrets
 ```
 
 
@@ -49,7 +49,11 @@ Set PYTHONPATH to include `share-lib` and `job_configs`; cd to this folder (repo
 export PYTHONPATH=$(pwd)/shared-lib/src:$(pwd)
 ```
 
-For all workflows, ensure dependencies are installed; cd to the workflow's `src` folder run the following:
+Download and copy the GCP service account credentials file to `.secrets` under the repo root. 
+See this guide for instructions
+
+For all workflows, ensure dependencies are installed; 
+cd to the workflow's `src` (ex. `train/src`) folder and  run the following:
 - `pip install -Ur ../requirements.txt`
 - `pip install -Ur ../../shared-lib/requirements.txt`
 

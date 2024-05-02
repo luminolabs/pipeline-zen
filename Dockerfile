@@ -43,9 +43,7 @@ ENV ENVIRONMENT=docker
 # Set GCP credentials file location;
 # these are mounted on the container at run time,
 # they aren't bundled in the image
-ENV GOOGLE_APPLICATION_CREDENTIALS=/project/google_key.json
+ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
 
 # Run workflow
 ENTRYPOINT ["python", "main.py"]
-
-# NOTE: `.cache`, `.results`, and `.logs' folders should be mounted with the `docker run` command, see readme
