@@ -1,8 +1,8 @@
 FROM python
 
 # Install essentials
-RUN apt-get update \
-	&& apt-get install -y \
+RUN apt update \
+	&& apt install -y \
 		build-essential \
 		ca-certificates \
 		curl \
@@ -40,7 +40,12 @@ COPY ${TARGET_WORKFLOW}/src .
 # This affects a few runtime options such as cache and results folders
 ENV ENVIRONMENT=docker
 
+# Set GCP credentials file location;
+# these are mounted on the container at run time,
+# they aren't bundled in the image
+ENV GOOGLE_APPLICATION_CREDENTIALS=/project/google_key.json
+
 # Run workflow
 ENTRYPOINT ["python", "main.py"]
 
-# NOTE: `.cache` and `.results` folders should be mounted with the `docker run` command, see readme
+# NOTE: `.cache`, `.results`, and `.logs' folders should be mounted with the `docker run` command, see readme

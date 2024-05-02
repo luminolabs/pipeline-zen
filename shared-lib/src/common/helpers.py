@@ -1,5 +1,6 @@
 import math
 import os
+from logging import Logger
 from typing import Tuple
 
 import torch
@@ -15,14 +16,12 @@ from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 
 
-# TODO: Rename file to setup.py
-
-
-def get_device():
+def get_device(logger: Logger):
     """
     Returns a torch device with the following priority (highest to lowest):
     cuda -> mps -> cpu
 
+    :param logger: The logger instance
     :return: Torch device
     """
     device = 'cpu'
@@ -33,12 +32,13 @@ def get_device():
         # see: https://pytorch.org/docs/stable/notes/mps.html
         os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
         device = 'mps'
+    logger.info('Training on (cpu/cuda/mps?) device: ' + device)
     device = torch.device(device)
-    print("Training on (cpu/cuda/mps?) device:", device)
     return device
 
 
 def configure_model_and_dataloader(job_config: dict,
+                                   logger: Logger,
                                    for_inference: bool = False,
                                    model_weights_id: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
@@ -46,11 +46,11 @@ def configure_model_and_dataloader(job_config: dict,
     Configure model and dataloader from a job configuration.
 
     :param job_config: The job configuration. Configurations are found under `job_configs`
+    :param logger: The logger instance
     :param for_inference: Whether we are running inference or training
     :param model_weights_id: Model weights to use for inference
     :return: Configured objects to be used in the workflow
     """
-
     if for_inference:
         model_weights_path = os.path.join(
             get_model_weights_path(), job_config.get('job_id'), model_weights_id)
@@ -58,7 +58,7 @@ def configure_model_and_dataloader(job_config: dict,
             raise FileNotFoundError(f'model_weights_id: {model_weights_id} '
                                     f'not found; looked at: {model_weights_path}')
 
-    print("Loading and configuring dataset!")
+    logger.info("Loading and configuring dataset!")
 
     # Dataset split to use
     split = job_config.get('train_split')
@@ -69,13 +69,14 @@ def configure_model_and_dataloader(job_config: dict,
     dataset = dataset_provider_factory(
         dataset_provider=job_config.get('dataset_provider'),
         dataset_id=job_config.get('dataset_id'),
-        split=split)
-    dataset.fetch(**job_config.get('dataset_fetch_config', {}))
-    print(f'Dataset split has {len(dataset)} records')
-    print(f'Batch size is {job_config.get("batch_size")}, '
+        split=split,
+        logger=logger)
+    dataset.fetch(logger, **job_config.get('dataset_fetch_config', {}))
+    logger.info(f'Dataset split has {len(dataset)} records')
+    logger.info(f'Batch size is {job_config.get("batch_size")}, '
           f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
     if job_config.get('num_batches'):
-        print(f'...but only {job_config.get("num_batches")} batches are configured to run')
+        logger.info(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
     # that will be used in the training loop
     # ex. the `input_label` dataset converts data structured as an arbitrary dict to tuple(input, label)
@@ -97,7 +98,7 @@ def configure_model_and_dataloader(job_config: dict,
     # so that the text can be represented as an array of integers
     tokenizer = None
     if job_config.get('tokenizer_id'):
-        tokenizer = tokenizer_factory(job_config.get('tokenizer_id'))
+        tokenizer = tokenizer_factory(job_config.get('tokenizer_id'), logger)
 
     # This loads data from the dataset in batches;
     # data requested from the dataloader will return preprocessed but not tokenized
@@ -108,22 +109,27 @@ def configure_model_and_dataloader(job_config: dict,
         shuffle=job_config.get('shuffle'))
 
     # To run on GPU or not to run on GPU, that is the question
-    device = get_device()
+    device = get_device(logger)
 
-    print("Fetching the model")
+    logger.info("Fetching the model")
     # Instantiate the appropriate model
     model = model_factory(
         model_kind=job_config.get('dataset_kind'),
         model_base=job_config.get('model_base'),
+        logger=logger,
         **job_config.get('model_base_args', {}))
     if for_inference:
-        model.load_state_dict(torch.load(model_weights_path))
-        print("Using model weights path: " + model_weights_path)
+        # `map_location` is needed when the weights were generated on
+        # a different kind of a device
+        # ex. `cpu` running on this machine vs weights generated with `cuda`
+        model_weights = torch.load(model_weights_path, map_location=device)
+        model.load_state_dict(model_weights)
+        logger.info("Using model weights path: " + model_weights_path)
     model.to(device)
     if for_inference:
         model.eval()
     elif torch.cuda.device_count() > 1:
-        print(f"Let's use {torch.cuda.device_count()} GPUs!")
+        logger.info(f"Let's use {torch.cuda.device_count()} GPUs!")
         # Wrap the model with DataParallel
         model = nn.DataParallel(model)
 

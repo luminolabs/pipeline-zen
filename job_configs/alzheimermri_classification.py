@@ -1,6 +1,6 @@
 job_config = {
-    # Used to associate results and metrics
-    'job_id': 'alzheimer-mri',
+    # Used to associate results and scores
+    'job_id': 'alzheimermri-classification',
 
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
@@ -38,6 +38,6 @@ job_config = {
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
     # Loss function configuration
-    'loss_func_name': 'cross_entropy',
+    'loss_func_name': 'CrossEntropyLoss',
     'loss_func_args': {},
 }

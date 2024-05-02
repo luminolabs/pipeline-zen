@@ -1,9 +1,6 @@
-# This job won't work yet because of this issue:
-# https://linear.app/luminoai/issue/LUM-84/error-while-training-using-the-agnews-sentiment-job-config
-
 job_config = {
-    # Used to associate results and metrics
-    'job_id': 'imdb-sentiment',
+    # Used to associate results and scores
+    'job_id': 'agnews-classification',
 
     # Dataset provider configuration
     'dataset_provider': 'huggingface',
@@ -14,8 +11,8 @@ job_config = {
     'test_split': 'test',
 
     # Dataset configuration
-    'dataset_kind': 'input_label',
-    'input_label_dataset_config': {
+    'dataset_kind': 'single_label',
+    'single_label_dataset_config': {
         'input_col': 'text',
         'label_col': 'label',
     },
@@ -32,15 +29,30 @@ job_config = {
 
     # Model configuration
     'model_base': 'cardiffnlp/twitter-roberta-base-sentiment-latest',
+    'model_base_args': {
+        'ignore_mismatched_sizes': True,
+        'id2label': {
+            "0": "World",
+            "1": "Sports",
+            "2": "Business",
+            "3": "Sci/Tech"
+        },
+        'label2id': {
+            'World': 0,
+            'Sports': 1,
+            'Business': 2,
+            'Sci/Tech': 3,
+        }
+    },
 
     # Training configuration
-    'batch_size': 32,
-    'num_epochs': 10,
-    'learning_rate': 0.001,
+    'batch_size': 18,  # ~13.5GB memory use
+    'num_epochs': 5,
+    'learning_rate': 0.0005,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
     # Loss function configuration
-    'loss_func_name': 'cross_entropy',
+    'loss_func_name': 'CrossEntropyLoss',
     'loss_func_args': {},
 }

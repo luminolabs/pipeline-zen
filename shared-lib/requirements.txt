@@ -7,3 +7,5 @@ transformers
 datasets
 segmentation_models_pytorch
 numpy
+google-cloud-bigquery
+xmltodict

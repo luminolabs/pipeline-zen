@@ -1,5 +1,5 @@
 job_config = {
-    # Used to associate results and metrics
+    # Used to associate results and scores
     'job_id': 'mri-segmentation',
 
     # Dataset provider configuration
@@ -34,18 +34,18 @@ job_config = {
     # Model configuration
     'model_base': 'unet',
     'model_base_args': {
-        'num_classes': 1,
+        'classes': 1,
     },
 
     # Training configuration
-    'batch_size': 16,
+    'batch_size': 8,
     'num_epochs': 10,
     'learning_rate': 0.001,
     'shuffle': False,
     # On every epoch, stop after this number of batches
     'num_batches': None,  # ex 5
     # Loss function configuration
-    'loss_func_name': 'focal',
+    'loss_func_name': 'FocalLoss',
     'loss_func_args': {
         'mode': 'binary',
     },

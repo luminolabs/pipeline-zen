@@ -6,10 +6,10 @@ from common.model.utils import model_factory
 
 
 @patch('common.model.utils.image.resnet')
-def test_model_factory(resnet):
+def test_model_factory(resnet, logger):
     # Invalid `loss_func_name` raises error
     with pytest.raises(TypeError):
-        model_factory(model_kind='foo', model_base='resnet')
+        model_factory(model_kind='foo', model_base='resnet', logger=logger)
 
     # Valid function arguments return a new object
     # We don't want to actually fetch the model here, which is
@@ -17,5 +17,5 @@ def test_model_factory(resnet):
     # we make it return a string value to compare to;
     # we are testing the `model_factory()` not the `resnet()` method
     resnet.return_value = 'resnet model...'
-    r = model_factory(model_kind='single_label', model_base='resnet')
+    r = model_factory(model_kind='single_label', model_base='resnet', logger=logger)
     assert r == resnet.return_value

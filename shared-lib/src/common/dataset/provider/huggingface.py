@@ -1,4 +1,5 @@
 import os
+from logging import Logger
 from typing import Dict
 
 from datasets import load_dataset
@@ -11,11 +12,11 @@ class HuggingFace(BaseDatasetProvider):
     HuggingFace Dataset Provider
     """
 
-    def fetch(self, **kwargs):
+    def fetch(self, logger: Logger, **kwargs):
         # Some huggingface datasets consist of multiple subsets;
         # use the `name` kwarg to specify which to use
         if kwargs.get('name'):
-            print(f'... subset: `{kwargs.get("name")}`')
+            logger.info(f'... subset: `{kwargs.get("name")}`')
         # Download the dataset
         # `load_dataset()` has builtin retries (1 retry by default)
         self.dataset = load_dataset(
