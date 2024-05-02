@@ -2,13 +2,12 @@ from enum import Enum
 
 DEFAULT_BATCH_SIZE = 8
 DEFAULT_NUM_EPOCHS = 10
-DEFAULT_NUM_BATCHES = None
+DEFAULT_NUM_BATCHES = None  # `None` for no limit
 
 
 class JobCategory(Enum):
     def _json(self):
         return str(self.value)
-
     NLP = 'nlp'
     IMAGE = 'image'
     LLM = 'llm'
@@ -17,7 +16,6 @@ class JobCategory(Enum):
 class JobType(Enum):
     def _json(self):
         return str(self.value)
-
     CLASSIFICATION = 'classification'
     SEGMENTATION = 'segmentation'
     TEXT_GENERATION = 'text_generation'
