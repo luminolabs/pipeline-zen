@@ -40,7 +40,7 @@ def get_device(logger: Logger):
 def configure_model_and_dataloader(job_config: dict,
                                    logger: Logger,
                                    for_inference: bool = False,
-                                   model_weights_id: str = None) \
+                                   model_weights: str = None) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
     """
     Configure model and dataloader from a job configuration.
@@ -48,14 +48,14 @@ def configure_model_and_dataloader(job_config: dict,
     :param job_config: The job configuration. Configurations are found under `job_configs`
     :param logger: The logger instance
     :param for_inference: Whether we are running inference or training
-    :param model_weights_id: Model weights to use for inference
+    :param model_weights: Model weights to use for inference
     :return: Configured objects to be used in the workflow
     """
     if for_inference:
         model_weights_path = os.path.join(
-            get_model_weights_path(), job_config.get('job_id'), model_weights_id)
+            get_model_weights_path(), model_weights)
         if not os.path.isfile(model_weights_path):
-            raise FileNotFoundError(f'model_weights_id: {model_weights_id} '
+            raise FileNotFoundError(f'model_weights: {model_weights} '
                                     f'not found; looked at: {model_weights_path}')
 
     logger.info("Loading and configuring dataset!")

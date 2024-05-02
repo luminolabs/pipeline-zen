@@ -11,9 +11,18 @@ from datetime import datetime
 # Available options so far: `docker`, `local`
 environment = os.environ.get("ENVIRONMENT", 'local')
 
-
 # Job configuration path in relation to repository root path
 job_config_dir = 'job_configs'
+
+# Timestamp format to use for logs, results, etc
+system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
+
+
+def get_system_timestamp() -> str:
+    """
+    :return: A timestamp formatted as a string; use in logs, results, etc
+    """
+    return datetime.now().strftime(system_timestamp_format)
 
 
 def get_root_path() -> str:
@@ -58,7 +67,7 @@ def get_model_weights_path(job_id: Optional[str] = None) -> str:
     """
     path_list = ()
     if job_id:
-        timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+        timestamp = get_system_timestamp()
         path_list = (job_id, timestamp + '.pt')
     path = os.path.join(get_results_path(), 'model_weights', *path_list)
     os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -84,7 +93,7 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     :param default_log_level: The default log level to use, ex. `logging.INFO`
     :return: A logger instance
     """
-    timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
+    timestamp = get_system_timestamp()
     log_format = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
 
     # Log to stdout and to file

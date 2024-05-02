@@ -2,7 +2,7 @@ from job_configs._defaults import build_job_config, JobType, JobCategory
 
 _job_config = {
     # Used to associate results and scores
-    'job_id': 'mri-segmentation',
+    'job_id': 'mri_image_segmentation',
 
     # What kind of job is this?
     'category': JobCategory.IMAGE,

@@ -10,7 +10,7 @@ from common.utils import load_job_config
 def test_configure_model_and_dataloader(logger):
     # Test that `configure_model_and_dataloader` initializes
     # objects properly
-    job_config = load_job_config('imdb_sentiment')
+    job_config = load_job_config('imdb_nlp_classification')
     for_inference = False
     model_weights_id = None
     model, dataloader, tokenizer, device = \

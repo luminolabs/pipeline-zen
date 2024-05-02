@@ -2,7 +2,7 @@ from job_configs._defaults import build_job_config, JobCategory, JobType
 
 _job_config = {
     # Used to associate results and scores in logs and bigquery
-    'job_id': 'alzheimermri-classification',
+    'job_id': 'alzheimermri_image_classification',
 
     # What kind of job is this?
     'category': JobCategory.IMAGE,

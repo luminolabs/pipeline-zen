@@ -1,5 +1,3 @@
-from enum import Enum
-
 from common.utils import JsonEnumBase
 
 DEFAULT_BATCH_SIZE = 8
