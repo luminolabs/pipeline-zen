@@ -6,10 +6,13 @@ import torch
 from torch import nn, optim, Tensor
 
 from common.loss.utils import loss_factory
-from common.utils import get_model_weights_path, load_job_config, setup_logger
+from common.utils import get_model_weights_path, load_job_config, setup_logger, get_root_path
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
 from common.agents.model_scores import TrainScoresAgent
+
+# Point application to the `pipeline-zen_dev` GCP credentials file
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
 
 
 def _train(job_config: dict, job_id: str, job_config_id: str, logger: Logger):
