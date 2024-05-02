@@ -1,5 +1,5 @@
 job_config = {
-    # Used to associate results and metrics
+    # Used to associate results and scores
     'job_id': 'mri-segmentation',
 
     # Dataset provider configuration

@@ -1,8 +1,6 @@
-import asyncio
-import logging
 import os
 import sys
-from datetime import datetime
+from logging import Logger
 
 import torch
 from torch import nn, optim, Tensor
@@ -11,9 +9,10 @@ from common.loss.utils import loss_factory
 from common.utils import get_model_weights_path, load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
+from common.agents.model_scores import TrainScoresAgent
 
 
-def _train(job_config: dict, job_id: str, job_config_id: str, logger: logging.Logger):
+def _train(job_config: dict, job_id: str, job_config_id: str, logger: Logger):
     """
     Trains a model
 
@@ -23,8 +22,14 @@ def _train(job_config: dict, job_id: str, job_config_id: str, logger: logging.Lo
     :param logger: The logging object
     :return:
     """
-    # A logger for logging metrics
-    metrics = setup_logger('train_metrics', job_id)
+    # A logger for logging scores
+    scores_logger = setup_logger('train_workflow_metrics', job_id)
+
+    # Setup logging and bigquery agent for scores
+    scores_agent = TrainScoresAgent(job_id, scores_logger)
+
+    # Log system specs
+    scores_agent.log_system_specs()
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger)
@@ -34,21 +39,18 @@ def _train(job_config: dict, job_id: str, job_config_id: str, logger: logging.Lo
         job_config.get('loss_func_name'), logger,
         **job_config.get('loss_func_args', {}))
     # Optimizer
-    # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
     logger.info("Loss and Optimizer is set")
 
-    # Capture the start time
-    start_time = datetime.now()
-    metrics.info(f"Training started at {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
+    # Log the start time
+    scores_agent.mark_time_start()
 
-    for epoch_cnt in range(job_config.get('num_epochs')):
+    for epoch_num in range(job_config.get('num_epochs')):
         running_loss = 0.0
-        batch_cnt = 0
+        batch_num = 0
         model.train()
         # The dataloader will load a batch of records from the dataset
         for inputs, labels in dataloader:
-            batch_cnt += 1
             model_args = {}
             if tokenizer:
                 inputs = tokenize_inputs(inputs, tokenizer, model_args, device)
@@ -65,22 +67,19 @@ def _train(job_config: dict, job_id: str, job_config_id: str, logger: logging.Lo
             optimizer.step()
             running_loss += loss.item()
             # Log training information
-            metrics.info(f'Batch {batch_cnt}/{len(dataloader)}, Batch Loss: {loss.item()}')
+            scores_agent.log_batch(batch_num + 1, len(dataloader), loss.item(), epoch_num + 1, job_config.get("num_epochs"))
             # Exit if `num_batches` is reached. This option is used when testing,
             # to stop training loop before the actual end of the dataset is reached
-            if job_config.get('num_batches') == batch_cnt:
+            if job_config.get('num_batches') == batch_num + 1:
                 break
+            batch_num += 1
         # Log training information
-        metrics.info(f'Epoch {epoch_cnt + 1}/{job_config.get("num_epochs")}, Loss: {running_loss / len(dataloader)}')
+        scores_agent.log_epoch(epoch_num + 1, job_config.get("num_epochs"), running_loss / len(dataloader))
 
-    # Capture the end time
-    end_time = datetime.now()
-    metrics.info(f"Training ended at {end_time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    # Calculate and print the total training time
-    total_time = end_time - start_time
-    total_minutes = total_time.total_seconds() / 60
-    metrics.info(f"Total training time: {total_minutes:.2f} minutes")
+    # Log the end time
+    scores_agent.mark_time_end()
+    # Log the total training time
+    scores_agent.log_time_elapsed()
 
     logger.info("Training loop complete, now saving the model")
     # Save the trained model

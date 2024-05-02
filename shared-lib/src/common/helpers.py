@@ -32,7 +32,7 @@ def get_device(logger: Logger):
         # see: https://pytorch.org/docs/stable/notes/mps.html
         os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
         device = 'mps'
-    logger.info("Training on (cpu/cuda/mps?) device: " + device)
+    logger.info('Training on (cpu/cuda/mps?) device: ' + device)
     device = torch.device(device)
     return device
 
@@ -119,7 +119,11 @@ def configure_model_and_dataloader(job_config: dict,
         logger=logger,
         **job_config.get('model_base_args', {}))
     if for_inference:
-        model.load_state_dict(torch.load(model_weights_path))
+        # `map_location` is needed when the weights were generated on
+        # a different kind of a device
+        # ex. `cpu` running on this machine vs weights generated with `cuda`
+        model_weights = torch.load(model_weights_path, map_location=device)
+        model.load_state_dict(model_weights)
         logger.info("Using model weights path: " + model_weights_path)
     model.to(device)
     if for_inference:
