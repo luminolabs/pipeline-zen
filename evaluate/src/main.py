@@ -5,7 +5,8 @@ import torch
 import numpy as np
 from torch import Tensor
 
-from common.scores.utils import mask_metrics, scalar_metrics
+from common.agents.model_scores import EvaluateScoresAgent
+from common.scores.utils import mask_scores, scalar_scores
 from common.utils import load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
@@ -17,13 +18,22 @@ async def main(job_config_id: str, model_weights_id: str):
     job_id = job_config["job_id"]
 
     # A logger for logging scores
-    metrics = setup_logger('evaluate_metrics', job_id)
+    scores_logger = setup_logger('evaluate_workflow_metrics', job_id)
     # and a logger for logging everything else
-    logger = setup_logger('evaluate_logger', job_id)
+    logger = setup_logger('evaluate_workflow', job_id)
+
+    # Setup logging and bigquery agent for scores
+    scores_agent = EvaluateScoresAgent(job_id, scores_logger)
+
+    # Log system specs
+    scores_agent.log_system_specs()
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger,
                                        for_inference=True, model_weights_id=model_weights_id)
+
+    # Log the start time
+    scores_agent.mark_time_start()
 
     # Variables to store predictions and actual labels
     all_preds = []
@@ -31,7 +41,6 @@ async def main(job_config_id: str, model_weights_id: str):
     batch_cnt = 0
     with torch.no_grad():
         for inputs, labels in dataloader:
-            batch_cnt += 1
             model_args = {}
             if tokenizer:
                 inputs = tokenize_inputs(inputs, tokenizer, model_args, device,
@@ -47,27 +56,32 @@ async def main(job_config_id: str, model_weights_id: str):
             all_preds.extend(predicted.cpu().numpy())
             all_labels.extend(labels.cpu().numpy())
             # Log run information
-            logger.info(f'Batch {batch_cnt}/{len(dataloader)}')
+            logger.info(f'Batch {batch_cnt + 1}/{len(dataloader)}')
             # Exit if `num_batches` is reached. This option is used when testing,
             # to stop the loop before the actual end of the dataset is reached
-            if job_config.get('num_batches') == batch_cnt:
+            if job_config.get('num_batches') == batch_cnt + 1:
+                logger.info(f'Reached `num_batches` limit: {job_config.get("num_batches")}')
                 break
+            batch_cnt += 1
 
-    # Convert lists to numpy arrays for metric calculation
+    # Convert lists to numpy arrays for scores calculation
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
 
     # Calculate scores
     if len(all_preds.shape) == 1:
-        accuracy, precision, recall, f1 = scalar_metrics(all_preds, all_labels)
+        accuracy, precision, recall, f1 = scalar_scores(all_preds, all_labels)
     else:
-        accuracy, precision, recall, f1 = mask_metrics(torch.tensor(all_preds), torch.tensor(all_labels))
+        accuracy, precision, recall, f1 = mask_scores(torch.tensor(all_preds), torch.tensor(all_labels))
 
     # Log scores
-    metrics.info(f'Accuracy: {accuracy}')
-    metrics.info(f'Precision: {precision}')
-    metrics.info(f'Recall: {recall}')
-    metrics.info(f'F1 Score: {f1}')
+    scores_agent.log_scores(accuracy, precision, recall, f1,
+                            stopped_at=batch_cnt + 1, num_batches=len(dataloader))
+
+    # Log the end time
+    scores_agent.mark_time_end()
+    # Log the total training time
+    scores_agent.log_time_elapsed()
 
 
 job_config_id = sys.argv[1]

@@ -1,7 +1,6 @@
 import asyncio
 import os
 import sys
-from datetime import datetime
 
 import torch
 from torch import nn, optim, Tensor
@@ -10,23 +9,24 @@ from common.loss.utils import loss_factory
 from common.utils import get_model_weights_path, load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
-from common.agents import TrainScoresAgent
+from common.agents.model_scores import TrainScoresAgent
 
 
 async def main(job_config_id: str):
-    # TODO: Store model training checkpoints frequently
-
     # Load job configuration
     job_config = load_job_config(job_config_id)
     job_id = job_config["job_id"]
 
     # A logger for logging scores
-    scores_logger = setup_logger('train_scores', job_id)
+    scores_logger = setup_logger('train_workflow_metrics', job_id)
     # and a logger for logging everything else
-    logger = setup_logger('train', job_id)
+    logger = setup_logger('train_workflow', job_id)
 
     # Setup logging and bigquery agent for scores
     scores_agent = TrainScoresAgent(job_id, scores_logger)
+
+    # Log system specs
+    scores_agent.log_system_specs()
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger)
@@ -36,7 +36,6 @@ async def main(job_config_id: str):
         job_config.get('loss_func_name'), logger,
         **job_config.get('loss_func_args', {}))
     # Optimizer
-    # TODO: Allow using different optimizers through configuration
     optimizer = optim.Adam(model.parameters(), lr=job_config.get('learning_rate'))
     logger.info("Loss and Optimizer is set")
 
@@ -76,11 +75,9 @@ async def main(job_config_id: str):
 
     # Log the end time
     scores_agent.mark_time_end()
-
     # Log the total training time
     scores_agent.log_time_elapsed()
 
-    # TODO: Implement different storage strategies; ex. gcp/s3 bucket
     logger.info("Training loop complete, now saving the model")
     # Save the trained model
     model_weights_path = get_model_weights_path(job_config.get('job_id'))
