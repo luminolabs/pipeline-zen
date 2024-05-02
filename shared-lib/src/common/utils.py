@@ -2,6 +2,8 @@ import importlib
 import logging
 import os
 import sys
+from enum import Enum
+from json import JSONEncoder
 from typing import Optional
 from datetime import datetime
 
@@ -99,3 +101,23 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger
+
+
+class AutoJSONEncoder(JSONEncoder):
+    """
+    A JSON encoder that automatically serializes objects with a `_json()` method,
+    such as `Enums` that implement the `_json()` method.
+    """
+    def default(self, obj):
+        try:
+            return obj._json()
+        except AttributeError:
+            return JSONEncoder.default(self, obj)
+
+
+class JsonEnumBase(Enum):
+    """
+    Base class for JSON serializable enums.
+    """
+    def _json(self):
+        return str(self.value)
