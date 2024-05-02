@@ -35,12 +35,12 @@ def test_base_dataset_preprocessor(single_label_dataset, huggingface_dataset):
 
 
 @patch('common.dataset.provider.huggingface.load_dataset')
-def test_text_transforms_dataset(load_dataset, text_transforms_dataset):
+def test_text_transforms_dataset(load_dataset, text_transforms_dataset, logger):
     # Dataset that requires preprocessing (trim whitespace)
     dataset = [{'input': '   in   ', 'label': '   out   '}]
     # Configure provider dataset with mock data from hugging face
     load_dataset.return_value = dataset
-    text_transforms_dataset.dataset.dataset.fetch()
+    text_transforms_dataset.dataset.dataset.fetch(logger)
     # Confirm that `TextTransformsDataset` properly preprocesses items
     # Note that `text_transforms_dataset` is a fixture that is
     # configured to use the `strip()` preprocessor function
@@ -54,7 +54,7 @@ def test_text_transforms_dataset(load_dataset, text_transforms_dataset):
     dataset = [{'input': 0, 'label': 'out'}]
     # Configure provider dataset with mock data from hugging face
     load_dataset.return_value = dataset
-    text_transforms_dataset.dataset.dataset.fetch()
+    text_transforms_dataset.dataset.dataset.fetch(logger)
     # If the input column datatype is not a string, then this dataset
     # must raise error
     with pytest.raises(AttributeError):
@@ -62,7 +62,7 @@ def test_text_transforms_dataset(load_dataset, text_transforms_dataset):
 
 
 @patch('common.dataset.provider.huggingface.load_dataset')
-def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dataset):
+def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dataset, logger):
     # Configure images to run tests with
     image_in = Image.new('L', (1, 1))
     image_out = Image.new('L', (1, 1))
@@ -71,7 +71,7 @@ def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dat
     dataset = [{'input': image_in, 'label': image_out}]
     # Configure provider dataset with mock data from hugging face
     load_dataset.return_value = dataset
-    torchvision_transforms_dataset.dataset.dataset.fetch()
+    torchvision_transforms_dataset.dataset.dataset.fetch(logger)
     # Confirm that `torchvision_transforms_dataset` properly preprocesses items
     # Note that `torchvision_transforms_dataset` is a fixture that is
     # configured to use the `to_tensor()` preprocessor function
@@ -88,7 +88,7 @@ def test_torchvision_transforms_dataset(load_dataset, torchvision_transforms_dat
     dataset = [{'input': 0, 'label': 'out'}]
     # Configure provider dataset with mock data from hugging face
     load_dataset.return_value = dataset
-    torchvision_transforms_dataset.dataset.dataset.fetch()
+    torchvision_transforms_dataset.dataset.dataset.fetch(logger)
     # If the input column datatype is not a string, then this dataset
     # must raise error
     with pytest.raises(AttributeError):

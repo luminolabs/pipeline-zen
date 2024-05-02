@@ -8,10 +8,10 @@ from common.tokenizer.utils import tokenizer_factory, tokenize_inputs
 
 
 @patch('common.tokenizer.utils.nlp.auto')
-def test_tokenizer_factory(nlp_auto):
+def test_tokenizer_factory(nlp_auto, logger):
     # Invalid `tokenizer_id` raises error
     with pytest.raises(TypeError):
-        tokenizer_factory(tokenizer_id='foo')
+        tokenizer_factory(tokenizer_id='foo', logger=logger)
 
     # Valid function arguments return a new object
     # We don't want to actually fetch the model here, which is
@@ -19,13 +19,13 @@ def test_tokenizer_factory(nlp_auto):
     # we make it return a string value to compare to;
     # we are testing the `model_factory()` not the `resnet()` method
     nlp_auto.return_value = 'bert tokenizer...'
-    r = tokenizer_factory(tokenizer_id='bert')
+    r = tokenizer_factory(tokenizer_id='bert', logger=logger)
     assert r == nlp_auto.return_value
 
 
-def test_tokenize_inputs():
+def test_tokenize_inputs(logger):
     # Tokenize a string, confirm function returns a tensor
-    tokenizer = tokenizer_factory('google-bert/bert-base-cased')
-    device = get_device()
+    tokenizer = tokenizer_factory('google-bert/bert-base-cased', logger)
+    device = get_device(logger)
     r = tokenize_inputs(['some input...'], tokenizer, {}, device)
     assert isinstance(r, Tensor)

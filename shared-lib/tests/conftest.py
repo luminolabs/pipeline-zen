@@ -1,3 +1,5 @@
+import logging
+
 import pytest
 
 from common.dataset.kind.utils import dataset_kind_factory
@@ -6,10 +8,10 @@ from common.dataset.provider.utils import dataset_provider_factory
 
 
 @pytest.fixture
-def huggingface_dataset():
+def huggingface_dataset(logger):
     return dataset_provider_factory(
         dataset_provider='huggingface',
-        dataset_id='foo', split='bar')
+        dataset_id='foo', split='bar', logger=logger)
 
 
 @pytest.fixture
@@ -45,5 +47,15 @@ def mock_dataset_item():
 
 
 @pytest.fixture
+def mock_dataset_item_with_master_col():
+    return {'master': {'input': 'in', 'label': 'out'}}
+
+
+@pytest.fixture
 def mock_dataset(mock_dataset_item):
     return [mock_dataset_item]
+
+
+@pytest.fixture
+def logger():
+    return logging.getLogger('tests')
