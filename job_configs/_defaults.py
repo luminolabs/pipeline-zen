@@ -1,19 +1,19 @@
 from enum import Enum
 
-from common.utils import JsonEnum
+from common.utils import JsonEnumBase
 
 DEFAULT_BATCH_SIZE = 8
 DEFAULT_NUM_EPOCHS = 10
 DEFAULT_NUM_BATCHES = None  # `None` for no limit
 
 
-class JobCategory(JsonEnum):
+class JobCategory(JsonEnumBase):
     NLP = 'nlp'
     IMAGE = 'image'
     LLM = 'llm'
 
 
-class JobType(JsonEnum):
+class JobType(JsonEnumBase):
     CLASSIFICATION = 'classification'
     SEGMENTATION = 'segmentation'
     TEXT_GENERATION = 'text_generation'

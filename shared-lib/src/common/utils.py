@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 import sys
+from abc import ABC
 from enum import Enum
 from json import JSONEncoder
 from typing import Optional
@@ -115,7 +116,7 @@ class AutoJSONEncoder(JSONEncoder):
             return JSONEncoder.default(self, obj)
 
 
-class JsonEnum(Enum):
+class JsonEnumBase(Enum, ABC):
     """
     Base class for JSON serializable enums.
     """
