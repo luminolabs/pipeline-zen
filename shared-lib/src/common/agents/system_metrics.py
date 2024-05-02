@@ -75,8 +75,10 @@ class SystemSpecs:
             self.logger.error('`grep` command not found')
             return None
         # If `/proc/meminfo` isn't found
-        if '/proc/meminfo' in r.stderr.decode('utf-8'):
-            self.logger.error(r.stderr)
+
+        err = r.stderr.decode('utf-8')
+        if '/proc/meminfo' in err:
+            self.logger.error('`/proc/meminfo` is not available in this system')
             return None
 
         s = r.stdout.decode('utf-8')

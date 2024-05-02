@@ -72,12 +72,14 @@ def get_logs_path(job_id: Optional[str] = None) -> str:
     return path
 
 
-def setup_logger(name: str, job_id: Optional[str] = None) -> logging.Logger:
+def setup_logger(name: str, job_id: Optional[str] = None,
+                 default_log_level: int = logging.INFO) -> logging.Logger:
     """
     Sets up a logger
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
+    :param default_log_level: The default log level to use, ex. `logging.INFO`
     :return: A logger instance
     """
     timestamp = datetime.now().strftime('%Y-%m-%d-%H-%M-%S')
@@ -93,8 +95,7 @@ def setup_logger(name: str, job_id: Optional[str] = None) -> logging.Logger:
 
     # Configure logger
     pg_logger = logging.getLogger(name)
-    # Set default logging level to `INFO`
-    pg_logger.setLevel(logging.INFO)
+    pg_logger.setLevel(default_log_level)
     pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger

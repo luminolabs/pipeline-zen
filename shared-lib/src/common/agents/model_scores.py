@@ -68,8 +68,9 @@ class BaseScoresAgent(ABC):
         Log system specs
         :return:
         """
-        self.logger.info(f'System specs: {self.system_specs.get_specs()}')
-        self.bq_insert(operation='log_system_specs', result=self.system_specs.get_specs())
+        system_specs = self.system_specs.get_specs()
+        self.logger.info(f'System specs: {system_specs}')
+        self.bq_insert(operation='log_system_specs', result=system_specs)
 
     def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
         """

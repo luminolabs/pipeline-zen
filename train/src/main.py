@@ -1,6 +1,6 @@
-import asyncio
 import os
 import sys
+from logging import Logger
 
 import torch
 from torch import nn, optim, Tensor
@@ -12,15 +12,18 @@ from common.tokenizer.utils import tokenize_inputs
 from common.agents.model_scores import TrainScoresAgent
 
 
-async def main(job_config_id: str):
-    # Load job configuration
-    job_config = load_job_config(job_config_id)
-    job_id = job_config["job_id"]
+def _train(job_config: dict, job_id: str, job_config_id: str, logger: Logger):
+    """
+    Trains a model
 
+    :param job_config: The job configuration
+    :param job_id: The job id
+    :type job_config_id: The job config id that was entered on the command line
+    :param logger: The logging object
+    :return:
+    """
     # A logger for logging scores
     scores_logger = setup_logger('train_workflow_metrics', job_id)
-    # and a logger for logging everything else
-    logger = setup_logger('train_workflow', job_id)
 
     # Setup logging and bigquery agent for scores
     scores_agent = TrainScoresAgent(job_id, scores_logger)
@@ -84,11 +87,30 @@ async def main(job_config_id: str):
     torch.save(model.module.state_dict()
                if isinstance(model, nn.DataParallel)
                else model.state_dict(), model_weights_path)
-    logger.info("Trained model saved! at: " + model_weights_path +
-                "... use these arguments to evaluate your model: `" +
+    logger.info("Trained model saved! at: " + model_weights_path)
+    logger.info("... use these arguments to evaluate your model: `" +
                 job_config_id + " " +
                 os.path.basename(model_weights_path) + "`")
 
 
-job_config_id = sys.argv[1]
-asyncio.run(main(job_config_id))
+def main(job_config_id: str):
+    """
+    Workflow entry point, mainly for catching unhandled exceptions
+
+    :param job_config_id: The job configuration id; configuration files are found under `job_configs`
+    :return:
+    """
+    # Load job configuration
+    job_config = load_job_config(job_config_id)
+    job_id = job_config["job_id"]
+    # Instantiate the main logger
+    logger = setup_logger('train_logger', job_id)
+    # Run the `train` workflow, and handle unexpected exceptions
+    try:
+        _train(job_config, job_id, job_config_id, logger)
+    except Exception as ex:
+        logger.error(f"Exception occurred: {ex}")
+        raise ex
+
+
+main(job_config_id=sys.argv[1])
