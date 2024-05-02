@@ -1,9 +1,12 @@
 from abc import ABC, abstractmethod
 from datetime import datetime
 from logging import Logger
-from typing import Optional
+from typing import Optional, Union
+import json
 
 from google.cloud import bigquery
+
+from common.agents.system_metrics import SystemSpecs
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
@@ -25,10 +28,13 @@ class BaseScoresAgent(ABC):
         self.time_start = None
         self.time_end = None
 
+        # Configure bigquery
         self.bq_table = self._get_bq_table()
         bq_project = self.bq_table.split('.')[0]
         self.bq = bigquery.Client(bq_project)
         self.bq_table_defaults = self._get_bq_table_defaults()
+        # Get a copy of the system specs
+        self.system_specs = SystemSpecs(logger)
 
     def mark_time_start(self):
         """
@@ -57,7 +63,15 @@ class BaseScoresAgent(ABC):
         self.logger.info(f'Elapsed time: {time_delta_m}')
         self.bq_insert(operation='log_time_elapsed', result=time_delta_m)
 
-    def bq_insert(self, operation: str, result: Optional[str] = None, **kwargs):
+    def log_system_specs(self):
+        """
+        Log system specs
+        :return:
+        """
+        self.logger.info(f'System specs: {self.system_specs.get_specs()}')
+        self.bq_insert(operation='log_system_specs', result=self.system_specs.get_specs())
+
+    def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
         """
         Insert scores into BigQuery table
 
@@ -66,15 +80,26 @@ class BaseScoresAgent(ABC):
         :param kwargs: Dict with scores to be inserted (see `row` contents below)
         :return:
         """
+
+        # Normalize result
+        result_json = None
+        if result:
+            if not isinstance(result, dict):
+                result = {'value': result}
+            result_json = json.dumps(result)
+
+        # Construct row
         row = {
             # Create a new dict from the dicts below;
             # the new dict represents the target table structure
             **{'job_id': self.job_id,
                 'create_ts': str(datetime.now()),
                 'operation': operation,
-                'result': result},
+                'result': result_json},
             **self.bq_table_defaults,
             **kwargs}
+
+        # Handle errors
         errors = self.bq.insert_rows_json(self.bq_table, [row])
         if errors:
             raise SystemError('Encountered errors while inserting rows: {}'.format(errors))

@@ -9,7 +9,7 @@ from common.loss.utils import loss_factory
 from common.utils import get_model_weights_path, load_job_config, setup_logger
 from common.helpers import configure_model_and_dataloader
 from common.tokenizer.utils import tokenize_inputs
-from common.agents import TrainScoresAgent
+from common.agents.model_scores import TrainScoresAgent
 
 
 async def main(job_config_id: str):
@@ -24,6 +24,9 @@ async def main(job_config_id: str):
 
     # Setup logging and bigquery agent for scores
     scores_agent = TrainScoresAgent(job_id, scores_logger)
+
+    # Log system specs
+    scores_agent.log_system_specs()
 
     model, dataloader, tokenizer, device = \
         configure_model_and_dataloader(job_config, logger)
