@@ -50,7 +50,7 @@ export PYTHONPATH=$(pwd)/shared-lib/src:$(pwd)
 ```
 
 Download and copy the GCP service account credentials file to `.secrets` under the repo root. 
-See this guide for instructions
+[Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
 
 For all workflows, ensure dependencies are installed; 
 cd to the workflow's `src` (ex. `train/src`) folder and  run the following:
