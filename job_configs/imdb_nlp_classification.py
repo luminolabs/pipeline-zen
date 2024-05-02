@@ -2,7 +2,7 @@ from job_configs._defaults import build_job_config, JobCategory, JobType
 
 _job_config = {
     # Used to associate results and scores
-    'job_id': 'imdb-sentiment',
+    'job_id': 'imdb_nlp_classification',
 
     # What kind of job is this?
     'category': JobCategory.NLP,

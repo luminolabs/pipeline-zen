@@ -17,7 +17,7 @@ def test_load_job_config():
         load_job_config(job_config_id='foo')
 
     # Valid job config, confirm config is a dict
-    config = load_job_config(job_config_id='imdb_sentiment')
+    config = load_job_config(job_config_id='imdb_nlp_classification')
     assert isinstance(config, dict)
 
 

@@ -7,7 +7,7 @@ import json
 from google.cloud import bigquery
 
 from common.agents.system_metrics import SystemSpecs
-from common.utils import AutoJSONEncoder
+from common.utils import AutoJSONEncoder, system_timestamp_format
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = 'neat-airport-407301.pipeline_zen.train'
@@ -42,18 +42,18 @@ class BaseScoresAgent(ABC):
         Mark, and log the start time of the training job
         """
         self.time_start = datetime.now()
-        str_time = self.time_start.strftime("%Y-%m-%d %H:%M:%S")
+        str_time = self.time_start.strftime(system_timestamp_format)
         self.logger.info(f'Process started at: {str_time}')
-        self.bq_insert(operation='mark_time_start', result=str_time)
+        self.bq_insert(operation='mark_time_start')
 
     def mark_time_end(self):
         """
         Mark, and log the end time of the training job
         """
         self.time_end = datetime.now()
-        str_time = self.time_end.strftime("%Y-%m-%d %H:%M:%S")
+        str_time = self.time_end.strftime(system_timestamp_format)
         self.logger.info(f'Process ended at: {str_time}')
-        self.bq_insert(operation='mark_time_end', result=str_time)
+        self.bq_insert(operation='mark_time_end')
 
     def log_time_elapsed(self):
         """

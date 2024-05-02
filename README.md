@@ -13,9 +13,9 @@ docker run --gpus all \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -v "$PWD/job_configs":/project/job_configs \
-train-workflow imdb_sentiment
+train-workflow --job_config_name imdb_nlp_classification
 ```
-NOTE: `imdb_sentiment` above points to a file under `job_configs`
+NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -30,10 +30,13 @@ docker run --gpus all \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -v "$PWD/job_configs":/project/job_configs \
-evaluate-workflow imdb_sentiment 2024-04-18-16-12-07.pt
+evaluate-workflow \
+    --job_config_name imdb_nlp_classification \
+    --model_weights imdb_nlp_classification/2024-05-02-15-09-31.pt
 ```
-NOTE: `imdb_sentiment` above points to a file under `job_configs` and
-`2024-04-18-16-12-07.pt` points to the model weights file under `.results/model_weights/<job_id>`
+NOTE: `imdb_nlp_classification` above points to a file under `job_configs` and
+`imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the 
+model weights file under `.results/model_weights/`
 
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
 run the following command to change filesystem permissions back to your user:
@@ -60,12 +63,16 @@ cd to the workflow's `src` (ex. `train/src`) folder and  run the following:
 ### Running the train workflow
 
 - cd to the `train/src` folder
-- `python main.py mri_segmentation`
+- `python main.py --job_config_name imdb_nlp_classification`
 
 ### Running the evaluate workflow
 
 - cd to the `evaluate/src` folder
-- `python main.py mri_segmentation 2024-04-18-16-57-23.pt`
+```
+python main.py \
+    --job_config_name imdb_nlp_classification \
+    --model_weights imdb_nlp_classification/2024-05-02-15-09-31.pt
+```
 
 
 ## Outputs
@@ -75,75 +82,79 @@ Examples of workflow outputs
 ### Train Workflow
 
 ```
-docker run --gpus all \                                           
--v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
--v "$PWD/job_configs":/project/job_configs \
--v $GOOGLE_APPLICATION_CREDENTIALS:/project/google_key.json:ro \
-train-workflow mri_segmentation
+$ python main.py --job_config_name imdb_nlp_classification --batch_size 8 --num_epochs 2 --num_batches 3
 
-train_workflow_metrics :: INFO :: System specs: {'gpu': [{'model': 'NVIDIA GeForce RTX 3080 Laptop GPU', 'memory': '16384 MiB', 'pwr_limit': '80.00 W'}], 'cpu': {'architecture': 'x86_64', 'cpus': '16', 'model_name': '11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz', 'threads_per_core': '2'}, 'mem': '31.21 GiB'}
+train_workflow :: INFO :: The job id is: imdb_nlp_classification-2024-05-02-15-31-14
+train_workflow_metrics :: ERROR :: `nvidia-smi` command not found
+train_workflow_metrics :: ERROR :: `lscpu` command not found
+train_workflow_metrics :: ERROR :: `/proc/meminfo` is not available in this system
+train_workflow_metrics :: INFO :: System specs: {'gpu': None, 'cpu': None, 'mem': None}
+train_workflow_metrics :: INFO :: Training job type: `JobCategory.NLP` - `JobType.CLASSIFICATION`
 train_workflow :: INFO :: Loading and configuring dataset!
-train_workflow :: INFO :: Using `rainerberger/Mri_segmentation.train` from `huggingface`
-Downloading readme: 100%|██████████| 522/522 [00:00<00:00, 2.38MB/s]
-train_workflow :: INFO :: Dataset split has 400 records
-train_workflow :: INFO :: Batch size is 8, number of batches is 50
-train_workflow :: INFO :: Training on (cpu/cuda/mps?) device: cuda
+train_workflow :: INFO :: Using `stanfordnlp/imdb.train` from `huggingface`
+train_workflow :: INFO :: Dataset split has 25000 records
+train_workflow :: INFO :: Batch size is 8, number of batches is 3125
+train_workflow :: INFO :: ...but only 3 batches are configured to run
+train_workflow :: INFO :: Using `google-bert/bert-base-cased` tokenizer
+train_workflow :: INFO :: Training on (cpu/cuda/mps?) device: mps
 train_workflow :: INFO :: Fetching the model
-train_workflow :: INFO :: Using `single_label.unet` model
-Downloading: "https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth" to /root/.cache/torch/hub/checkpoints/efficientnet-b4-6ed6700e.pth
-100%|██████████| 74.4M/74.4M [00:02<00:00, 32.0MB/s]
-train_workflow :: INFO :: Using `FocalLoss` loss function
+train_workflow :: INFO :: Using `single_label.cardiffnlp/twitter-roberta-base-sentiment-latest` model
+Some weights of the model checkpoint at cardiffnlp/twitter-roberta-base-sentiment-latest were not used when initializing RobertaForSequenceClassification: ['roberta.pooler.dense.bias', 'roberta.pooler.dense.weight']
+- This IS expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+train_workflow :: INFO :: Using `CrossEntropyLoss` loss function
 train_workflow :: INFO :: Loss and Optimizer is set
-train_workflow_metrics :: INFO :: Process started at: 2024-05-01 04:29:09
-train_workflow_metrics :: INFO :: Batch #1/50, Loss: 0.3290
-...
-...
-train_workflow_metrics :: INFO :: Batch #48/50, Loss: 0.1735
-train_workflow_metrics :: INFO :: Batch #49/50, Loss: 0.1727
-train_workflow_metrics :: INFO :: Batch #50/50, Loss: 0.1737
-train_workflow_metrics :: INFO :: Epoch #3/3, Loss: 0.1737
-train_workflow_metrics :: INFO :: Process ended at: 2024-05-01 04:30:56
-train_workflow_metrics :: INFO :: Elapsed time: 1.77 minutes
+train_workflow_metrics :: INFO :: Process started at: 2024-05-02-15-31-19
+train_workflow_metrics :: INFO :: Batch #1/3125, Loss: 1.2770
+train_workflow_metrics :: INFO :: Batch #2/3125, Loss: 1.5317
+train_workflow_metrics :: INFO :: Batch #3/3125, Loss: 1.0876
+train_workflow_metrics :: INFO :: Epoch #1/2, Loss: 0.0012
+train_workflow_metrics :: INFO :: Batch #1/3125, Loss: 1.4425
+train_workflow_metrics :: INFO :: Batch #2/3125, Loss: 1.0437
+train_workflow_metrics :: INFO :: Batch #3/3125, Loss: 0.9804
+train_workflow_metrics :: INFO :: Epoch #2/2, Loss: 0.0011
+train_workflow_metrics :: INFO :: Process ended at: 2024-05-02-15-31-26
+train_workflow_metrics :: INFO :: Elapsed time: 0.12 minutes
 train_workflow :: INFO :: Training loop complete, now saving the model
-train_workflow :: INFO :: Trained model saved! at: ./.results/model_weights/mri-segmentation/2024-05-01-04-30-56.pt... use these arguments to evaluate your model: `mri_segmentation 2024-05-01-04-30-56.pt`
+train_workflow :: INFO :: Trained model saved! at: ../../.results/model_weights/imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt
 ```
 
 ### Evaluate Workflow
 
 ```
-docker run --gpus all \
--v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
--v "$PWD/job_configs":/project/job_configs \
--v $GOOGLE_APPLICATION_CREDENTIALS:/project/google_key.json:ro \
-evaluate-workflow mri_segmentation 2024-05-01-04-30-56.pt
-evaluate_workflow_metrics :: INFO :: System specs: {'gpu': [{'model': 'NVIDIA GeForce RTX 3080 Laptop GPU', 'memory': '16384 MiB', 'pwr_limit': '80.00 W'}], 'cpu': {'architecture': 'x86_64', 'cpus': '16', 'model_name': '11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz', 'threads_per_core': '2'}, 'mem': '31.21 GiB'}
+$ python main.py --job_config_name imdb_nlp_classification --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt --batch_size 8 --num_batches 3
+
+evaluate_workflow :: INFO :: The job id is: imdb_nlp_classification-2024-05-02-15-32-38
+evaluate_workflow_metrics :: ERROR :: `nvidia-smi` command not found
+evaluate_workflow_metrics :: ERROR :: `lscpu` command not found
+evaluate_workflow_metrics :: ERROR :: `/proc/meminfo` is not available in this system
+evaluate_workflow_metrics :: INFO :: System specs: {'gpu': None, 'cpu': None, 'mem': None}
+evaluate_workflow_metrics :: INFO :: Training job type: `JobCategory.NLP` - `JobType.CLASSIFICATION`
 evaluate_workflow :: INFO :: Loading and configuring dataset!
-evaluate_workflow :: INFO :: Using `rainerberger/Mri_segmentation.test` from `huggingface`
-Downloading readme: 100%|██████████| 522/522 [00:00<00:00, 2.47MB/s]
-evaluate_workflow :: INFO :: Dataset split has 100 records
-evaluate_workflow :: INFO :: Batch size is 8, number of batches is 13
-evaluate_workflow :: INFO :: Training on (cpu/cuda/mps?) device: cuda
+evaluate_workflow :: INFO :: Using `stanfordnlp/imdb.test` from `huggingface`
+evaluate_workflow :: INFO :: Dataset split has 25000 records
+evaluate_workflow :: INFO :: Batch size is 8, number of batches is 3125
+evaluate_workflow :: INFO :: ...but only 3 batches are configured to run
+evaluate_workflow :: INFO :: Using `google-bert/bert-base-cased` tokenizer
+evaluate_workflow :: INFO :: Training on (cpu/cuda/mps?) device: mps
 evaluate_workflow :: INFO :: Fetching the model
-evaluate_workflow :: INFO :: Using `single_label.unet` model
-Downloading: "https://github.com/lukemelas/EfficientNet-PyTorch/releases/download/1.0/efficientnet-b4-6ed6700e.pth" to /root/.cache/torch/hub/checkpoints/efficientnet-b4-6ed6700e.pth
-100%|██████████| 74.4M/74.4M [00:02<00:00, 33.1MB/s]
-evaluate_workflow :: INFO :: Using model weights path: ./.results/model_weights/mri-segmentation/2024-05-01-04-30-56.pt
-evaluate_workflow_metrics :: INFO :: Process started at: 2024-05-01 04:34:57
-evaluate_workflow :: INFO :: Batch 1/13
-evaluate_workflow :: INFO :: Batch 2/13
-...
-...
-evaluate_workflow :: INFO :: Batch 12/13
-evaluate_workflow :: INFO :: Batch 13/13
-evaluate_workflow_metrics :: INFO :: Stopped at batch: 14/13
-Accuracy: 0.9927, 
-Precision: 0.8080, 
-Recall: 0.9958, 
-F1: 0.7803
-evaluate_workflow_metrics :: INFO :: Process ended at: 2024-05-01 04:35:01
-evaluate_workflow_metrics :: INFO :: Elapsed time: 0.08 minutes
+evaluate_workflow :: INFO :: Using `single_label.cardiffnlp/twitter-roberta-base-sentiment-latest` model
+Some weights of the model checkpoint at cardiffnlp/twitter-roberta-base-sentiment-latest were not used when initializing RobertaForSequenceClassification: ['roberta.pooler.dense.bias', 'roberta.pooler.dense.weight']
+- This IS expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing RobertaForSequenceClassification from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+evaluate_workflow :: INFO :: Using model weights path: ../../.results/model_weights/imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt
+evaluate_workflow_metrics :: INFO :: Process started at: 2024-05-02-15-32-43
+evaluate_workflow :: INFO :: Batch 1/3125
+evaluate_workflow :: INFO :: Batch 2/3125
+evaluate_workflow :: INFO :: Batch 3/3125
+evaluate_workflow :: INFO :: Reached `num_batches` limit: 3
+/Users/vasilis/venv/luminoai/lib/python3.11/site-packages/sklearn/metrics/_classification.py:1509: UndefinedMetricWarning: Recall is ill-defined and being set to 0.0 in labels with no true samples. Use `zero_division` parameter to control this behavior.
+  _warn_prf(average, modifier, f"{metric.capitalize()} is", len(result))
+evaluate_workflow_metrics :: INFO :: Stopped at batch: 3/3125
+Accuracy: 0.5833, 
+Precision: 0.5000, 
+Recall: 0.2917, 
+F1: 0.3684
+evaluate_workflow_metrics :: INFO :: Process ended at: 2024-05-02-15-32-44
+evaluate_workflow_metrics :: INFO :: Elapsed time: 0.02 minutes
 ```
