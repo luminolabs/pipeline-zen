@@ -1,0 +1,33 @@
+name: Python package
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  approved:
+    # Only run when PR is approved
+    # Because of the amount of python dependencies in this project,
+    # it takes a while to build the python environment on Github Actions
+    # Thus, it only makes sense to run this GA (github action), once
+    # the PR is approved.
+    # Later we can mock some of the python dependencies and exclude them from
+    # needing to be installed when running unit tests.
+    # See: https://linear.app/luminoai/issue/LUM-130/reduce-number-of-python-dependencies-needed-to-run-unit-tests
+    #
+    if: github.event.review.state == 'APPROVED'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Update pip
+        run: python -m pip install --upgrade pip setuptools wheel
+      - name: Install python dependencies for `shared-lib`
+        run: python -m pip install -r shared-lib/requirements.txt
+      - name: Install unit test specific python dependencies for `shared-lib`
+        run: python -m pip install -r shared-lib/requirements-test.txt
+      - name: Run unit tests
+        run: PYTHONPATH=./shared-lib/src:./ pytest -vv
