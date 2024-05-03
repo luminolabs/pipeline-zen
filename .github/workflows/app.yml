@@ -1,12 +1,22 @@
 name: Python package
 
-on: [push]
+on:
+  pull_request_review:
+    types: [submitted]
 
 jobs:
-  build:
-
+  approved:
+    # Only run when PR is approved
+    # Because of the amount of python dependencies in this project,
+    # it takes a while to build the python environment on Github Actions
+    # Thus, it only makes sense to run this GA (github action), once
+    # the PR is approved.
+    # Later we can mock some of the python dependencies and exclude them from
+    # needing to be installed when running unit tests.
+    # See: https://linear.app/luminoai/issue/LUM-130/reduce-number-of-python-dependencies-needed-to-run-unit-tests
+    #
+    if: github.event.review.state == 'APPROVED'
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
