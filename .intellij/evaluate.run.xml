@@ -24,7 +24,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/evaluate/src/main.py" />
-    <option name="PARAMETERS" value="imdb_sentiment 2024-05-01-17-58-36.pt" />
+    <option name="PARAMETERS" value="--job_config_name imdb_nlp_classification --model_weights 2024-04-18-16-12-07.pt --job_id imdb_nlp_classification-experiment1 --batch_size 8 --num_batches 10" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />
