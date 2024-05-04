@@ -1,46 +1,6 @@
 import argparse
-import os
 
-from common.utils import load_job_config, setup_logger, get_root_path, get_system_timestamp
-from evaluate import run
-
-# Point application to the `pipeline-zen_dev` GCP credentials file
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
-
-
-def main(job_config_name: str, model_weights: str, job_id: str, batch_size: int, num_batches: int):
-    """
-    Workflow entry point, mainly for catching unhandled exceptions
-
-    :param job_config_name: The job configuration id; configuration files are found under `job_configs`
-    :param model_weights: Which model weights to use for inference
-    :param job_id: The job id to use for logs, results, etc.
-    :param batch_size: The batch size to split the data into
-    :param num_batches: How many batches to run on each epoch
-    :return:
-    """
-    # Load job configuration
-    job_config = load_job_config(job_config_name)
-
-    # Overwrite job config values with values from input, if any
-    if job_id:
-        job_config['job_id'] = job_id
-    else:
-        timestamp = get_system_timestamp()
-        job_config['job_id'] = job_config['job_id'] + '-' + timestamp
-    if batch_size:
-        job_config['batch_size'] = batch_size
-    if num_batches:
-        job_config['num_batches'] = num_batches
-
-    # Instantiate the main logger
-    logger = setup_logger('evaluate_workflow', job_config["job_id"])
-    # Run the `evaluate` workflow, and handle unexpected exceptions
-    try:
-        run(job_config, model_weights, logger)
-    except Exception as ex:
-        logger.error(f"Exception occurred: {ex}")
-        raise ex
+from evaluate import main
 
 
 def parse_args() -> tuple:

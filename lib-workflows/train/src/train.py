@@ -1,3 +1,4 @@
+import os
 from logging import Logger
 
 import torch
@@ -7,7 +8,10 @@ from common.agents.model_scores import TrainScoresAgent
 from common.helpers import configure_model_and_dataloader
 from common.loss.utils import loss_factory
 from common.tokenizer.utils import tokenize_inputs
-from common.utils import setup_logger, get_model_weights_path, get_root_path
+from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config, get_system_timestamp
+
+# Point application to the `pipeline-zen_dev` GCP credentials file
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
 
 
 def run(job_config: dict, logger: Logger):
@@ -15,7 +19,6 @@ def run(job_config: dict, logger: Logger):
     Trains a model
 
     :param job_config: The job configuration
-    :type job_config_id: The job config id that was entered on the command line
     :param logger: The logging object
     :return:
     """
@@ -97,3 +100,40 @@ def run(job_config: dict, logger: Logger):
                if isinstance(model, nn.DataParallel)
                else model.state_dict(), model_weights_path)
     logger.info("Trained model saved! at: " + model_weights_path)
+
+
+def main(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, num_batches: int):
+    """
+    Workflow entry point, mainly for catching unhandled exceptions
+
+    :param job_config_name: The job configuration id; configuration files are found under `job_configs`
+    :param job_id: The job id to use for logs, results, etc
+    :param batch_size: The batch size to split the data into
+    :param num_epochs: The number of epochs to train on
+    :param num_batches: How many batches to run on each epoch
+    :return:
+    """
+    # Load job configuration
+    job_config = load_job_config(job_config_name)
+
+    # Overwrite job config values with values from input, if any
+    if job_id:
+        job_config['job_id'] = job_id
+    else:
+        timestamp =get_system_timestamp()
+        job_config['job_id'] = job_config['job_id'] + '-' + timestamp
+    if batch_size:
+        job_config['batch_size'] = batch_size
+    if num_epochs:
+        job_config['num_epochs'] = num_epochs
+    if num_batches:
+        job_config['num_batches'] = num_batches
+
+    # Instantiate the main logger
+    logger = setup_logger('train_workflow', job_config['job_id'])
+    # Run the `train` workflow, and handle unexpected exceptions
+    try:
+        run(job_config, logger)
+    except Exception as ex:
+        logger.error(f"Exception occurred: {ex}")
+        raise ex
