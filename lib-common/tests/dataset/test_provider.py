@@ -22,7 +22,7 @@ def test_base_dataset_provider():
 
     # Downloads cache dir is a string
     assert BaseDatasetProvider.get_cache_dir() == \
-           '../../.cache/datasets/basedatasetprovider'
+           './.cache/datasets/basedatasetprovider'
 
 
 @patch('common.dataset.provider.huggingface.load_dataset')

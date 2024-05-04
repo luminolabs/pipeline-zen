@@ -1,38 +1,57 @@
+## Running locally (recommended)
+
+### First time setup
+
+Download and copy the GCP service account credentials file to `.secrets` under the repo root.
+[Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
+
+Install python dependencies:
+```
+./scripts/install-deps.sh
+```
+
+### Running the train workflow
+
+```
+./scripts/run-local.sh train \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3
+```
+
+### Running the evaluate workflow
+
+```
+./scripts/run-local.sh evaluate \
+  --job_config_name imdb_nlp_classification \
+  --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
+  --batch_size 8 \
+  --num_batches 3
+```
+
+
 ## Running with docker
 
 ### Running the train workflow
 
-cd to this folder (repo root) and run:
 ```
-docker build --build-arg TARGET_WORKFLOW=train -t train-workflow .
-```
-```
-docker run --gpus all \
--v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
--v "$PWD/.secrets":/project/.secrets \
--v "$PWD/job_configs":/project/job_configs \
-train-workflow --job_config_name imdb_nlp_classification
+./scripts/run-docker.sh train \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3
 ```
 NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
-cd to this folder (repo root) and run:
 ```
-docker build --build-arg TARGET_WORKFLOW=evaluate -t evaluate-workflow .
-```
-```
-docker run --gpus all \
--v "$PWD/.cache":/project/.cache \
--v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
--v "$PWD/.secrets":/project/.secrets \
--v "$PWD/job_configs":/project/job_configs \
-evaluate-workflow \
-    --job_config_name imdb_nlp_classification \
-    --model_weights imdb_nlp_classification/2024-05-02-15-09-31.pt
+./scripts/run-docker.sh evaluate \
+  --job_config_name imdb_nlp_classification \
+  --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
+  --batch_size 8 \
+  --num_batches 3
 ```
 NOTE: `imdb_nlp_classification` above points to a file under `job_configs` and
 `imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the 
@@ -45,36 +64,6 @@ sudo chown $(whoami) -R .results .cache .logs .secrets
 ```
 
 
-## Running locally
-
-Set PYTHONPATH to include `share-lib` and `job_configs`; cd to this folder (repo root) and run:
-```
-export PYTHONPATH=$(pwd)/shared-lib/src:$(pwd)
-```
-
-Download and copy the GCP service account credentials file to `.secrets` under the repo root. 
-[Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
-
-For all workflows, ensure dependencies are installed; 
-cd to the workflow's `src` (ex. `train/src`) folder and  run the following:
-- `pip install -Ur ../requirements.txt`
-- `pip install -Ur ../../shared-lib/requirements.txt`
-
-### Running the train workflow
-
-- cd to the `train/src` folder
-- `python main.py --job_config_name imdb_nlp_classification`
-
-### Running the evaluate workflow
-
-- cd to the `evaluate/src` folder
-```
-python main.py \
-    --job_config_name imdb_nlp_classification \
-    --model_weights imdb_nlp_classification/2024-05-02-15-09-31.pt
-```
-
-
 ## Outputs
 
 Examples of workflow outputs
@@ -82,7 +71,11 @@ Examples of workflow outputs
 ### Train Workflow
 
 ```
-$ python main.py --job_config_name imdb_nlp_classification --batch_size 8 --num_epochs 2 --num_batches 3
+$ ./scripts/run-local.sh train \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3
 
 train_workflow :: INFO :: The job id is: imdb_nlp_classification-2024-05-02-15-31-14
 train_workflow_metrics :: ERROR :: `nvidia-smi` command not found
@@ -122,7 +115,11 @@ train_workflow :: INFO :: Trained model saved! at: ../../.results/model_weights/
 ### Evaluate Workflow
 
 ```
-$ python main.py --job_config_name imdb_nlp_classification --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt --batch_size 8 --num_batches 3
+$ ./scripts/run-local.sh evaluate \
+  --job_config_name imdb_nlp_classification \
+  --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
+  --batch_size 8 \
+  --num_batches 3
 
 evaluate_workflow :: INFO :: The job id is: imdb_nlp_classification-2024-05-02-15-32-38
 evaluate_workflow_metrics :: ERROR :: `nvidia-smi` command not found
