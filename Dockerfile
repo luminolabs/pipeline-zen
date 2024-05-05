@@ -20,21 +20,21 @@ WORKDIR /project
 # and we don't want them to be build every time we add a new entry in requirements.txt
 RUN pip install torch torchvision transformers
 
-# Install python libraries needed by the shared-lib
-COPY shared-lib/requirements.txt ./requirements-shared.txt
-RUN pip install -r requirements-shared.txt
+# Install python libraries needed by the lib-common
+COPY lib-common/requirements.txt ./requirements-lib-common.txt
+RUN pip install -r requirements-lib-common.txt
 
 ARG TARGET_WORKFLOW
 
 # Install python libraries needed by the workflow
-COPY ${TARGET_WORKFLOW}/requirements.txt .
+COPY lib-workflows/${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
 
-# Copy shared-lib source code
-COPY shared-lib/src .
+# Copy lib-common source code
+COPY lib-common/src .
 
 # Copy workflow source code
-COPY ${TARGET_WORKFLOW}/src .
+COPY lib-workflows/${TARGET_WORKFLOW}/src .
 
 # Set environment to `docker`
 # This affects a few runtime options such as cache and results folders
@@ -46,4 +46,4 @@ ENV ENVIRONMENT=docker
 ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
 
 # Run workflow
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "cli.py"]

@@ -31,10 +31,11 @@ def get_root_path() -> str:
     This allows workflows to share results, cache, etc
     :return: Root path
     """
-    if environment == 'local':
-        return os.path.join('..', '..')
-    elif environment == 'docker':
+    ends_with = 'pipeline-zen' if environment == 'local' else 'project'
+    if os.getcwd().endswith(ends_with):
         return '.'
+    else:
+        raise EnvironmentError('Please run workflows from the root of the pipeline-zen directory')
 
 
 def load_job_config(job_config_id: str) -> dict:
