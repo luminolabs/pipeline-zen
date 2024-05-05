@@ -46,4 +46,4 @@ ENV ENVIRONMENT=docker
 ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
 
 # Run workflow
-ENTRYPOINT ["python", "main.py"]
+ENTRYPOINT ["python", "cli.py"]
