@@ -7,15 +7,38 @@ from json import JSONEncoder
 from typing import Optional
 from datetime import datetime
 
-# This affects a few runtime options such as cache and results folders
-# Available options so far: `docker`, `local`
-environment = os.environ.get("ENVIRONMENT", 'local')
 
 # Job configuration path in relation to repository root path
-job_config_dir = 'job_configs'
+job_configs_module = 'job_configs'
 
 # Timestamp format to use for logs, results, etc
 system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
+
+
+def get_environment() -> str:
+    """
+    Returns the environment variable name
+    :return:
+    """
+    return os.environ.get("ENVIRONMENT", 'local')
+
+
+def add_environment(environment: str):
+    """
+    Stack environment names; ex `local-celery` is a `local` and a `celery` environment
+    :param environment: The environment name to add
+    :return:
+    """
+    os.environ['ENVIRONMENT'] = get_environment() + '-' + environment
+
+
+def is_environment(environment: str) -> bool:
+    """
+    Checks if the environment name is an environment
+    :param environment: The environment name to check
+    :return: Whether the current environment is the one in question
+    """
+    return environment in get_environment()
 
 
 def get_system_timestamp() -> str:
@@ -31,25 +54,25 @@ def get_root_path() -> str:
     This allows workflows to share results, cache, etc
     :return: Root path
     """
-    ends_with = 'pipeline-zen' if environment == 'local' else 'project'
+    ends_with = 'pipeline-zen' if is_environment('local') else 'project'
     if os.getcwd().endswith(ends_with):
         return '.'
     else:
         raise EnvironmentError('Please run workflows from the root of the pipeline-zen directory')
 
 
-def load_job_config(job_config_id: str) -> dict:
+def load_job_config(job_config_name: str) -> dict:
     """
     Loads a job config from a job config file
 
-    :param job_config_id: Job config name; this is the file name without the `.py` extension
+    :param job_config_name: Job config name; this is the file name without the `.py` extension
     :return: Job config dict
     """
     try:
-        return importlib.import_module(f'{job_config_dir}.{job_config_id}').job_config
+        return importlib.import_module(f'{job_configs_module}.{job_config_name}').job_config
     except ModuleNotFoundError:
         # Raise `FileNotFoundError` as it's more intuitive message to give to the user
-        raise FileNotFoundError(f'job_config_id: {job_config_id} not found under {job_config_dir}')
+        raise FileNotFoundError(f'job_config_id: {job_config_name} not found under {job_configs_module}')
 
 
 def get_results_path() -> str:
@@ -94,12 +117,11 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     :param default_log_level: The default log level to use, ex. `logging.INFO`
     :return: A logger instance
     """
-    timestamp = get_system_timestamp()
-    log_format = logging.Formatter('%(name)s :: %(levelname)s :: %(message)s')
+    log_format = logging.Formatter('%(message)s')
 
     # Log to stdout and to file
     stdout_handler = logging.StreamHandler(sys.stdout)
-    file_handler = logging.FileHandler("{0}/{1}.log".format(get_logs_path(job_id), f'{name}_{timestamp}'))
+    file_handler = logging.FileHandler(os.path.join(get_logs_path(job_id), f'{name}.log'))
 
     # Set the logger format
     stdout_handler.setFormatter(log_format)
@@ -108,7 +130,9 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     # Configure logger
     pg_logger = logging.getLogger(name)
     pg_logger.setLevel(default_log_level)
-    pg_logger.addHandler(stdout_handler)
+    pg_logger.propagate = False
+    if not is_environment('celery'):
+        pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger
 

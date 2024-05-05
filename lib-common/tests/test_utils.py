@@ -2,8 +2,8 @@ from logging import Logger
 
 import pytest
 
-from common.utils import get_root_path, load_job_config, get_model_weights_path, get_results_path, environment, \
-    get_logs_path, setup_logger
+from common.utils import get_root_path, load_job_config, get_model_weights_path, get_results_path, \
+    get_logs_path, setup_logger, get_environment
 
 
 def test_get_root_path():
@@ -14,10 +14,10 @@ def test_get_root_path():
 def test_load_job_config():
     # Invalid job config, raise error
     with pytest.raises(FileNotFoundError):
-        load_job_config(job_config_id='foo')
+        load_job_config(job_config_name='foo')
 
     # Valid job config, confirm config is a dict
-    config = load_job_config(job_config_id='imdb_nlp_classification')
+    config = load_job_config(job_config_name='imdb_nlp_classification')
     assert isinstance(config, dict)
 
 
@@ -43,4 +43,4 @@ def test_setup_logger():
 
 def test_environment():
     # `environment` defaults to `local`
-    assert environment == 'local'
+    assert get_environment() == 'local'

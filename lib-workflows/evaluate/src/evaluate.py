@@ -15,14 +15,14 @@ from common.utils import setup_logger, get_root_path, load_job_config, get_syste
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
 
 
-def run(job_config: dict, model_weights_id: str, logger: Logger):
+def run(job_config: dict, model_weights_id: str, logger: Logger) -> tuple:
     """
     Evaluates a model
 
     :param job_config: The job configuration
     :param model_weights_id: Which model weights to use for inference
     :param logger: The logging object
-    :return:
+    :return: A tuple containing the accuracy, precision, recall, f1 score
     """
 
     # Verify working dir is repo root
@@ -99,6 +99,8 @@ def run(job_config: dict, model_weights_id: str, logger: Logger):
     # Log the total training time
     scores_agent.log_time_elapsed()
 
+    return accuracy, precision, recall, f1
+
 
 def main(job_config_name: str, model_weights: str, job_id: str, batch_size: int, num_batches: int):
     """
@@ -109,7 +111,7 @@ def main(job_config_name: str, model_weights: str, job_id: str, batch_size: int,
     :param job_id: The job id to use for logs, results, etc.
     :param batch_size: The batch size to split the data into
     :param num_batches: How many batches to run on each epoch
-    :return:
+    :return: A tuple containing the accuracy, precision, recall, f1 score
     """
     # Load job configuration
     job_config = load_job_config(job_config_name)
@@ -129,7 +131,7 @@ def main(job_config_name: str, model_weights: str, job_id: str, batch_size: int,
     logger = setup_logger('evaluate_workflow', job_config["job_id"])
     # Run the `evaluate` workflow, and handle unexpected exceptions
     try:
-        run(job_config, model_weights, logger)
+        return run(job_config, model_weights, logger)
     except Exception as ex:
         logger.error(f"Exception occurred: {ex}")
         raise ex
