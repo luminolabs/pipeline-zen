@@ -1,3 +1,3 @@
-paths=$(pwd):$(pwd)/lib-common/src:$(pwd)/lib-workflows/train/src:$(pwd)/lib-workflows/evaluate/src
+paths=$(pwd):$(pwd)/lib-common/src:$(pwd)/lib-workflows/$1/src
 
-PYTHONPATH=$paths python lib-workflows/$1/src/cli.py "${@:2}"
+PYTHONPATH=$paths python lib-workflows/$1/src/$1/cli.py "${@:2}"

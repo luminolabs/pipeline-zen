@@ -8,7 +8,7 @@ import uuid
 from enum import Enum
 from json import JSONEncoder
 from os.path import basename
-from typing import Optional, Union
+from typing import Optional, Union, List
 from datetime import datetime
 
 from google.cloud import storage
@@ -53,13 +53,15 @@ def add_environment(environment: Env):
     os.environ['ENVIRONMENT'] = get_environment() + '-' + environment.value
 
 
-def is_environment(environment: Env) -> bool:
+def is_environment(environment: Union[Env, List[Env]]) -> bool:
     """
     Checks if the environment name is an environment
     :param environment: The environment name to check
     :return: Whether the current environment is the one in question
     """
-    return environment.value in get_environment()
+    if isinstance(environment, Env):
+        environment = [environment]
+    return any(x.value in get_environment() for x in environment)
 
 
 def get_system_timestamp() -> str:

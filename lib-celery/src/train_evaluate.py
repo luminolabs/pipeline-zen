@@ -5,7 +5,7 @@ from celery import Celery, chain
 
 import celeryconfig
 from common.utils import add_environment, Env, get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs
+    upload_local_directory_to_gcs, is_environment
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
 from evaluate.workflow import main as _evaluate
@@ -58,9 +58,13 @@ def schedule(*args):
     train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
     evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
-    # Output from `train` automatically goes into `evaluate` method's first argument,
-    # which in this case is the relative path to the trained weights.
-    chain(train.s(None, *train_args), evaluate.s(*evaluate_args), upload_results.s(job_id))()
+    # Define workflow `train` -> `evaluate`
+    tasks = [train.s(None, *train_args), evaluate.s(*evaluate_args)]
+    # Upload job results when not on a local or test environment
+    if not is_environment([Env.LOCAL, Env.TESTING]):
+        tasks.append(upload_results.s(job_id))
+    # Schedule tasks
+    chain(*tasks)()
 
 
 def start_worker():
