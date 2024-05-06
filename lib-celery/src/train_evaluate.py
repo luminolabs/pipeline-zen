@@ -68,8 +68,11 @@ def schedule(*args):
 
 
 def start_worker():
-    # Start the celery worker
-    # NOTE: The worker will continue running after the task queue is processed
+    """
+    Starts the celery worker
+    NOTE: The worker will continue running after the task queue is processed
+    :return:
+    """
     argv = [
         'worker',
         '--loglevel=INFO',
