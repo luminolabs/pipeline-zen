@@ -9,7 +9,8 @@ from common.agents.model_scores import EvaluateScoresAgent
 from common.helpers import configure_model_and_dataloader
 from common.scores.utils import scalar_scores, mask_scores
 from common.tokenizer.utils import tokenize_inputs
-from common.utils import setup_logger, get_root_path, load_job_config, get_system_timestamp, get_or_generate_job_id
+from common.utils import setup_logger, get_root_path, load_job_config, get_system_timestamp, get_or_generate_job_id, \
+    save_job_results
 
 # Point application to the `pipeline-zen_dev` GCP credentials file
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
@@ -93,12 +94,14 @@ def run(job_config: dict, logger: Logger) -> dict:
     # Log the total evaluation time
     scores_agent.log_time_elapsed()
 
-    return {
+    results = {
         'accuracy': accuracy,
         'precision': precision,
         'recall': recall,
         'f1': f1,
     }
+    save_job_results(job_id, results, 'evaluate')
+    return results
 
 
 def main(job_config_name: str, job_id: str,
