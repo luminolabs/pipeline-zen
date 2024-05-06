@@ -3,7 +3,7 @@ from logging import Logger
 import pytest
 
 from common.utils import get_root_path, load_job_config, get_model_weights_path, get_results_path, \
-    get_logs_path, setup_logger, get_environment
+    get_logs_path, setup_logger, get_environment, Env
 
 
 def test_get_root_path():
@@ -43,4 +43,4 @@ def test_setup_logger():
 
 def test_environment():
     # `environment` defaults to `local`
-    assert get_environment() == 'local'
+    assert get_environment(Env.TESTING) == Env.TESTING.value

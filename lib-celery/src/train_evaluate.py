@@ -5,7 +5,7 @@ import uuid
 from celery import Celery, chain
 
 import celeryconfig
-from common.utils import add_environment
+from common.utils import add_environment, Env
 from train import main as _train
 from evaluate import main as _evaluate
 
@@ -18,7 +18,7 @@ if platform.system() == 'Darwin':
     os.environ['TOKENIZERS_PARALLELISM'] = '0'
 
 # Update environment name
-add_environment('celery')
+add_environment(Env.CELERY)
 
 # Setup Celery App
 app = Celery('train_evaluate')
@@ -53,6 +53,8 @@ def test():
     # which in this case is the relative path to the trained weights.
     chain(train.s(*args1), evaluate.s(*args2))()
 
+
+def test_start_worker():
     # Start the celery worker
     # NOTE: The worker has to be stopped manually when the job above is finished
     argv = [
@@ -65,3 +67,4 @@ def test():
 
 if __name__ == '__main__':
     test()
+    test_start_worker()

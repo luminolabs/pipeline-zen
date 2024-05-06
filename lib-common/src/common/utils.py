@@ -8,6 +8,18 @@ from typing import Optional
 from datetime import datetime
 
 
+class Env(Enum):
+    """
+    List of all available environments
+    """
+    PRODUCTION = 'prod'
+    DEVELOPMENT = 'dev'
+    TESTING = 'test'
+    LOCAL = 'local'
+    DOCKER = 'docker'
+    CELERY = 'celery'
+
+
 # Job configuration path in relation to repository root path
 job_configs_module = 'job_configs'
 
@@ -15,30 +27,32 @@ job_configs_module = 'job_configs'
 system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
 
 
-def get_environment() -> str:
+def get_environment(default: Optional[Env] = None) -> str:
     """
-    Returns the environment variable name
-    :return:
+    :return: Returns the environment name
+    ex. `local`, `dev`, `prod`, `docker`, `celery`, etc
+    Environments can be stacked: ex. `local-celery` or `dev-docker-celery`
     """
-    return os.environ.get("ENVIRONMENT", 'local')
+    default = default and default.value or Env.LOCAL.value
+    return os.environ.get("ENVIRONMENT", default)
 
 
-def add_environment(environment: str):
+def add_environment(environment: Env):
     """
     Stack environment names; ex `local-celery` is a `local` and a `celery` environment
     :param environment: The environment name to add
     :return:
     """
-    os.environ['ENVIRONMENT'] = get_environment() + '-' + environment
+    os.environ['ENVIRONMENT'] = get_environment() + '-' + environment.value
 
 
-def is_environment(environment: str) -> bool:
+def is_environment(environment: Env) -> bool:
     """
     Checks if the environment name is an environment
     :param environment: The environment name to check
     :return: Whether the current environment is the one in question
     """
-    return environment in get_environment()
+    return environment.value in get_environment()
 
 
 def get_system_timestamp() -> str:
@@ -54,7 +68,7 @@ def get_root_path() -> str:
     This allows workflows to share results, cache, etc
     :return: Root path
     """
-    ends_with = 'pipeline-zen' if is_environment('local') else 'project'
+    ends_with = 'pipeline-zen' if is_environment(Env.LOCAL) else 'project'
     if os.getcwd().endswith(ends_with):
         return '.'
     else:
@@ -130,7 +144,7 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     # Configure logger
     pg_logger = logging.getLogger(name)
     pg_logger.setLevel(default_log_level)
-    if not is_environment('celery'):
+    if not is_environment(Env.CELERY):
         pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger
