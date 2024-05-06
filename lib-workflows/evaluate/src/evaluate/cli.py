@@ -10,8 +10,6 @@ def parse_args() -> tuple:
     parser = argparse.ArgumentParser(description="The model evaluation workflow")
     parser.add_argument('-jc', '--job_config_name', nargs=1, type=str, required=True,
                         help='The name of the job config file, without the `.py` extension')
-    parser.add_argument('-mw', '--model_weights', nargs=1, type=str, required=True,
-                        help='The model weights file to use')
     parser.add_argument('-jid', '--job_id', nargs=1, type=str, required=False,
                         help='The job_id to use for evaluation; '
                              'logs and other job results and artifacts will be named after this.')
@@ -24,12 +22,11 @@ def parse_args() -> tuple:
     args = parser.parse_args()
 
     job_config_name = args.job_config_name and args.job_config_name[0]
-    model_weights = args.model_weights and args.model_weights[0]
     job_id = args.job_id and args.job_id[0]
     batch_size = args.batch_size and args.batch_size[0]
     num_batches = args.num_batches and args.num_batches[0]
 
-    return job_config_name, model_weights, job_id, batch_size, num_batches
+    return job_config_name, job_id, batch_size, num_batches
 
 
 if __name__ == '__main__':

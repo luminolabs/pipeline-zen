@@ -28,7 +28,7 @@ def test_get_results_path():
 
 def test_get_model_weights_path():
     # Path is of type `str`
-    assert isinstance(get_model_weights_path(), str)
+    assert isinstance(get_model_weights_path('test_job_id'), str)
 
 
 def test_get_logs_path():

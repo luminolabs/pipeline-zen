@@ -81,6 +81,7 @@ class BaseScoresAgent(ABC):
         :return:
         """
         self.logger.info(f'Training job type: `{job_config["category"]}` - `{job_config["type"]}`')
+        self.logger.info(f'Job configuration: {job_config}')
         self.bq_insert(operation='log_job_config', result=job_config)
 
     def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):

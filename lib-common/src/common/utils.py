@@ -2,6 +2,7 @@ import importlib
 import logging
 import os
 import sys
+import uuid
 from enum import Enum
 from json import JSONEncoder
 from typing import Optional
@@ -99,16 +100,12 @@ def get_results_path() -> str:
     return path
 
 
-def get_model_weights_path(job_id: Optional[str] = None) -> str:
+def get_model_weights_path(job_id: str) -> str:
     """
     :param job_id: Job id to use as part of the model weights path
     :return: Returns the path to the model weights file
     """
-    path_list = ()
-    if job_id:
-        timestamp = get_system_timestamp()
-        path_list = (job_id, timestamp + '.pt')
-    path = os.path.join(get_results_path(), 'model_weights', *path_list)
+    path = os.path.join(get_results_path(), 'model_weights', job_id,  'weights.pt')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -123,12 +120,14 @@ def get_logs_path(job_id: Optional[str] = None) -> str:
 
 
 def setup_logger(name: str, job_id: Optional[str] = None,
+                 add_stdout: bool = True,
                  default_log_level: int = logging.INFO) -> logging.Logger:
     """
     Sets up a logger
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
+    :param add_stdout: Whether to add the stdout logger or not
     :param default_log_level: The default log level to use, ex. `logging.INFO`
     :return: A logger instance
     """
@@ -145,10 +144,25 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     # Configure logger
     pg_logger = logging.getLogger(name)
     pg_logger.setLevel(default_log_level)
-    if not is_environment(Env.CELERY):
+    if add_stdout and not is_environment(Env.CELERY):
         pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger
+
+
+def get_or_generate_job_id(job_config_name: str, job_id: Optional[str] = None) -> str:
+    """
+    Returns the job id if set -
+    Otherwise generates a new job id, in this form `<default job id from the job configuration>-<UUID>`
+
+    :param job_config_name: The name of the job configuration
+    :param job_id: Job id to use, or if empty, generates a new job id
+    :return: The input job id, or the generated job id
+    """
+    if not job_id:
+        job_config = load_job_config(job_config_name)
+        job_id = job_config['job_id'] + '-' + str(uuid.uuid4())
+    return job_id
 
 
 class AutoJSONEncoder(JSONEncoder):
