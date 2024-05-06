@@ -58,12 +58,12 @@ def schedule(*args):
     train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
     evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
-    # Define workflow `train` -> `evaluate`
+    # Define workflow tasks: `train` -> `evaluate`
     tasks = [train.s(None, *train_args), evaluate.s(*evaluate_args)]
-    # Upload job results when not on a local or test environment
+    # Add task to upload job results (when not on a local or test environment)
     if not is_environment([Env.LOCAL, Env.TESTING]):
         tasks.append(upload_results.s(job_id))
-    # Schedule tasks
+    # Send task chain to celery scheduler
     chain(*tasks)()
 
 
