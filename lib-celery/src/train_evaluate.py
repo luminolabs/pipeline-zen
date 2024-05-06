@@ -8,7 +8,7 @@ import celeryconfig
 from common.utils import add_environment, Env
 from train import main as _train
 from evaluate import main as _evaluate
-from train_cli import parse_args
+from train_cli import parse_args as train_parse_args
 
 # OSX compatibility
 if platform.system() == 'Darwin':
@@ -39,7 +39,7 @@ def evaluate(model_weights: str, job_config_name: str, job_id: str, batch_size: 
 
 def schedule(*args):
     """
-    Testing function; runs the train and evaluate workflows one after the other
+    Runs the train and evaluate workflows one after the other
     :param args: Arguments passed to the train and evaluate functions
     :return:
     """
@@ -54,7 +54,7 @@ def schedule(*args):
 
 def start_worker():
     # Start the celery worker
-    # NOTE: The worker has to be stopped manually when the job above is finished
+    # NOTE: The worker will continue running after the task queue is processed
     argv = [
         'worker',
         '--loglevel=INFO',
@@ -64,5 +64,5 @@ def start_worker():
 
 
 if __name__ == '__main__':
-    schedule(*parse_args())
+    schedule(*train_parse_args())
     start_worker()
