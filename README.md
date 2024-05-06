@@ -10,6 +10,15 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
+### Run train and evaluate workflows in one go
+```
+./scripts/run-celery.sh \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3
+```
+
 ### Running the train workflow
 
 ```

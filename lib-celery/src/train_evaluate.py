@@ -8,6 +8,7 @@ import celeryconfig
 from common.utils import add_environment, Env
 from train import main as _train
 from evaluate import main as _evaluate
+from train_cli import parse_args
 
 # OSX compatibility
 if platform.system() == 'Darwin':
@@ -36,25 +37,22 @@ def evaluate(model_weights: str, job_config_name: str, job_id: str, batch_size: 
     return _evaluate(job_config_name, model_weights, job_id, batch_size, num_batches)
 
 
-def test():
+def schedule(*args):
     """
     Testing function; runs the train and evaluate workflows one after the other
+    :param args: Arguments passed to the train and evaluate functions
     :return:
     """
-    job_config_name = 'agnews_nlp_classification'
-    job_id = job_config_name + '-' + str(uuid.uuid4())
-    batch_size = 8
-    num_epochs = 2
-    num_batches = 3
-    args1 = (job_config_name, job_id, batch_size, num_epochs, num_batches)
-    args2 = (job_config_name, job_id, batch_size, num_batches)
+    job_config_name, job_id, batch_size, num_epochs, num_batches = args
+    train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
+    evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
     # Output from `train` automatically goes into `evaluate` method's first argument,
     # which in this case is the relative path to the trained weights.
-    chain(train.s(*args1), evaluate.s(*args2))()
+    chain(train.s(*train_args), evaluate.s(*evaluate_args))()
 
 
-def test_start_worker():
+def start_worker():
     # Start the celery worker
     # NOTE: The worker has to be stopped manually when the job above is finished
     argv = [
@@ -66,5 +64,5 @@ def test_start_worker():
 
 
 if __name__ == '__main__':
-    test()
-    test_start_worker()
+    schedule(*parse_args())
+    start_worker()
