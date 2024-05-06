@@ -130,7 +130,6 @@ def setup_logger(name: str, job_id: Optional[str] = None,
     # Configure logger
     pg_logger = logging.getLogger(name)
     pg_logger.setLevel(default_log_level)
-    pg_logger.propagate = False
     if not is_environment('celery'):
         pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
