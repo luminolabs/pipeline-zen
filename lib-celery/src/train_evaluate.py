@@ -1,14 +1,13 @@
 import os
 import platform
-import uuid
 
 from celery import Celery, chain
 
 import celeryconfig
 from common.utils import add_environment, Env
-from train import main as _train
-from evaluate import main as _evaluate
-from train_cli import parse_args as train_parse_args
+from train.cli import parse_args as train_parse_args
+from train.workflow import main as _train
+from evaluate.workflow import main as _evaluate
 
 # OSX compatibility
 if platform.system() == 'Darwin':

@@ -68,8 +68,9 @@ def get_root_path() -> str:
     This allows workflows to share results, cache, etc
     :return: Root path
     """
-    ends_with = 'pipeline-zen' if is_environment(Env.LOCAL) else 'project'
-    if os.getcwd().endswith(ends_with):
+    if 'project' in os.getcwd():
+        return '../.'
+    elif 'pipeline-zen' in os.getcwd():
         return '.'
     else:
         raise EnvironmentError('Please run workflows from the root of the pipeline-zen directory')

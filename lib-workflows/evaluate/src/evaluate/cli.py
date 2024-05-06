@@ -1,6 +1,6 @@
 import argparse
 
-from evaluate import main
+from evaluate.workflow import main
 
 
 def parse_args() -> tuple:

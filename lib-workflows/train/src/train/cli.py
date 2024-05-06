@@ -1,6 +1,6 @@
 import argparse
 
-from train import main
+from train.workflow import main
 
 
 def parse_args() -> tuple:

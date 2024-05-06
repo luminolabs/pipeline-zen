@@ -45,5 +45,9 @@ ENV ENVIRONMENT=docker
 # they aren't bundled in the image
 ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
 
+# Set workdir to workflow's namespace
+WORKDIR /project/${TARGET_WORKFLOW}
+ENV PYTHONPATH=/project
+
 # Run workflow
 ENTRYPOINT ["python", "cli.py"]
