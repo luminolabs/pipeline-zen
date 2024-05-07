@@ -25,9 +25,9 @@ jobs:
           python-version: '3.11'
       - name: Update pip
         run: python -m pip install --upgrade pip setuptools wheel
-      - name: Install python dependencies for `shared-lib`
-        run: python -m pip install -r shared-lib/requirements.txt
-      - name: Install unit test specific python dependencies for `shared-lib`
-        run: python -m pip install -r shared-lib/requirements-test.txt
+      - name: Install python dependencies for `lib-common`
+        run: python -m pip install -r lib-common/requirements.txt
+      - name: Install unit test specific python dependencies for `lib-common`
+        run: python -m pip install -r lib-common/requirements-test.txt
       - name: Run unit tests
-        run: PYTHONPATH=./shared-lib/src:./ pytest -vv
+        run: PYTHONPATH=./lib-common/src:./ pytest -vv
