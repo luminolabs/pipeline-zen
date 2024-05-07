@@ -1,6 +1,6 @@
 import argparse
 
-from train import main
+from train.workflow import main
 
 
 def parse_args() -> tuple:
@@ -32,5 +32,6 @@ def parse_args() -> tuple:
     return job_config_name, job_id, batch_size, num_epochs, num_batches
 
 
-# Run train workflow
-main(*parse_args())
+if __name__ == '__main__':
+    # Run train workflow
+    main(*parse_args())

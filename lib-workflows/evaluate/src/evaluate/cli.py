@@ -1,6 +1,6 @@
 import argparse
 
-from evaluate import main
+from evaluate.workflow import main
 
 
 def parse_args() -> tuple:
@@ -32,5 +32,6 @@ def parse_args() -> tuple:
     return job_config_name, model_weights, job_id, batch_size, num_batches
 
 
-# Run evaluate workflow
-main(*parse_args())
+if __name__ == '__main__':
+    # Run evaluate workflow
+    main(*parse_args())

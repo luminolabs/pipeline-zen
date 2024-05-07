@@ -10,6 +10,15 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
+### Run train and evaluate workflows in one go
+```
+./scripts/run-celery.sh \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3
+```
+
 ### Running the train workflow
 
 ```
@@ -19,6 +28,7 @@ Install python dependencies:
   --num_epochs 2 \
   --num_batches 3
 ```
+NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -29,6 +39,9 @@ Install python dependencies:
   --batch_size 8 \
   --num_batches 3
 ```
+NOTE: `imdb_nlp_classification` above points to a file under `job_configs` and
+`imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the
+model weights file under `.results/model_weights/`
 
 
 ## Running with docker
@@ -42,7 +55,6 @@ Install python dependencies:
   --num_epochs 2 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
 
 ### Running the evaluate workflow
 
@@ -53,9 +65,6 @@ NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
   --batch_size 8 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job_configs` and
-`imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the 
-model weights file under `.results/model_weights/`
 
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
 run the following command to change filesystem permissions back to your user:

@@ -1,4 +1,5 @@
 import os
+import uuid
 from logging import Logger
 
 import torch
@@ -8,19 +9,19 @@ from common.agents.model_scores import TrainScoresAgent
 from common.helpers import configure_model_and_dataloader
 from common.loss.utils import loss_factory
 from common.tokenizer.utils import tokenize_inputs
-from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config, get_system_timestamp
+from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config
 
 # Point application to the `pipeline-zen_dev` GCP credentials file
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
 
 
-def run(job_config: dict, logger: Logger):
+def run(job_config: dict, logger: Logger) -> str:
     """
     Trains a model
 
     :param job_config: The job configuration
     :param logger: The logging object
-    :return:
+    :return: Relative path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
 
     # Verify working dir is repo root
@@ -101,6 +102,9 @@ def run(job_config: dict, logger: Logger):
                else model.state_dict(), model_weights_path)
     logger.info("Trained model saved! at: " + model_weights_path)
 
+    # ex. `imdb_nlp_classification-experiment1/2024-05-04-12-03-39.pt`
+    return os.path.join(*model_weights_path.split('/')[-2:])
+
 
 def main(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, num_batches: int):
     """
@@ -111,7 +115,7 @@ def main(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, nu
     :param batch_size: The batch size to split the data into
     :param num_epochs: The number of epochs to train on
     :param num_batches: How many batches to run on each epoch
-    :return:
+    :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
     # Load job configuration
     job_config = load_job_config(job_config_name)
@@ -120,8 +124,7 @@ def main(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, nu
     if job_id:
         job_config['job_id'] = job_id
     else:
-        timestamp =get_system_timestamp()
-        job_config['job_id'] = job_config['job_id'] + '-' + timestamp
+        job_config['job_id'] = job_config['job_id'] + '-' + str(uuid.uuid4())
     if batch_size:
         job_config['batch_size'] = batch_size
     if num_epochs:
@@ -133,7 +136,7 @@ def main(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, nu
     logger = setup_logger('train_workflow', job_config['job_id'])
     # Run the `train` workflow, and handle unexpected exceptions
     try:
-        run(job_config, logger)
+        return run(job_config, logger)
     except Exception as ex:
         logger.error(f"Exception occurred: {ex}")
         raise ex

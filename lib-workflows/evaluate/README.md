@@ -1,1 +1,1 @@
-# Training evaluation workflow
+# Model evaluation workflow

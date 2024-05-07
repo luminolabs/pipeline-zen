@@ -1,1 +1,1 @@
-# Training workflow
+# Model training workflow
