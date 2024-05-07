@@ -11,8 +11,22 @@ from os.path import basename
 from typing import Optional, Union, List
 from datetime import datetime
 
+import yaml
 from google.cloud import storage
 from google.cloud.storage import Bucket
+
+
+#--- CONSTANTS ---#
+
+
+# Job configuration path in relation to repository root path
+job_configs_module = 'job_configs'
+
+# Timestamp format to use for logs, results, etc
+system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
+
+
+#--- TYPES / CLASSES ---#
 
 
 class Env(Enum):
@@ -27,11 +41,41 @@ class Env(Enum):
     CELERY = 'celery'
 
 
-# Job configuration path in relation to repository root path
-job_configs_module = 'job_configs'
+class JsonEnumBase(Enum):
+    """
+    Base class for JSON serializable enums.
+    """
 
-# Timestamp format to use for logs, results, etc
-system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
+    def _json(self):
+        return str(self.value)
+
+
+class JobCategory(JsonEnumBase):
+    NLP = 'nlp'
+    IMAGE = 'image'
+    LLM = 'llm'
+
+
+class JobType(JsonEnumBase):
+    CLASSIFICATION = 'classification'
+    SEGMENTATION = 'segmentation'
+    TEXT_GENERATION = 'text_generation'
+
+
+class AutoJSONEncoder(JSONEncoder):
+    """
+    A JSON encoder that automatically serializes objects with a `_json()` method,
+    such as `Enums` that implement the `_json()` method.
+    """
+
+    def default(self, obj):
+        try:
+            return obj._json()
+        except AttributeError:
+            return JSONEncoder.default(self, obj)
+
+
+#--- METHODS ---#
 
 
 def get_environment(default: Optional[Env] = None) -> str:
@@ -85,20 +129,6 @@ def get_root_path() -> str:
         raise EnvironmentError('Please run workflows from the root of the pipeline-zen directory')
 
 
-def load_job_config(job_config_name: str) -> dict:
-    """
-    Loads a job config from a job config file
-
-    :param job_config_name: Job config name; this is the file name without the `.py` extension
-    :return: Job config dict
-    """
-    try:
-        return importlib.import_module(f'{job_configs_module}.{job_config_name}').job_config
-    except ModuleNotFoundError:
-        # Raise `FileNotFoundError` as it's more intuitive message to give to the user
-        raise FileNotFoundError(f'job_config_id: {job_config_name} not found under {job_configs_module}')
-
-
 def get_results_path(job_id: str) -> str:
     """
     :return: Returns the path to the results directory
@@ -113,7 +143,7 @@ def get_model_weights_path(job_id: str) -> str:
     :param job_id: Job id to use as part of the model weights path
     :return: Returns the path to the model weights file
     """
-    path = os.path.join(get_results_path(job_id),  'weights.pt')
+    path = os.path.join(get_results_path(job_id), 'weights.pt')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -187,26 +217,6 @@ def save_job_results(job_id: str, results: dict, job_name: str) -> None:
         f.write(json.dumps(results))
 
 
-class AutoJSONEncoder(JSONEncoder):
-    """
-    A JSON encoder that automatically serializes objects with a `_json()` method,
-    such as `Enums` that implement the `_json()` method.
-    """
-    def default(self, obj):
-        try:
-            return obj._json()
-        except AttributeError:
-            return JSONEncoder.default(self, obj)
-
-
-class JsonEnumBase(Enum):
-    """
-    Base class for JSON serializable enums.
-    """
-    def _json(self):
-        return str(self.value)
-
-
 def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], gcs_path: Optional[str] = None):
     """
     Upload a local directory to Google Cloud Storage.
@@ -229,3 +239,57 @@ def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], g
             remote_path = os.path.join(gcs_path, local_file[1 + len(local_path):])
             blob = bucket.blob(remote_path)
             blob.upload_from_filename(local_file)
+
+
+def load_job_config(job_config_name: str) -> dict:
+    """
+    Builds the job configuration dict using the requested config plus values
+    inherited from the default templates
+
+    :param job_config_name: Name of the job configuration
+    :return: Final job configuration dict
+    """
+
+    # Pull the requested configuration file
+    job_config = read_job_config_from_file(job_config_name)
+
+    # Construct the template configuration file; ex. `image_segmentation_base.yml`
+    template_config_name = (job_config['category'].value +
+                            '_' + job_config['type'].value +
+                            '_base.yml')
+
+    # Pull the base and template configuration files
+    base_config = read_job_config_from_file(os.path.join('templates', 'base.yml'))
+    template_config = read_job_config_from_file(os.path.join('templates', template_config_name))
+
+    # Build final configuration dict
+    return {**base_config, **template_config, **job_config}
+
+
+def read_job_config_from_file(job_config_name: str) -> dict:
+    """
+    Reads the job config from a YAML file
+
+    :param job_config_name: Name of the job configuration
+    :return: The job config dictionary
+    """
+    # Normalize filename
+    if not job_config_name.endswith('.yml'):
+        job_config_name += '.yml'
+
+    # Open and read YAML into dictionary
+    path = os.path.join('job-configs', job_config_name)
+    try:
+        with open(path, 'r') as f:
+            job_config = yaml.safe_load(f)
+    except FileNotFoundError:
+        # User friendly error
+        raise FileNotFoundError(f'job_config_name: {job_config_name} not found under {path}')
+
+    # Resolve these two into the Enum class; ex. `IMAGE` -> `JobCategory.IMAGE`
+    if job_config.get('type'):
+        job_config['type'] = getattr(JobType, job_config['type'])
+    if job_config.get('category'):
+        job_config['category'] = getattr(JobCategory, job_config['category'])
+
+    return job_config

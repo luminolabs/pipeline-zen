@@ -1,0 +1,4 @@
+job_id: alzheimermri_image_classification
+category: IMAGE
+type: CLASSIFICATION
+dataset_id: Falah/Alzheimer_MRI
