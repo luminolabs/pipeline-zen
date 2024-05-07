@@ -1,8 +1,6 @@
 name: unit tests
 
-on:
-  pull_request_review:
-    types: [submitted]
+on: push
 
 jobs:
   approved:
@@ -15,7 +13,6 @@ jobs:
     # needing to be installed when running unit tests.
     # See: https://linear.app/luminoai/issue/LUM-130/reduce-number-of-python-dependencies-needed-to-run-unit-tests
     #
-    if: github.event.review.state == 'APPROVED'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
