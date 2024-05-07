@@ -13,5 +13,5 @@ docker run $gpus \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--v "$PWD/job_configs":/project/job_configs \
+-v "$PWD/job-configs":/project/job-configs \
 $1-workflow "${@:2}"

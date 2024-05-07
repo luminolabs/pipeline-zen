@@ -278,7 +278,7 @@ def read_job_config_from_file(job_config_name: str) -> dict:
         job_config_name += '.yml'
 
     # Open and read YAML into dictionary
-    path = os.path.join('job-configs', job_config_name)
+    path = os.path.join(get_root_path(), 'job-configs', job_config_name)
     try:
         with open(path, 'r') as f:
             job_config = yaml.safe_load(f)
