@@ -2,13 +2,8 @@ from logging import Logger
 
 import pytest
 
-from common.utils import get_root_path, load_job_config, get_model_weights_path, get_results_path, \
-    get_logs_path, setup_logger, get_environment, Env
-
-
-def test_get_root_path():
-    # Path is of type `str`
-    assert isinstance(get_root_path(), str)
+from common.utils import load_job_config, get_model_weights_path, get_results_path, \
+    get_logs_path, setup_logger
 
 
 def test_load_job_config():
@@ -33,14 +28,9 @@ def test_get_model_weights_path():
 
 def test_get_logs_path():
     # Path is of type `str`
-    assert isinstance(get_logs_path(), str)
+    assert isinstance(get_logs_path('test_job_id'), str)
 
 
 def test_setup_logger():
-    logger = setup_logger('test_logger')
+    logger = setup_logger('test_logger', 'test_job_id')
     assert isinstance(logger, Logger)
-
-
-def test_environment():
-    # `environment` defaults to `local`
-    assert get_environment(Env.TESTING) == Env.TESTING.value

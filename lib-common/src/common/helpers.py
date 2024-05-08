@@ -28,7 +28,8 @@ def get_device(logger: Logger):
     if torch.cuda.is_available():
         device = 'cuda'
     elif torch.backends.mps.is_available() and torch.backends.mps.is_built():
-        # `mps` device enables high-performance training on GPU for MacOS devices with Metal programming framework.
+        # `mps` device enables high-performance training on GPU for MacOS
+        # devices with Metal programming framework.
         # see: https://pytorch.org/docs/stable/notes/mps.html
         os.environ['PYTORCH_MPS_HIGH_WATERMARK_RATIO'] = '0.0'
         device = 'mps'
@@ -37,18 +38,15 @@ def get_device(logger: Logger):
     return device
 
 
-def configure_model_and_dataloader(job_config: dict,
-                                   logger: Logger,
-                                   for_inference: bool = False,
-                                   model_weights: str = None) \
+def configure_model_and_dataloader(
+        job_config: dict, logger: Logger, for_inference: bool = False) \
         -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
     """
     Configure model and dataloader from a job configuration.
 
-    :param job_config: The job configuration. Configurations are found under `job_configs`
+    :param job_config: The job configuration. Configurations are found under `job-configs`
     :param logger: The logger instance
     :param for_inference: Whether we are running inference or training
-    :param model_weights: Model weights to use for inference
     :return: Configured objects to be used in the workflow
     """
     if for_inference:
@@ -72,7 +70,7 @@ def configure_model_and_dataloader(job_config: dict,
     dataset.fetch(logger, **job_config.get('dataset_fetch_config', {}))
     logger.info(f'Dataset split has {len(dataset)} records')
     logger.info(f'Batch size is {job_config.get("batch_size")}, '
-          f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
+                f'number of batches is {math.ceil(len(dataset) / job_config.get("batch_size"))}')
     if job_config.get('num_batches'):
         logger.info(f'...but only {job_config.get("num_batches")} batches are configured to run')
     # This is the dataset that prepares the dataset data into the data structure
@@ -118,7 +116,7 @@ def configure_model_and_dataloader(job_config: dict,
         **job_config.get('model_base_args', {}))
     if for_inference:
         # `map_location` is needed when the weights were generated on
-        # a different kind of a device
+        # a different kind of device
         # ex. `cpu` running on this machine vs weights generated with `cuda`
         model_weights = torch.load(model_weights_path, map_location=device)
         model.load_state_dict(model_weights)

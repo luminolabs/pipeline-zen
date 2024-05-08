@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import xmltodict
 
+from common.config_manager import config
+
 
 class SystemSpecs:
     """

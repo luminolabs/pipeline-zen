@@ -6,14 +6,15 @@ import torch
 from torch import optim, Tensor, nn
 
 from common.agents.model_scores import TrainScoresAgent
+from common.config_manager import config
 from common.helpers import configure_model_and_dataloader
 from common.loss.utils import loss_factory
 from common.tokenizer.utils import tokenize_inputs
-from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config, get_or_generate_job_id, \
+from common.utils import setup_logger, get_model_weights_path, load_job_config, get_or_generate_job_id, \
     save_job_results
 
 # Point application to the `pipeline-zen_dev` GCP credentials file
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(config.root_path, '.secrets', 'gcp_key.json')
 
 
 def run(job_config: dict, logger: Logger) -> dict:
@@ -25,9 +26,6 @@ def run(job_config: dict, logger: Logger) -> dict:
     :return: The final epoch's loss value
     """
     job_id = job_config['job_id']
-
-    # Verify working dir is repo root
-    _ = get_root_path()  # raises exception
 
     # A logger for logging scores; also propagates to main logger
     scores_logger = setup_logger('train_workflow.metrics', job_id, add_stdout=False)
@@ -111,7 +109,7 @@ def main(job_config_name: str, job_id: Optional[str],
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
-    :param job_config_name: The job configuration id; configuration files are found under `job_configs`
+    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param job_id: The job id to use for logs, results, etc
     :param batch_size: The batch size to split the data into
     :param num_epochs: The number of epochs to train on

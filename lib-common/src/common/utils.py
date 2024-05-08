@@ -1,5 +1,4 @@
 import glob
-import importlib
 import json
 import logging
 import os
@@ -8,37 +7,23 @@ import uuid
 from enum import Enum
 from json import JSONEncoder
 from os.path import basename
-from typing import Optional, Union, List
+from typing import Optional, Union
 from datetime import datetime
 
 import yaml
 from google.cloud import storage
 from google.cloud.storage import Bucket
 
+from common.config_manager import config
 
 #--- CONSTANTS ---#
 
-
-# Job configuration path in relation to repository root path
-job_configs_module = 'job_configs'
 
 # Timestamp format to use for logs, results, etc
 system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
 
 
 #--- TYPES / CLASSES ---#
-
-
-class Env(Enum):
-    """
-    List of all available environments
-    """
-    PRODUCTION = 'prod'
-    DEVELOPMENT = 'dev'
-    TESTING = 'test'
-    LOCAL = 'local'
-    DOCKER = 'docker'
-    CELERY = 'celery'
 
 
 class JsonEnumBase(Enum):
@@ -78,36 +63,6 @@ class AutoJSONEncoder(JSONEncoder):
 #--- METHODS ---#
 
 
-def get_environment(default: Optional[Env] = None) -> str:
-    """
-    :return: Returns the environment name
-    ex. `local`, `dev`, `prod`, `docker`, `celery`, etc
-    Environments can be stacked: ex. `local-celery` or `dev-docker-celery`
-    """
-    default = default and default.value or Env.LOCAL.value
-    return os.environ.get("ENVIRONMENT", default)
-
-
-def add_environment(environment: Env):
-    """
-    Stack environment names; ex `local-celery` is a `local` and a `celery` environment
-    :param environment: The environment name to add
-    :return:
-    """
-    os.environ['ENVIRONMENT'] = get_environment() + '-' + environment.value
-
-
-def is_environment(environment: Union[Env, List[Env]]) -> bool:
-    """
-    Checks if the environment name is an environment
-    :param environment: The environment name to check
-    :return: Whether the current environment is the one in question
-    """
-    if isinstance(environment, Env):
-        environment = [environment]
-    return any(x.value in get_environment() for x in environment)
-
-
 def get_system_timestamp() -> str:
     """
     :return: A timestamp formatted as a string; use in logs, results, etc
@@ -115,25 +70,12 @@ def get_system_timestamp() -> str:
     return datetime.now().strftime(system_timestamp_format)
 
 
-def get_root_path() -> str:
-    """
-    Returns the path to a common root between workflows
-    This allows workflows to share results, cache, etc
-    :return: Root path
-    """
-    if 'project' in os.getcwd():
-        return '../.'
-    elif 'pipeline-zen' in os.getcwd():
-        return '.'
-    else:
-        raise EnvironmentError('Please run workflows from the root of the pipeline-zen directory')
-
-
 def get_results_path(job_id: str) -> str:
     """
+    :param job_id: Job id to use as part of the results path
     :return: Returns the path to the results directory
     """
-    path = os.path.join(get_root_path(), '.results', job_id)
+    path = os.path.join(config.root_path, config.results_path, job_id)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -143,32 +85,34 @@ def get_model_weights_path(job_id: str) -> str:
     :param job_id: Job id to use as part of the model weights path
     :return: Returns the path to the model weights file
     """
-    path = os.path.join(get_results_path(job_id), 'weights.pt')
+    path = os.path.join(get_results_path(job_id), config.weights_file)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
 
-def get_logs_path(job_id: Optional[str] = None) -> str:
+def get_logs_path(job_id: str) -> str:
     """
+    :param job_id: Job id to use as part of the logs path
     :return: Returns the path to the logs directory
     """
-    path = os.path.join(get_root_path(), '.logs', job_id or '')
+    path = os.path.join(config.root_path, config.logs_path, job_id)
     os.makedirs(path, exist_ok=True)
     return path
 
 
-def setup_logger(name: str, job_id: Optional[str] = None,
+def setup_logger(name: str, job_id: str,
                  add_stdout: bool = True,
-                 default_log_level: int = logging.INFO) -> logging.Logger:
+                 log_level: int = logging.INFO) -> logging.Logger:
     """
     Sets up a logger
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
     :param add_stdout: Whether to add the stdout logger or not
-    :param default_log_level: The default log level to use, ex. `logging.INFO`
+    :param log_level: The log level to log at, ex. `logging.INFO`
     :return: A logger instance
     """
+    log_level = log_level or config.log_level
     log_format = logging.Formatter('%(message)s')
 
     # Log to stdout and to file
@@ -181,8 +125,8 @@ def setup_logger(name: str, job_id: Optional[str] = None,
 
     # Configure logger
     pg_logger = logging.getLogger(name)
-    pg_logger.setLevel(default_log_level)
-    if add_stdout and not is_environment(Env.CELERY):
+    pg_logger.setLevel(log_level)
+    if add_stdout and config.log_stdout:
         pg_logger.addHandler(stdout_handler)
     pg_logger.addHandler(file_handler)
     return pg_logger
@@ -226,7 +170,7 @@ def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], g
     :param gcs_path:
     :return:
     """
-    client = storage.Client(project='neat-airport-407301')
+    client = storage.Client(project=config.gcp_project)
     if isinstance(bucket, str):
         bucket = client.get_bucket(bucket)
     gcs_path = gcs_path or basename(local_path)
@@ -278,7 +222,7 @@ def read_job_config_from_file(job_config_name: str) -> dict:
         job_config_name += '.yml'
 
     # Open and read YAML into dictionary
-    path = os.path.join(get_root_path(), 'job-configs', job_config_name)
+    path = os.path.join(config.root_path, config.job_configs_path, job_config_name)
     try:
         with open(path, 'r') as f:
             job_config = yaml.safe_load(f)

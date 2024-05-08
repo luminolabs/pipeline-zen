@@ -1,0 +1,23 @@
+# Workflows
+upload_results: false
+cp_log_scores: false  # insert scores to bigquery?, or any other future remote DB
+
+# Logging
+log_level: INFO
+log_stdout: true
+
+# Paths
+root_path: .
+cache_path: .cache
+logs_path: .logs
+results_path: .results
+secrets_path: .secrets
+job_configs_path: job-configs
+weights_file: weights.pt
+
+# Celery
+celery_broker_url: memory://localhost/
+
+# GCP
+gcp_project: neat-airport-407301
+bq_dataset: pipeline_zen

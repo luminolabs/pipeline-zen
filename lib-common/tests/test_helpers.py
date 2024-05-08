@@ -14,7 +14,7 @@ def test_configure_model_and_dataloader(logger):
     for_inference = False
     model_weights_id = None
     model, dataloader, tokenizer, device = \
-        configure_model_and_dataloader(job_config, logger, for_inference, model_weights_id)
+        configure_model_and_dataloader(job_config, logger, for_inference)
     assert isinstance(model, PreTrainedModel)
     assert isinstance(dataloader, DataLoader)
     assert isinstance(tokenizer, PreTrainedTokenizerBase)
@@ -25,4 +25,4 @@ def test_configure_model_and_dataloader(logger):
     for_inference = True
     model_weights_id = 'foo'
     with pytest.raises(FileNotFoundError):
-        configure_model_and_dataloader(job_config, logger, for_inference, model_weights_id)
+        configure_model_and_dataloader(job_config, logger, for_inference)

@@ -30,24 +30,29 @@ ARG TARGET_WORKFLOW
 COPY lib-workflows/${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
 
+# Copy application configuration folder
+COPY app-config app-config
+
 # Copy lib-common source code
 COPY lib-common/src .
 
 # Copy workflow source code
 COPY lib-workflows/${TARGET_WORKFLOW}/src .
 
-# Set environment to `docker`
-# This affects a few runtime options such as cache and results folders
-ENV ENVIRONMENT=docker
-
 # Set GCP credentials file location;
 # these are mounted on the container at run time,
 # they aren't bundled in the image
 ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
 
-# Set workdir to workflow's namespace
-WORKDIR /project/${TARGET_WORKFLOW}
+# Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
+# Set the application root path
+ENV PZ_ROOT_PATH=/project
+# Set the application configuration path
+ENV PZ_CONF_PATH=/project/app-config
+
+# Run workflow from workflow folder
+WORKDIR /project/${TARGET_WORKFLOW}
 
 # Run workflow
 ENTRYPOINT ["python", "cli.py"]
