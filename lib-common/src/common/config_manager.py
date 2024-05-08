@@ -16,7 +16,7 @@ class ConfigManager:
         # Configuration folder path
         self.base_path = os.environ.get('PZ_CONF_PATH', 'app-config')
         # Get the application environment
-        self.current_env = os.environ.get('PZ_ENV', 'local')
+        self.env_name = os.environ.get('PZ_ENV', 'local')
         # Load configuration
         self.config = self.load()
 
@@ -31,7 +31,7 @@ class ConfigManager:
         # Default configuration
         default_file = os.path.join(self.base_path, 'default.yml')
         # Environment specific configuration
-        env_file = os.path.join(self.base_path, f'{self.current_env}.yml')
+        env_file = os.path.join(self.base_path, f'{self.env_name}.yml')
 
         config = {}
         # Load configuration from config files
