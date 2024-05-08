@@ -1,10 +1,11 @@
 import os
 import platform
+import uuid
 
 from celery import Celery, chain
 
 import celeryconfig
-from common.utils import add_environment, Env
+from common.utils import add_environment, Env, load_job_config, get_or_generate_job_id
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
 from evaluate.workflow import main as _evaluate
@@ -26,14 +27,13 @@ app.config_from_object(celeryconfig)
 
 
 @app.task
-def train(job_config_name: str, job_id: str, batch_size: int, num_epochs: int, num_batches: int):
-    model_weights_path = _train(job_config_name, job_id, batch_size, num_epochs, num_batches)
-    return model_weights_path
+def train(_, job_config_name: str, job_id: str, batch_size: int, num_epochs: int, num_batches: int):
+    return _train(job_config_name, job_id, batch_size, num_epochs, num_batches)
 
 
 @app.task
-def evaluate(model_weights: str, job_config_name: str, job_id: str, batch_size: int, num_batches: int):
-    return _evaluate(job_config_name, model_weights, job_id, batch_size, num_batches)
+def evaluate(_, job_config_name: str, job_id: str, batch_size: int, num_batches: int):
+    return _evaluate(job_config_name, job_id, batch_size, num_batches)
 
 
 def schedule(*args):
@@ -43,12 +43,14 @@ def schedule(*args):
     :return:
     """
     job_config_name, job_id, batch_size, num_epochs, num_batches = args
+    job_id = get_or_generate_job_id(job_config_name, job_id)
+
     train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
     evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
     # Output from `train` automatically goes into `evaluate` method's first argument,
     # which in this case is the relative path to the trained weights.
-    chain(train.s(*train_args), evaluate.s(*evaluate_args))()
+    chain(train.s(None, *train_args), evaluate.s(*evaluate_args))()
 
 
 def start_worker():
