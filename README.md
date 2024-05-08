@@ -28,7 +28,7 @@ Install python dependencies:
   --num_epochs 2 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
+NOTE: `imdb_nlp_classification` above points to a file under `job-configs`
 
 ### Running the evaluate workflow
 
@@ -39,7 +39,7 @@ NOTE: `imdb_nlp_classification` above points to a file under `job_configs`
   --batch_size 8 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job_configs` and
+NOTE: `imdb_nlp_classification` above points to a file under `job-configs` and
 `imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the
 model weights file under `.results/model_weights/`
 

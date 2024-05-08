@@ -4,11 +4,17 @@ import platform
 from celery import Celery, chain
 
 import celeryconfig
-from common.utils import add_environment, Env, get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, is_environment
+from common.config_manager import config
+from common.utils import get_or_generate_job_id, get_results_path, \
+    upload_local_directory_to_gcs
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
 from evaluate.workflow import main as _evaluate
+
+# Celery logs output to stdout
+# Disable workflow logger output to stdout
+# so that logs aren't logged twice
+config.log_stdout = False
 
 # OSX compatibility
 if platform.system() == 'Darwin':
@@ -17,9 +23,6 @@ if platform.system() == 'Darwin':
     # are running parallelization internally, and OSX doesn't
     # seem to like this
     os.environ['TOKENIZERS_PARALLELISM'] = '0'
-
-# Update environment name
-add_environment(Env.CELERY)
 
 # Setup Celery App
 app = Celery('train_evaluate')
@@ -61,7 +64,7 @@ def schedule(*args):
     # Define workflow tasks: `train` -> `evaluate`
     tasks = [train.s(None, *train_args), evaluate.s(*evaluate_args)]
     # Add task to upload job results (when not on a local or test environment)
-    if not is_environment([Env.LOCAL, Env.TESTING]):
+    if config.upload_results:
         tasks.append(upload_results.s(job_id))
     # Send task chain to celery scheduler
     chain(*tasks)()

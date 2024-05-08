@@ -4,6 +4,7 @@ from logging import Logger
 from typing import Any
 
 from common import utils
+from common.config_manager import config
 from common.dataset.base import BaseDataset
 
 
@@ -41,7 +42,7 @@ class BaseDatasetProvider(BaseDataset):
 
         The dataset name is appended to the path above in the subclasses
         """
-        return os.path.join(utils.get_root_path(), '.cache', 'datasets', cls.__name__.lower())
+        return os.path.join(config.root_path, config.cache_path, 'datasets', cls.__name__.lower())
 
     @staticmethod
     def _validate_init(dataset_id: str, split: str):

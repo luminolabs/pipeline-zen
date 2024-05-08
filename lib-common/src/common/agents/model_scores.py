@@ -7,11 +7,12 @@ import json
 from google.cloud import bigquery
 
 from common.agents.system_metrics import SystemSpecs
+from common.config_manager import config
 from common.utils import AutoJSONEncoder, system_timestamp_format
 
 datetime_format = '%Y-%m-%d %H:%M:%S'
-bq_table_train = 'neat-airport-407301.pipeline_zen.train'
-bq_table_evaluate = 'neat-airport-407301.pipeline_zen.evaluate'
+bq_table_train = f'{config.gcp_project}.{config.bq_dataset}.train'
+bq_table_evaluate = f'{config.gcp_project}.{config.bq_dataset}.evaluate'
 
 
 class BaseScoresAgent(ABC):
@@ -31,8 +32,7 @@ class BaseScoresAgent(ABC):
 
         # Configure bigquery
         self.bq_table = self._get_bq_table()
-        bq_project = self.bq_table.split('.')[0]
-        self.bq = bigquery.Client(bq_project)
+        self.bq = bigquery.Client(config.gcp_project)
         self.bq_table_defaults = self._get_bq_table_defaults()
         # Get a copy of the system specs
         self.system_specs = SystemSpecs(logger)
@@ -93,6 +93,10 @@ class BaseScoresAgent(ABC):
         :param kwargs: Dict with scores to be inserted (see `row` contents below)
         :return:
         """
+
+        # Sending scores to BigQuery is disabled
+        if not config.cp_log_scores:
+            return
 
         # Normalize result
         result_json = None
