@@ -14,11 +14,11 @@ class ConfigManager:
         Initializes the configuration manager.
         """
         # Configuration folder path
-        self.base_path = os.environ.get('PZ_CONF_PATH', 'app-config')
+        self.app_configs_path = os.environ.get('PZ_CONF_PATH', 'app-configs')
         # Get the application environment
         self.env_name = os.environ.get('PZ_ENV', 'local')
         # Load configuration
-        self.config = self.load()
+        self.loaded_config = self.load()
 
     def load(self) -> dict:
         """
@@ -29,19 +29,19 @@ class ConfigManager:
         """
 
         # Default configuration
-        default_file = os.path.join(self.base_path, 'default.yml')
+        default_file = os.path.join(self.app_configs_path, 'default.yml')
         # Environment specific configuration
-        env_file = os.path.join(self.base_path, f'{self.env_name}.yml')
+        env_file = os.path.join(self.app_configs_path, f'{self.env_name}.yml')
 
-        config = {}
+        loaded_config = {}
         # Load configuration from config files
         for file in (default_file, env_file):
             if os.path.exists(file):
                 with open(file, 'r') as f:
-                    config.update(yaml.safe_load(f))
+                    loaded_config.update(yaml.safe_load(f))
 
         # Override configuration with environment variables
-        for key, value in config.items():
+        for key, value in loaded_config.items():
             env_var_name = f'PZ_{key.upper()}'
             if env_var_name in os.environ:
                 env_var_value = os.environ[env_var_name]
@@ -49,12 +49,12 @@ class ConfigManager:
                     env_var_value = True
                 elif is_falsy(env_var_value):
                     env_var_value = False
-                config[key] = env_var_value
+                loaded_config[key] = env_var_value
 
-        return config
+        return loaded_config
 
     def __getattr__(self, attr):
-        return self.config[attr]
+        return self.loaded_config[attr]
 
 
 def is_truthy(value) -> bool:
