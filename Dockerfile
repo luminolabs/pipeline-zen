@@ -31,7 +31,7 @@ COPY lib-workflows/${TARGET_WORKFLOW}/requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy application configuration folder
-COPY app-config app-config
+COPY app-configs app-configs
 
 # Copy lib-common source code
 COPY lib-common/src .
@@ -49,7 +49,7 @@ ENV PYTHONPATH=/project
 # Set the application root path
 ENV PZ_ROOT_PATH=/project
 # Set the application configuration path
-ENV PZ_CONF_PATH=/project/app-config
+ENV PZ_CONF_PATH=/project/app-configs
 
 # Run workflow from workflow folder
 WORKDIR /project/${TARGET_WORKFLOW}
