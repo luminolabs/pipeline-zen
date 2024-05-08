@@ -1,3 +1,5 @@
+#!python
+
 import argparse
 
 from common.version_manager import increment_version
