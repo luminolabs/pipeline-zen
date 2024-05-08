@@ -9,7 +9,8 @@ from common.agents.model_scores import TrainScoresAgent
 from common.helpers import configure_model_and_dataloader
 from common.loss.utils import loss_factory
 from common.tokenizer.utils import tokenize_inputs
-from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config, get_or_generate_job_id
+from common.utils import setup_logger, get_model_weights_path, get_root_path, load_job_config, get_or_generate_job_id, \
+    save_job_results
 
 # Point application to the `pipeline-zen_dev` GCP credentials file
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(get_root_path(), '.secrets', 'gcp_key.json')
@@ -100,7 +101,9 @@ def run(job_config: dict, logger: Logger) -> dict:
                else model.state_dict(), model_weights_path)
     logger.info("Trained model saved! at: " + model_weights_path)
 
-    return {'loss': epoch_loss}
+    results = {'loss': epoch_loss}
+    save_job_results(job_id, results, 'train')
+    return results
 
 
 def main(job_config_name: str, job_id: Optional[str],

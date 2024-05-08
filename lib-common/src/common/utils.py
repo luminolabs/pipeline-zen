@@ -1,12 +1,18 @@
+import glob
 import importlib
+import json
 import logging
 import os
 import sys
 import uuid
 from enum import Enum
 from json import JSONEncoder
-from typing import Optional
+from os.path import basename
+from typing import Optional, Union, List
 from datetime import datetime
+
+from google.cloud import storage
+from google.cloud.storage import Bucket
 
 
 class Env(Enum):
@@ -47,13 +53,15 @@ def add_environment(environment: Env):
     os.environ['ENVIRONMENT'] = get_environment() + '-' + environment.value
 
 
-def is_environment(environment: Env) -> bool:
+def is_environment(environment: Union[Env, List[Env]]) -> bool:
     """
     Checks if the environment name is an environment
     :param environment: The environment name to check
     :return: Whether the current environment is the one in question
     """
-    return environment.value in get_environment()
+    if isinstance(environment, Env):
+        environment = [environment]
+    return any(x.value in get_environment() for x in environment)
 
 
 def get_system_timestamp() -> str:
@@ -91,11 +99,11 @@ def load_job_config(job_config_name: str) -> dict:
         raise FileNotFoundError(f'job_config_id: {job_config_name} not found under {job_configs_module}')
 
 
-def get_results_path() -> str:
+def get_results_path(job_id: str) -> str:
     """
     :return: Returns the path to the results directory
     """
-    path = os.path.join(get_root_path(), '.results')
+    path = os.path.join(get_root_path(), '.results', job_id)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -105,7 +113,7 @@ def get_model_weights_path(job_id: str) -> str:
     :param job_id: Job id to use as part of the model weights path
     :return: Returns the path to the model weights file
     """
-    path = os.path.join(get_results_path(), 'model_weights', job_id,  'weights.pt')
+    path = os.path.join(get_results_path(job_id),  'weights.pt')
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -165,6 +173,20 @@ def get_or_generate_job_id(job_config_name: str, job_id: Optional[str] = None) -
     return job_id
 
 
+def save_job_results(job_id: str, results: dict, job_name: str) -> None:
+    """
+    Saves the results of a job to a file
+
+    :param job_id: The job id
+    :param results: The results to save
+    :param job_name: Name of the job
+    :return:
+    """
+    path = os.path.join(get_results_path(job_id), job_name + '.json')
+    with open(path, 'w') as f:
+        f.write(json.dumps(results))
+
+
 class AutoJSONEncoder(JSONEncoder):
     """
     A JSON encoder that automatically serializes objects with a `_json()` method,
@@ -183,3 +205,27 @@ class JsonEnumBase(Enum):
     """
     def _json(self):
         return str(self.value)
+
+
+def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], gcs_path: Optional[str] = None):
+    """
+    Upload a local directory to Google Cloud Storage.
+
+    :param local_path: Local path to upload
+    :param bucket: Bucket to upload to
+    :param gcs_path:
+    :return:
+    """
+    client = storage.Client(project='neat-airport-407301')
+    if isinstance(bucket, str):
+        bucket = client.get_bucket(bucket)
+    gcs_path = gcs_path or basename(local_path)
+
+    assert os.path.isdir(local_path)
+    for local_file in glob.glob(local_path + '/**'):
+        if not os.path.isfile(local_file):
+            upload_local_directory_to_gcs(local_file, bucket, gcs_path + "/" + os.path.basename(local_file))
+        else:
+            remote_path = os.path.join(gcs_path, local_file[1 + len(local_path):])
+            blob = bucket.blob(remote_path)
+            blob.upload_from_filename(local_file)

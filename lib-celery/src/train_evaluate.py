@@ -1,11 +1,11 @@
 import os
 import platform
-import uuid
 
 from celery import Celery, chain
 
 import celeryconfig
-from common.utils import add_environment, Env, load_job_config, get_or_generate_job_id
+from common.utils import add_environment, Env, get_or_generate_job_id, get_results_path, \
+    upload_local_directory_to_gcs, is_environment
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
 from evaluate.workflow import main as _evaluate
@@ -36,9 +36,19 @@ def evaluate(_, job_config_name: str, job_id: str, batch_size: int, num_batches:
     return _evaluate(job_config_name, job_id, batch_size, num_batches)
 
 
+@app.task
+def upload_results(_, job_id: str):
+    """
+    Upload results to Google Cloud Storage.
+    :return:
+    """
+    upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
+
+
 def schedule(*args):
     """
     Runs the train and evaluate workflows one after the other
+
     :param args: Arguments passed to the train and evaluate functions
     :return:
     """
@@ -48,14 +58,21 @@ def schedule(*args):
     train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
     evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
-    # Output from `train` automatically goes into `evaluate` method's first argument,
-    # which in this case is the relative path to the trained weights.
-    chain(train.s(None, *train_args), evaluate.s(*evaluate_args))()
+    # Define workflow `train` -> `evaluate`
+    tasks = [train.s(None, *train_args), evaluate.s(*evaluate_args)]
+    # Upload job results when not on a local or test environment
+    if not is_environment([Env.LOCAL, Env.TESTING]):
+        tasks.append(upload_results.s(job_id))
+    # Schedule tasks
+    chain(*tasks)()
 
 
 def start_worker():
-    # Start the celery worker
-    # NOTE: The worker will continue running after the task queue is processed
+    """
+    Starts the celery worker
+    NOTE: The worker will continue running after the task queue is processed
+    :return:
+    """
     argv = [
         'worker',
         '--loglevel=INFO',
