@@ -23,7 +23,7 @@ def test_load_job_config():
 
 def test_get_results_path():
     # Path is of type `str`
-    assert isinstance(get_results_path(), str)
+    assert isinstance(get_results_path('test_job_id'), str)
 
 
 def test_get_model_weights_path():

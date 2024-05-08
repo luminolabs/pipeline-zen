@@ -1,0 +1,5 @@
+job_id: imdb_nlp_classification
+category: NLP
+type: CLASSIFICATION
+dataset_id: stanfordnlp/imdb
+tokenizer_id: google-bert/bert-base-cased
