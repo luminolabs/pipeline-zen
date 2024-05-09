@@ -24,20 +24,28 @@ RUN pip install torch torchvision transformers
 COPY lib-common/requirements.txt ./requirements-lib-common.txt
 RUN pip install -r requirements-lib-common.txt
 
-ARG TARGET_WORKFLOW
+# Install python libraries needed by the lib-celery
+COPY lib-celery/requirements.txt ./requirements-lib-celery.txt
+RUN pip install -r requirements-lib-celery.txt
 
-# Install python libraries needed by the workflow
-COPY lib-workflows/${TARGET_WORKFLOW}/requirements.txt .
-RUN pip install -r requirements.txt
-
-# Copy application configuration folder
-COPY app-configs app-configs
+# Install python libraries needed by the workflows
+COPY lib-workflows/train/requirements.txt requirements-train.txt
+RUN pip install -r requirements-train.txt
+COPY lib-workflows/evaluate/requirements.txt requirements-evaluate.txt
+RUN pip install -r requirements-evaluate.txt
 
 # Copy lib-common source code
 COPY lib-common/src .
 
+# Copy lib-celery source code
+COPY lib-celery/src .
+
 # Copy workflow source code
-COPY lib-workflows/${TARGET_WORKFLOW}/src .
+COPY lib-workflows/train/src .
+COPY lib-workflows/evaluate/src .
+
+# Copy application configuration folder
+COPY app-configs app-configs
 
 # Set GCP credentials file location;
 # these are mounted on the container at run time,
@@ -52,7 +60,7 @@ ENV PZ_ROOT_PATH=/project
 ENV PZ_CONF_PATH=/project/app-configs
 
 # Run workflow from workflow folder
-WORKDIR /project/${TARGET_WORKFLOW}
+WORKDIR /project/pipeline
 
 # Run workflow
-ENTRYPOINT ["python", "cli.py"]
+ENTRYPOINT ["python", "train_evaluate.py"]
