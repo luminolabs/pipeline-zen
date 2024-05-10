@@ -1,0 +1,72 @@
+name: Build E2E Workflow and Push to Artifact Registry
+
+on:
+  push:
+    branches: [ master ]
+
+# Allows this workflow to push changes to the git repo
+# we need this to commit and push the updated VERSION file
+permissions:
+  contents: write
+
+env:
+  IMAGE_NAME: train_evaluate-workflow
+  IMAGE_TAG: us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow
+
+jobs:
+  build-and-push-image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Git Repo
+        uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Google Cloud SDK Authentication
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+          token_format: 'access_token'
+
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v2"
+
+      - name: "Use gcloud CLI"
+        run: "gcloud info"
+
+      - name: "Docker auth"
+        run: |-
+          gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
+
+      - name: Bump Version
+        run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump-version.py -p minor
+
+      - name: Build Docker Image
+        run: |
+          version=$(cat VERSION)
+          docker build -f celery.Dockerfile -t $IMAGE_NAME:$version .
+
+      - name: Build image
+        run: docker build . -f celery.Dockerfile -t $IMAGE_NAME
+
+      - name: Tag image with version tag and artifact registry URL
+        run: docker tag $IMAGE_NAME $IMAGE_TAG:$(cat VERSION)
+
+      - name: Tag image `latest` tag and artifact registry URL
+        run: docker tag $IMAGE_NAME $IMAGE_TAG:latest
+
+      - name: Push image (version tag)
+        run: docker push $IMAGE_TAG:$(cat VERSION)
+
+      - name: Push image (latest tag)
+        run: docker push $IMAGE_TAG:latest
+
+      - name: Commit new version and push to git repo
+        run: |
+          git config --global user.name 'pipeline-zen-bot'
+          git config --global user.email 'vasilis@luminolabs.ai'
+          git commit -am "Version bump to $(cat VERSION)"
+          git push

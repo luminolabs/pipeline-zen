@@ -47,6 +47,9 @@ COPY lib-workflows/evaluate/src .
 # Copy application configuration folder
 COPY app-configs app-configs
 
+# Copy VERSION file for record keeping
+COPY VERSION .
+
 # Set GCP credentials file location;
 # these are mounted on the container at run time,
 # they aren't bundled in the image
