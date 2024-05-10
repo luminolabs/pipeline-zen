@@ -16,64 +16,72 @@ permissions:
 env:
   IMAGE_NAME: train_evaluate-workflow
   IMAGE_TAG: us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow
+  WORKFLOW_URL: "${{github.SERVER_URL}}/${{github.REPOSITORY}}/actions/runs/${{github.RUN_ID}}"
+  AUTHOR: ${{ github.event.pusher.name }}
 
 jobs:
-  build-and-push-image:
+  release:
     runs-on: ubuntu-latest
-
     # Run release workflow only if the unit tests workflow succeeds
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-
     steps:
+      - name: Notify Slack - Started
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"version: `pending` | commit: `${{github.SHA}}` | user: `${{env.AUTHOR}}` | status: <${{env.WORKFLOW_URL}}|started>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
       - name: Checkout Git Repo
         uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
       - name: Set up Google Cloud SDK Authentication
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
           token_format: 'access_token'
-
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v2"
-
       - name: "Use gcloud CLI"
         run: "gcloud info"
-
       - name: "Docker auth"
-        run: |-
+        run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
-
       - name: Bump Version
         run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump-version.py -p minor
-
       - name: Build Docker Image
         run: |
           version=$(cat VERSION)
           docker build -f celery.Dockerfile -t $IMAGE_NAME:$version .
-
       - name: Build image
         run: docker build . -f celery.Dockerfile -t $IMAGE_NAME
-
       - name: Tag image with version tag and artifact registry URL
         run: docker tag $IMAGE_NAME $IMAGE_TAG:$(cat VERSION)
-
       - name: Tag image `latest` tag and artifact registry URL
         run: docker tag $IMAGE_NAME $IMAGE_TAG:latest
-
       - name: Push image (version tag)
         run: docker push $IMAGE_TAG:$(cat VERSION)
-
       - name: Push image (latest tag)
         run: docker push $IMAGE_TAG:latest
-
       - name: Commit new version and push to git repo
         run: |
           git config --global user.name 'pipeline-zen-bot'
           git config --global user.email 'vasilis@luminolabs.ai'
           git commit -am "Version bump to $(cat VERSION)"
           git push
+      - name: Notify Slack - Success
+        run: |
+          version=$(cat VERSION)
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"version: `'"$version"'` | commit: `${{github.SHA}}` | user: `${{env.AUTHOR}}` | status: <${{env.WORKFLOW_URL}}|success>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
+  on-failure:
+    if: failure() || cancelled()
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack - Failure
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"version: `none` | commit: `${{github.SHA}}` | user: `${{env.AUTHOR}}` | status: <${{env.WORKFLOW_URL}}|failure>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
