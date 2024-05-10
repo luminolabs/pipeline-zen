@@ -9,12 +9,16 @@ on:
 permissions:
   contents: write
 
+env:
+  IMAGE_NAME: train_evaluate-workflow
+  IMAGE_TAG: us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow
+
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout Git Repo
         uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
@@ -43,22 +47,22 @@ jobs:
       - name: Build Docker Image
         run: |
           version=$(cat VERSION)
-          docker build -f celery.Dockerfile -t train_evaluate-workflow:$version .
+          docker build -f celery.Dockerfile -t $IMAGE_NAME:$version .
 
       - name: Build image
-        run: docker build . -f celery.Dockerfile -t train_evaluate-workflow
+        run: docker build . -f celery.Dockerfile -t $IMAGE_NAME
 
       - name: Tag image with version tag and artifact registry URL
-        run: docker tag train_evaluate-workflow us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:$(cat VERSION)
+        run: docker tag $IMAGE_NAME $IMAGE_TAG:$(cat VERSION)
 
       - name: Tag image `latest` tag and artifact registry URL
-        run: docker tag train_evaluate-workflow us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:latest
+        run: docker tag $IMAGE_NAME $IMAGE_TAG:latest
 
       - name: Push image (version tag)
-        run: docker push us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:$(cat VERSION)
+        run: docker push $IMAGE_TAG:$(cat VERSION)
 
       - name: Push image (latest tag)
-        run: docker push us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:latest
+        run: docker push $IMAGE_TAG:latest
 
       - name: Commit new version and push to git repo
         run: |
