@@ -2,7 +2,7 @@ name: Build E2E Workflow and Push to Artifact Registry
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
 
 # Allows this workflow to push changes to the git repo
 # we need this to commit and push the updated VERSION file
