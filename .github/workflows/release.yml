@@ -80,7 +80,7 @@ jobs:
     needs: [ release ]
     runs-on: ubuntu-latest
     steps:
-      - name: Notify Failure Slack
+      - name: Notify Slack - Failure
         run: |
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text":"version: `none` | commit: `${{github.SHA}}` | user: `${{env.AUTHOR}}` | status: <${{env.WORKFLOW_URL}}|failure>"}' \
