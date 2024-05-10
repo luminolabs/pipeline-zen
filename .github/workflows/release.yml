@@ -1,9 +1,11 @@
 name: Release
 
 on:
+  # Run release workflow only if the unit tests workflow succeeds
   workflow_run:
     workflows: [ "Unit Tests" ]
     types: [ completed ]
+    # Run release workflow only in master branch
     branches: [ master ]
 
 # Allows this workflow to push changes to the git repo
@@ -18,6 +20,8 @@ env:
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
+
+    # Run release workflow only if the unit tests workflow succeeds
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
