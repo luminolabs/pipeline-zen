@@ -55,13 +55,6 @@ COPY VERSION .
 
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
-# Set the application root path
-ENV PZ_ROOT_PATH=/project
-# Set the application configuration path
-ENV PZ_CONF_PATH=/project/app-configs
-
-# Run workflow from workflow folder
-WORKDIR /project/pipeline
 
 # Run workflow
-ENTRYPOINT ["python", "train_evaluate.py"]
+ENTRYPOINT ["python", "pipeline/train_evaluate.py"]

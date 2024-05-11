@@ -3,7 +3,6 @@ import platform
 
 from celery import Celery, chain
 
-import celeryconfig
 from common.config_manager import config
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs
@@ -25,8 +24,7 @@ if platform.system() == 'Darwin':
     os.environ['TOKENIZERS_PARALLELISM'] = '0'
 
 # Setup Celery App
-app = Celery('train_evaluate')
-app.config_from_object(celeryconfig)
+app = Celery('train_evaluate', broker=config.celery_broker_url)
 
 
 @app.task

@@ -44,13 +44,6 @@ COPY lib-workflows/${TARGET_WORKFLOW}/src .
 
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
-# Set the application root path
-ENV PZ_ROOT_PATH=/project
-# Set the application configuration path
-ENV PZ_CONF_PATH=/project/app-configs
-
-# Run workflow from workflow folder
-WORKDIR /project/${TARGET_WORKFLOW}
 
 # Run workflow
-ENTRYPOINT ["python", "cli.py"]
+ENTRYPOINT ["python", "${TARGET_WORKFLOW}/cli.py"]

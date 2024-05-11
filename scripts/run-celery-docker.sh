@@ -24,10 +24,10 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   gpus=""
 fi
 
-docker run "$gpus" \
+docker run $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV="$env" \
+-e PZ_ENV=$env \
 $image_use "${@}"
