@@ -1,4 +1,3 @@
-import os
 from logging import Logger
 
 import numpy as np
@@ -6,15 +5,11 @@ import torch
 from torch import Tensor
 
 from common.agents.model_scores import EvaluateScoresAgent
-from common.config_manager import config
 from common.helpers import configure_model_and_dataloader
 from common.scores.utils import scalar_scores, mask_scores
 from common.tokenizer.utils import tokenize_inputs
 from common.utils import setup_logger, load_job_config, get_or_generate_job_id, \
     save_job_results
-
-# Point application to the `pipeline-zen_dev` GCP credentials file
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(config.root_path, '.secrets', 'gcp_key.json')
 
 
 def run(job_config: dict, logger: Logger) -> dict:

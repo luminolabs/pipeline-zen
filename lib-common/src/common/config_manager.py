@@ -51,6 +51,12 @@ class ConfigManager:
                     env_var_value = False
                 loaded_config[key] = env_var_value
 
+        # Set configuration as environment variables,
+        # for libraries like google (ex. GOOGLE_APPLICATION_CREDENTIALS)
+        # that look at env vars for configuration
+        for key, value in loaded_config.items():
+            os.environ[key] = str(value)
+
         return loaded_config
 
     def __getattr__(self, attr):

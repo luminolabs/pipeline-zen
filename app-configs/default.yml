@@ -1,6 +1,6 @@
 # Workflows
 upload_results: false
-cp_log_scores: false  # insert scores to bigquery?, or any other future remote DB
+cp_log_scores: true  # insert scores to bigquery?, or any other future remote DB
 
 # Logging
 log_level: INFO

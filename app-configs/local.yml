@@ -1,1 +1,4 @@
 log_level: DEBUG
+
+# GCP SA key location
+GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json
