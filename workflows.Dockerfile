@@ -42,11 +42,6 @@ COPY lib-common/src .
 # Copy workflow source code
 COPY lib-workflows/${TARGET_WORKFLOW}/src .
 
-# Set GCP credentials file location;
-# these are mounted on the container at run time,
-# they aren't bundled in the image
-ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
-
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
 # Set the application root path

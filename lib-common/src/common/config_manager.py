@@ -16,7 +16,17 @@ class ConfigManager:
         # Configuration folder path
         self.app_configs_path = os.environ.get('PZ_CONF_PATH', 'app-configs')
         # Get the application environment
-        self.env_name = os.environ.get('PZ_ENV', 'local')
+        # We aren't setting a default value on the `get()` method below
+        # because we want a default value if:
+        # 1. `PZ_ENV` is set, but empty
+        # 2. `PZ_ENV` is not set
+        # Setting a default here won't cover 1.
+        # So, we set the default below instead in a
+        # different way.
+        self.env_name = os.environ.get('PZ_ENV')
+        # Set default application environment to `local`
+        if not self.env_name:
+            self.env_name = 'local'
         # Load configuration
         self.loaded_config = self.load()
 
@@ -45,6 +55,8 @@ class ConfigManager:
             env_var_name = f'PZ_{key.upper()}'
             if env_var_name in os.environ:
                 env_var_value = os.environ[env_var_name]
+                if not env_var_value:
+                    continue
                 if is_truthy(env_var_value):
                     env_var_value = True
                 elif is_falsy(env_var_value):
