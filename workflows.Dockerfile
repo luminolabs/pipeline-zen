@@ -33,6 +33,9 @@ RUN pip install -r requirements-workflow.txt
 # Copy application configuration folder
 COPY app-configs app-configs
 
+# Copy job configuration folder
+COPY job-configs job-configs
+
 # Copy lib-common source code
 COPY lib-common/src .
 

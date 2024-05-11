@@ -1,4 +1,4 @@
-docker build -f celery.Dockerfile -t train_evaluate-workflow .
+docker build -f celery.Dockerfile -t train_evaluate-workflow:local .
 
 gpus="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -13,5 +13,4 @@ docker run $gpus \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--v "$PWD/job-configs":/project/job-configs \
-train_evaluate-workflow "${@}"
+train_evaluate-workflow:local "${@}"
