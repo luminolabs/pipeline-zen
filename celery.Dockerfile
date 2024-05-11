@@ -47,6 +47,9 @@ COPY lib-workflows/evaluate/src .
 # Copy application configuration folder
 COPY app-configs app-configs
 
+# Copy job configuration folder
+COPY job-configs job-configs
+
 # Copy VERSION file for record keeping
 COPY VERSION .
 

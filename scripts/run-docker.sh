@@ -1,4 +1,4 @@
-docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow .
+docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:local .
 
 gpus="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
@@ -13,5 +13,4 @@ docker run $gpus \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--v "$PWD/job-configs":/project/job-configs \
-$1-workflow "${@:2}"
+$1-workflow:local "${@:2}"
