@@ -89,8 +89,9 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
         instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
         if instance_resource.status == 'RUNNING':
             print('VM is running')
-            # Wait 5 more seconds for sshd to start
-            time.sleep(5)
+            # Wait for sshd to start
+            print('Wait for sshd to start (60s)')
+            time.sleep(60)
             break
         time.sleep(5)
         print('...still waiting for VM to start')
@@ -106,7 +107,12 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
                    f'--batch_size {batch_size} '
                    f'--num_epochs {num_epochs} '
                    f'--num_batches {num_batches}')
-    subprocess.run([*cmd_prefix, job_command])
+    try:
+        subprocess.run([*cmd_prefix, job_command], check=True)
+    except Exception as ex:
+        # Delete VM if we couldn't start the job
+        delete_vm(instance_client, vm_name)
+        raise ex
 
     # Wait for job completion (using file-based signal)
     print('Waiting for job completion...')
@@ -115,23 +121,32 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
             ssh_command = f'ls {JOB_COMPLETION_FILE}'
             result = subprocess.run(
                 [*cmd_prefix, ssh_command],
+                # We just care about the success or failure of the command
+                # so send output to /dev/null
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL)
+            # `ls` returns `0` exit code if file is found,
+            # and `1` if it isn't found
             if result.returncode == 0:
                 print('Job completed.')
                 break
         except Exception as e:
-            print(f'Error checking for job completion: {e}')
+            print(f'Error checking for job completion, will retry: {e}')
         time.sleep(10)
 
+    delete_vm(instance_client, vm_name)
+    print('Done.')
+
+
+def delete_vm(instance_client, vm_name):
     # Stop and delete VM
-    print('Deleting VM...')
+    print('Stopping VM...')
     operation = instance_client.stop(project=PROJECT_ID, zone=ZONE, instance=vm_name)
     operation.result()
+    print('Deleting VM...')
     operation = instance_client.delete(project=PROJECT_ID, zone=ZONE, instance=vm_name)
     operation.result()
-
-    print('Job completed and VM deleted.')
+    print('VM deleted...')
 
 
 if __name__ == '__main__':
