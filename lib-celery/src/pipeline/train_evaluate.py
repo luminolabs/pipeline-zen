@@ -56,7 +56,7 @@ def mark_finished(_, job_id: str):
     :param job_id: The job id that finished
     :return:
     """
-    path = os.path.join(config.root_path, config.finished_file, job_id)
+    path = os.path.join(config.root_path, config.finished_file)
     with open(path, "w") as f:
         f.write(f'job_id: {job_id}')
 
