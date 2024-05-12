@@ -46,6 +46,13 @@ def upload_results(_, job_id: str):
     upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
 
 
+@app.task
+def mark_finished(_, job_id: str):
+    path = os.path.join(config.root_path, config.finished_file, job_id)
+    with open(path, "w") as f:
+        f.write(f'job_id: {job_id}')
+
+
 def schedule(*args):
     """
     Runs the train and evaluate workflows one after the other
@@ -64,6 +71,11 @@ def schedule(*args):
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id))
+    # If we're not local, then create the `.finished` file
+    # that's used by the deployment script to watch for job
+    # completion
+    if config.env_name != 'local':
+        tasks.append(mark_finished.s(job_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 
