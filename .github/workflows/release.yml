@@ -53,7 +53,7 @@ jobs:
         run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
       - name: Bump Version
-        run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump-version.py -p minor
+        run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump_version.py -p minor
       - name: Build Docker Image
         run: |
           VERSION=$(cat VERSION)
