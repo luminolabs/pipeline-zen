@@ -1,11 +1,17 @@
+#!python
+
 import argparse
 import os
 import subprocess
 import time
+import uuid
+from typing import Optional
 
 from google.cloud import compute_v1
 
-# TODO: Make configuration configurable
+from delete_vm import delete_vm
+
+# TODO: Make options below configurable
 # see: https://linear.app/luminoai/issue/LUM-178/make-machine-type-configurable-when-deploying-job
 
 # Configuration (adjust as needed)
@@ -20,7 +26,11 @@ JOB_DIRECTORY = '/pipeline-zen-jobs'
 JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '.results', '.finished')
 
 
-def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
+def main(job_config_name: str, job_id: Optional[str],
+         batch_size: Optional[int], num_epochs: Optional[int], num_batches: Optional[int]):
+
+    # Create auto-generated job id of one is not given
+    job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
 
     # Network Interface Configuration
     network_interface = compute_v1.NetworkInterface()
@@ -33,7 +43,7 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
         )
     ]
 
-    # # Create VM instance
+    # Create VM instance
     vm_name = f'{TEMPLATE_NAME}-{job_id}'
     print(f'Creating VM: {vm_name}')
     instance_client = compute_v1.InstancesClient()
@@ -88,9 +98,9 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
     while True:
         instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
         if instance_resource.status == 'RUNNING':
-            print('VM is running')
+            print('...VM is running')
             # Wait for sshd to start
-            print('Wait for sshd to start (60s)')
+            print('...Wait for sshd to start (60s)')
             time.sleep(60)
             break
         time.sleep(5)
@@ -100,7 +110,6 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
 
     # Execute job directly (change directory and run command)
-    print(f'Running job: {job_id}')
     job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev ./run-celery-docker.sh '
                    f'--job_config_name {job_config_name} '
                    f'--job_id {job_id} '
@@ -108,45 +117,22 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
                    f'--num_epochs {num_epochs} '
                    f'--num_batches {num_batches}')
     try:
+        # This will monitor and echo job output
+        print(f'Running job: {job_id}')
+        print('...this might take a while!')
+        print('...if we disconnect with the server, the job is still running')
+        print('...and the job itself will stop the VM when done')
+        time.sleep(5)  # pause for user to ack message
         subprocess.run([*cmd_prefix, job_command], check=True)
     except Exception as ex:
         # Delete VM if we couldn't start the job
+        print('We failed to start the job!!!')
         delete_vm(instance_client, vm_name)
         raise ex
 
-    # Wait for job completion (using file-based signal)
-    print('Waiting for job completion...')
-    while True:
-        try:
-            ssh_command = f'ls {JOB_COMPLETION_FILE}'
-            result = subprocess.run(
-                [*cmd_prefix, ssh_command],
-                # We just care about the success or failure of the command
-                # so send output to /dev/null
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL)
-            # `ls` returns `0` exit code if file is found,
-            # and `1` if it isn't found
-            if result.returncode == 0:
-                print('Job completed.')
-                break
-        except Exception as e:
-            print(f'Error checking for job completion, will retry: {e}')
-        time.sleep(10)
-
-    delete_vm(instance_client, vm_name)
+    # The job itself will stop and delete the VM when done,
+    # so if we're here, the VM is deleted.
     print('Done.')
-
-
-def delete_vm(instance_client, vm_name):
-    # Stop and delete VM
-    print('Stopping VM...')
-    operation = instance_client.stop(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-    operation.result()
-    print('Deleting VM...')
-    operation = instance_client.delete(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-    operation.result()
-    print('VM deleted...')
 
 
 if __name__ == '__main__':

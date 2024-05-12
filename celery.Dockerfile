@@ -34,6 +34,9 @@ RUN pip install -r requirements-train.txt
 COPY lib-workflows/evaluate/requirements.txt requirements-evaluate.txt
 RUN pip install -r requirements-evaluate.txt
 
+# Copy scripts, needed to allow deleting VMs
+COPY scripts scripts
+
 # Copy lib-common source code
 COPY lib-common/src .
 
