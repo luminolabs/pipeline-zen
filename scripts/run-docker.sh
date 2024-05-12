@@ -1,3 +1,5 @@
+#!/bin/bash
+
 docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:local .
 
 env=""

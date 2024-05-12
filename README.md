@@ -19,6 +19,7 @@ Install python dependencies:
   --num_epochs 2 \
   --num_batches 3
 ```
+NOTE: `imdb_nlp_classification` above points to a file under `job-configs`
 
 ### Running the train workflow
 
@@ -29,20 +30,16 @@ Install python dependencies:
   --num_epochs 2 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job-configs`
 
 ### Running the evaluate workflow
 
 ```
 ./scripts/run-local.sh evaluate \
   --job_config_name imdb_nlp_classification \
-  --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
+  --job_id <use same job id as in the train workflow> \
   --batch_size 8 \
   --num_batches 3
 ```
-NOTE: `imdb_nlp_classification` above points to a file under `job-configs` and
-`imdb_nlp_classification-experiment1/2024-05-02-15-09-31.pt` points to the
-model weights file under `.results/model_weights/`
 
 
 ## Running with docker
@@ -62,7 +59,7 @@ model weights file under `.results/model_weights/`
 ```
 ./scripts/run-docker.sh evaluate \
   --job_config_name imdb_nlp_classification \
-  --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
+  --job_id <use same job id as in the train workflow> \
   --batch_size 8 \
   --num_batches 3
 ```

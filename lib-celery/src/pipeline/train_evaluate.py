@@ -56,9 +56,20 @@ def mark_finished(_, job_id: str):
     :param job_id: The job id that finished
     :return:
     """
-    path = os.path.join(config.root_path, config.finished_file)
+    path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
         f.write(f'job_id: {job_id}')
+
+
+@app.task
+def shutdown_celery_worker(_):
+    """
+    Shuts down the celery worker.
+    """
+    # sends shutdown signal to *all( workers
+    # ...there's just one worker though,
+    # because we aren't using a distributed queue yet
+    app.control.shutdown()
 
 
 def schedule(*args):
@@ -82,6 +93,9 @@ def schedule(*args):
     # If we're not on a local env, we need to signal that the job is finished
     if config.env_name != 'local':
         tasks.append(mark_finished.s(job_id))
+    # Shut down worker, since we aren't using a
+    # distributed job queue yet in any environment
+    tasks.append(shutdown_celery_worker.s())
     # Send task chain to celery scheduler
     chain(*tasks)()
 
