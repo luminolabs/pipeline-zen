@@ -5,6 +5,9 @@ import time
 
 from google.cloud import compute_v1
 
+# TODO: Make configuration configurable
+# see: https://linear.app/luminoai/issue/LUM-178/make-machine-type-configurable-when-deploying-job
+
 # Configuration (adjust as needed)
 PROJECT_ID = 'neat-airport-407301'
 ZONE = 'us-central1-a'
