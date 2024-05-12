@@ -41,9 +41,24 @@ def evaluate(_, job_config_name: str, job_id: str, batch_size: int, num_batches:
 def upload_results(_, job_id: str):
     """
     Upload results to Google Cloud Storage.
+    :param job_id: The job id to associate with the results
     :return:
     """
     upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
+
+
+@app.task
+def mark_finished(_, job_id: str):
+    """
+    Creates a `.finished` file that serves as a signal to listeners
+    that the job finished. Currently used by the `run-remote.py` script.
+
+    :param job_id: The job id that finished
+    :return:
+    """
+    path = os.path.join(config.root_path, config.finished_file, job_id)
+    with open(path, "w") as f:
+        f.write(f'job_id: {job_id}')
 
 
 def schedule(*args):
@@ -64,6 +79,9 @@ def schedule(*args):
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id))
+    # If we're not on a local env, we need to signal that the job is finished
+    if config.env_name != 'local':
+        tasks.append(mark_finished.s(job_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 
