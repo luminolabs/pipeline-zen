@@ -3,9 +3,9 @@
 image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:latest
 image_local=train_evaluate-workflow:local
 
-env=""
+env="local"
 image_use=$image_local
-if [[ "$PZ_ENV" != "" ]]; then
+if [[ "$PZ_ENV" != "local" ]]; then
   env=$PZ_ENV
   image_use=$image_remote
 fi
@@ -31,3 +31,11 @@ docker run $gpus \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
 $image_use "${@}"
+
+
+# If we're not on a local env, let's delete the VM that run this job
+# TODO: Make this optional
+# see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
+if [[ "$PZ_ENV" != "local" ]]; then
+  python ./scripts/delete_vm.py --job_id $(cat ./.results/.job_id)
+fi

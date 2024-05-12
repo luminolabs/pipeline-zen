@@ -122,6 +122,9 @@ def main(job_config_name: str, job_id: Optional[str],
         print('...this might take a while!')
         print('...if we disconnect with the server, the job is still running')
         print('...and the job itself will stop the VM when done')
+        print('!!! If you\'re asked for a password here, that\'s your Google password; '
+              'the `gcloud` command is asking for your password, not this script; '
+              'this script runs the `gcloud` command to start the job on the remote VM')
         time.sleep(5)  # pause for user to ack message
         subprocess.run([*cmd_prefix, job_command], check=True)
     except Exception as ex:

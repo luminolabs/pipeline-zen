@@ -3,7 +3,7 @@ name: Unit Tests
 on:
   push:
     # Run workflow only if these folders changed
-    paths: [ 'lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile' ]
+    paths: [ 'lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile', 'scripts/**' ]
 
 jobs:
   unit-tests:

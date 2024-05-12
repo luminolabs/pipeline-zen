@@ -8,7 +8,7 @@ on:
     # Run workflow only in master branch
     branches: [ master ]
     # Run workflow only if these folders changed
-    paths: ['lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile']
+    paths: ['lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile', 'scripts/**']
 
 # Allows this workflow to push changes to the git repo
 # we need this to commit and push the updated VERSION file
