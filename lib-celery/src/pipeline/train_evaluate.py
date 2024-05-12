@@ -73,17 +73,6 @@ def shutdown_celery_worker(_):
     app.control.shutdown()
 
 
-@app.task
-def delete_vm(_, job_id: str):
-    """
-    Deletes the VM associated with this job.
-
-    :param job_id: The job id that the VM is named after
-    :return:
-    """
-    subprocess.run(['python', './scripts/delete_vm.py', '--job_id', job_id], check=True)
-
-
 def schedule(*args):
     """
     Runs the train and evaluate workflows one after the other
@@ -105,11 +94,6 @@ def schedule(*args):
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id))
-    # If we're not on a local env, let's delete the VM that run this job
-    # TODO: Make this optional
-    # see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
-    if config.env_name != 'local':
-        tasks.append(delete_vm.s(job_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
     tasks.append(shutdown_celery_worker.s())
