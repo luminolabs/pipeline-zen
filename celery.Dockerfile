@@ -53,20 +53,8 @@ COPY job-configs job-configs
 # Copy VERSION file for record keeping
 COPY VERSION .
 
-# Set GCP credentials file location;
-# these are mounted on the container at run time,
-# they aren't bundled in the image
-ENV GOOGLE_APPLICATION_CREDENTIALS=/project/.secrets/gcp_key.json
-
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
-# Set the application root path
-ENV PZ_ROOT_PATH=/project
-# Set the application configuration path
-ENV PZ_CONF_PATH=/project/app-configs
-
-# Run workflow from workflow folder
-WORKDIR /project/pipeline
 
 # Run workflow
-ENTRYPOINT ["python", "train_evaluate.py"]
+ENTRYPOINT ["python", "pipeline/train_evaluate.py"]
