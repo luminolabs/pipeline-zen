@@ -52,14 +52,28 @@ def upload_results(_, job_id: str):
 def mark_finished(_, job_id: str):
     """
     Creates a `.finished` file that serves as a signal to listeners
-    that the job finished. Currently used by the `run_remote.py` script.
+    that the job finished.
 
     :param job_id: The job id that finished
     :return:
     """
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
-        f.write(f'job_id: {job_id}')
+        f.write(job_id)
+
+
+@app.task
+def mark_started(_, job_id: str):
+    """
+    Creates a `.started` file that serves as a signal to listeners
+    that the job started.
+
+    :param job_id: The job id that started
+    :return:
+    """
+    path = os.path.join(config.root_path, config.results_path, config.started_file)
+    with open(path, "w") as f:
+        f.write(job_id)
 
 
 @app.task
@@ -87,10 +101,9 @@ def schedule(*args):
     evaluate_args = (job_config_name, job_id, batch_size, num_batches)
 
     # Define workflow tasks: `train` -> `evaluate`
-    tasks = [train.s(None, *train_args), evaluate.s(*evaluate_args)]
-    # If we're not on a local env, we need to signal that the job is finished
-    if config.env_name != 'local':
-        tasks.append(mark_finished.s(job_id))
+    tasks = [mark_started.s(None, job_id),
+             train.s(*train_args), evaluate.s(*evaluate_args),
+             mark_finished.s(job_id)]
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id))

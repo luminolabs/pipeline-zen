@@ -14,9 +14,10 @@ results_path: .results
 secrets_path: .secrets
 job_configs_path: job-configs
 weights_file: weights.pt
-# `finished_file`: Its presence signals listeners that a
-# job is finished (used in dev, prod self-destroying VMs)
+# `finished/started_file`: Its presence signals listeners that a
+# job is finished/started
 finished_file: .finished
+started_file: .started
 
 # Celery
 celery_broker_url: memory://localhost/

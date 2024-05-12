@@ -91,7 +91,7 @@ def main(job_config_name: str, job_id: Optional[str],
     )
     # Wait for operation to complete
     operation.result()
-    print(f'Created VM: {vm_name}')
+    print(f'...VM created')
 
     # Wait for VM to start
     print('Starting VM...')
@@ -110,7 +110,7 @@ def main(job_config_name: str, job_id: Optional[str],
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
 
     # Execute job directly (change directory and run command)
-    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev ./run-celery-docker.sh '
+    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev ./scripts/run-celery-docker.sh '
                    f'--job_config_name {job_config_name} '
                    f'--job_id {job_id} '
                    f'--batch_size {batch_size} '
@@ -120,16 +120,16 @@ def main(job_config_name: str, job_id: Optional[str],
         # This will monitor and echo job output
         print(f'Running job: {job_id}')
         print('...this might take a while!')
-        print('...if we disconnect with the server, the job is still running')
-        print('...and the job itself will stop the VM when done')
-        print('!!! If you\'re asked for a password here, that\'s your Google password; '
-              'the `gcloud` command is asking for your password, not this script; '
-              'this script runs the `gcloud` command to start the job on the remote VM')
+        print('...note: the job will continue to run, even if we disconnect')
+        print('...note: the job will stop the VM when done, even if we disconnect')
+        print('!!! If you\'re asked for a password here, that\'s your Google password;')
+        print('!!! the `gcloud` command is asking for your password, not this script;')
+        print('!!! this script runs the `gcloud` command to start the job on the remote VM')
         time.sleep(5)  # pause for user to ack message
         subprocess.run([*cmd_prefix, job_command], check=True)
     except Exception as ex:
         # Delete VM if we couldn't start the job
-        print('We failed to start the job!!!')
+        print('We failed to start the job or something else went wrong!!!')
         delete_vm(instance_client, vm_name)
         raise ex
 

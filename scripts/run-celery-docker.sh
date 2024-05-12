@@ -37,5 +37,5 @@ $image_use "${@}"
 # TODO: Make this optional
 # see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
 if [[ "$PZ_ENV" != "local" ]]; then
-  python ./scripts/delete_vm.py --job_id $(cat ./.results/.job_id)
+  python ./scripts/delete_vm.py --job_id $(cat ./.results/.started)
 fi
