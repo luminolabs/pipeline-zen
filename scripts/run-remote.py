@@ -14,7 +14,7 @@ IMAGE_NAME = 'ubuntu-pipeline-zen-jobs'
 MACHINE_TYPE = 'n1-highcpu-8'
 GPU = 'nvidia-tesla-v100'
 JOB_DIRECTORY = '/pipeline-zen-jobs'
-JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '/.finished')
+JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '.results', '.finished')
 
 
 def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
@@ -86,6 +86,8 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
         instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
         if instance_resource.status == 'RUNNING':
             print('VM is running')
+            # Wait 5 more seconds for sshd to start
+            time.sleep(5)
             break
         time.sleep(5)
         print('...still waiting for VM to start')
@@ -107,7 +109,7 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
     print('Waiting for job completion...')
     while True:
         try:
-            ssh_command = f'cd {JOB_DIRECTORY} && ls {JOB_COMPLETION_FILE}'
+            ssh_command = f'ls {JOB_COMPLETION_FILE}'
             result = subprocess.run(
                 [*cmd_prefix, ssh_command],
                 stdout=subprocess.DEVNULL,
