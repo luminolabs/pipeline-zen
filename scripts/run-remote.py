@@ -7,31 +7,70 @@ from google.cloud import compute_v1
 
 # Configuration (adjust as needed)
 PROJECT_ID = 'neat-airport-407301'
-ZONE = 'us-central1'
+ZONE = 'us-central1-a'
+SERVICE_ACCOUNT_EMAIL = f'pipeline-zen-jobs-dev@{PROJECT_ID}.iam.gserviceaccount.com'
 TEMPLATE_NAME = 'ubuntu-1xv100-pipeline-zen-jobs'
 IMAGE_NAME = 'ubuntu-pipeline-zen-jobs'
 MACHINE_TYPE = 'n1-highcpu-8'
+GPU = 'nvidia-tesla-v100'
 JOB_DIRECTORY = '/pipeline-zen-jobs'
 JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '/.finished')
 
 
 def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
-    vm_name = f'{TEMPLATE_NAME}-{job_id}'
 
-    # Create VM instance
+    # Network Interface Configuration
+    network_interface = compute_v1.NetworkInterface()
+    network_interface.name = "global/networks/default"  # Use the default network
+    network_interface.access_configs = [
+        compute_v1.AccessConfig(
+            name="External NAT",
+            type_=compute_v1.AccessConfig.Type.ONE_TO_ONE_NAT.name,
+            network_tier="PREMIUM",
+        )
+    ]
+
+    # # Create VM instance
+    vm_name = f'{TEMPLATE_NAME}-{job_id}'
     print(f'Creating VM: {vm_name}')
     instance_client = compute_v1.InstancesClient()
     instance_resource = compute_v1.Instance()
     instance_resource.name = vm_name
     instance_resource.zone = ZONE
     instance_resource.machine_type = f'zones/{ZONE}/machineTypes/{MACHINE_TYPE}'
+    instance_resource.service_accounts = [
+        compute_v1.ServiceAccount(
+            email=SERVICE_ACCOUNT_EMAIL,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+    ]
     instance_resource.disks = [
         compute_v1.AttachedDisk(
             boot=True,
             auto_delete=True,
             initialize_params=compute_v1.AttachedDiskInitializeParams(
-                source_image=f'projects/{PROJECT_ID}/global/images/{TEMPLATE_NAME}',
+                source_image=f'projects/{PROJECT_ID}/global/images/{IMAGE_NAME}',
             ),
+        )
+    ]
+    instance_resource.guest_accelerators = [
+        compute_v1.AcceleratorConfig(
+            accelerator_count=1,
+            accelerator_type=f"zones/{ZONE}/acceleratorTypes/{GPU}",
+        )
+    ]
+    # Disable live migration; no need for High Availability
+    # We can't migrate a running job, and
+    # in any case, GPU VMs don't support live migration
+    instance_resource.scheduling = compute_v1.Scheduling(
+        automatic_restart=False,
+        on_host_maintenance="TERMINATE",
+    )
+    instance_resource.network_interfaces = [network_interface]  # Attach the network interface
+    instance_resource.service_accounts = [
+        compute_v1.ServiceAccount(
+            email=SERVICE_ACCOUNT_EMAIL,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
         )
     ]
     operation = instance_client.insert(
@@ -42,21 +81,26 @@ def main(job_config_name, job_id, batch_size, num_epochs, num_batches):
     print(f'Created VM: {vm_name}')
 
     # Wait for VM to start
+    print('Starting VM...')
     while True:
-        print('Starting VM...')
         instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-        if instance_resource.status == compute_v1.Instance.Status.RUNNING:
+        if instance_resource.status == 'RUNNING':
             print('VM is running')
             break
         time.sleep(5)
         print('...still waiting for VM to start')
 
-    # Set up VM CLI command prefix
+    # Set up VM CLI command prefix, to be used in ssh commands below
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
 
     # Execute job directly (change directory and run command)
     print(f'Running job: {job_id}')
-    job_command = f'cd {JOB_DIRECTORY} && bash job_script.sh {job_config_name} {job_id} {batch_size} {num_epochs} {num_batches}'
+    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev ./run-celery-docker.sh '
+                   f'--job_config_name {job_config_name} '
+                   f'--job_id {job_id} '
+                   f'--batch_size {batch_size} '
+                   f'--num_epochs {num_epochs} '
+                   f'--num_batches {num_batches}')
     subprocess.run([*cmd_prefix, job_command])
 
     # Wait for job completion (using file-based signal)
