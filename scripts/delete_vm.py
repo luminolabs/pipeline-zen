@@ -21,12 +21,9 @@ def delete_vm(instance_client, vm_name: str) -> None:
     Delete the VM
 
     :param instance_client: The VM instance client
-    :param vm_name: Name of the VM
+    :param vm_name: Name of the VM to delete
     :return:
     """
-    print('Stopping VM...')
-    operation = instance_client.stop(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-    operation.result()
     print('Deleting VM...')
     operation = instance_client.delete(project=PROJECT_ID, zone=ZONE, instance=vm_name)
     operation.result()

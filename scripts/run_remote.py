@@ -32,79 +32,79 @@ def main(job_config_name: str, job_id: Optional[str],
     # Create auto-generated job id of one is not given
     job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
 
-    # Network Interface Configuration
-    network_interface = compute_v1.NetworkInterface()
-    network_interface.name = "global/networks/default"  # Use the default network
-    network_interface.access_configs = [
-        compute_v1.AccessConfig(
-            name="External NAT",
-            type_=compute_v1.AccessConfig.Type.ONE_TO_ONE_NAT.name,
-            network_tier="PREMIUM",
-        )
-    ]
-
-    # Create VM instance
+    # # Network Interface Configuration
+    # network_interface = compute_v1.NetworkInterface()
+    # network_interface.name = "global/networks/default"  # Use the default network
+    # network_interface.access_configs = [
+    #     compute_v1.AccessConfig(
+    #         name="External NAT",
+    #         type_=compute_v1.AccessConfig.Type.ONE_TO_ONE_NAT.name,
+    #         network_tier="PREMIUM",
+    #     )
+    # ]
+    #
+    # # Create VM instance
     vm_name = f'{TEMPLATE_NAME}-{job_id}'
-    print(f'Creating VM: {vm_name}')
+    # print(f'Creating VM: {vm_name}')
     instance_client = compute_v1.InstancesClient()
-    instance_resource = compute_v1.Instance()
-    instance_resource.name = vm_name
-    instance_resource.zone = ZONE
-    instance_resource.machine_type = f'zones/{ZONE}/machineTypes/{MACHINE_TYPE}'
-    instance_resource.service_accounts = [
-        compute_v1.ServiceAccount(
-            email=SERVICE_ACCOUNT_EMAIL,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
-    ]
-    instance_resource.disks = [
-        compute_v1.AttachedDisk(
-            boot=True,
-            auto_delete=True,
-            initialize_params=compute_v1.AttachedDiskInitializeParams(
-                source_image=f'projects/{PROJECT_ID}/global/images/{IMAGE_NAME}',
-            ),
-        )
-    ]
-    instance_resource.guest_accelerators = [
-        compute_v1.AcceleratorConfig(
-            accelerator_count=1,
-            accelerator_type=f"zones/{ZONE}/acceleratorTypes/{GPU}",
-        )
-    ]
-    # Disable live migration; no need for High Availability
-    # We can't migrate a running job, and
-    # in any case, GPU VMs don't support live migration
-    instance_resource.scheduling = compute_v1.Scheduling(
-        automatic_restart=False,
-        on_host_maintenance="TERMINATE",
-    )
-    instance_resource.network_interfaces = [network_interface]  # Attach the network interface
-    instance_resource.service_accounts = [
-        compute_v1.ServiceAccount(
-            email=SERVICE_ACCOUNT_EMAIL,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
-    ]
-    operation = instance_client.insert(
-        project=PROJECT_ID, zone=ZONE, instance_resource=instance_resource
-    )
-    # Wait for operation to complete
-    operation.result()
-    print(f'...VM created')
-
-    # Wait for VM to start
-    print('Starting VM...')
-    while True:
-        instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-        if instance_resource.status == 'RUNNING':
-            print('...VM is running')
-            # Wait for sshd to start
-            print('...Wait for sshd to start (60s)')
-            time.sleep(60)
-            break
-        time.sleep(5)
-        print('...still waiting for VM to start')
+    # instance_resource = compute_v1.Instance()
+    # instance_resource.name = vm_name
+    # instance_resource.zone = ZONE
+    # instance_resource.machine_type = f'zones/{ZONE}/machineTypes/{MACHINE_TYPE}'
+    # instance_resource.service_accounts = [
+    #     compute_v1.ServiceAccount(
+    #         email=SERVICE_ACCOUNT_EMAIL,
+    #         scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    #     )
+    # ]
+    # instance_resource.disks = [
+    #     compute_v1.AttachedDisk(
+    #         boot=True,
+    #         auto_delete=True,
+    #         initialize_params=compute_v1.AttachedDiskInitializeParams(
+    #             source_image=f'projects/{PROJECT_ID}/global/images/{IMAGE_NAME}',
+    #         ),
+    #     )
+    # ]
+    # instance_resource.guest_accelerators = [
+    #     compute_v1.AcceleratorConfig(
+    #         accelerator_count=1,
+    #         accelerator_type=f"zones/{ZONE}/acceleratorTypes/{GPU}",
+    #     )
+    # ]
+    # # Disable live migration; no need for High Availability
+    # # We can't migrate a running job, and
+    # # in any case, GPU VMs don't support live migration
+    # instance_resource.scheduling = compute_v1.Scheduling(
+    #     automatic_restart=False,
+    #     on_host_maintenance="TERMINATE",
+    # )
+    # instance_resource.network_interfaces = [network_interface]  # Attach the network interface
+    # instance_resource.service_accounts = [
+    #     compute_v1.ServiceAccount(
+    #         email=SERVICE_ACCOUNT_EMAIL,
+    #         scopes=["https://www.googleapis.com/auth/cloud-platform"],
+    #     )
+    # ]
+    # operation = instance_client.insert(
+    #     project=PROJECT_ID, zone=ZONE, instance_resource=instance_resource
+    # )
+    # # Wait for operation to complete
+    # operation.result()
+    # print(f'...VM created')
+    #
+    # # Wait for VM to start
+    # print('Starting VM...')
+    # while True:
+    #     instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
+    #     if instance_resource.status == 'RUNNING':
+    #         print('...VM is running')
+    #         # Wait for sshd to start
+    #         print('...Wait for sshd to start (60s)')
+    #         time.sleep(60)
+    #         break
+    #     time.sleep(5)
+    #     print('...still waiting for VM to start')
 
     # Set up VM CLI command prefix, to be used in ssh commands below
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
