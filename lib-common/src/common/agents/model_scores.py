@@ -32,7 +32,8 @@ class BaseScoresAgent(ABC):
 
         # Configure bigquery
         self.bq_table = self._get_bq_table()
-        self.bq = bigquery.Client(config.gcp_project)
+        self.bq = bigquery.Client(config.gcp_project) \
+            if config.provider_log_scores else None
         self.bq_table_defaults = self._get_bq_table_defaults()
         # Get a copy of the system specs
         self.system_specs = SystemSpecs(logger)
@@ -95,7 +96,7 @@ class BaseScoresAgent(ABC):
         """
 
         # Sending scores to BigQuery is disabled
-        if not config.cp_log_scores:
+        if not config.provider_log_scores:
             return
 
         # Normalize result

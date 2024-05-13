@@ -4,7 +4,7 @@
 
 Download and copy the GCP service account credentials file to `.secrets` under the repo root.
 [Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
-This step isn't needed unless `config.cp_log_scores` is enabled
+This step isn't needed unless `config.provider_log_scores` is enabled
 
 Install python dependencies:
 ```
