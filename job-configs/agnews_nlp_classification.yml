@@ -4,6 +4,7 @@ type: CLASSIFICATION
 dataset_id: ag_news
 model_base_args:
   ignore_mismatched_sizes: true
+  # TODO: See how can we pull this from the dataset metadata
   id2label:
     '0': World
     '1': Sports

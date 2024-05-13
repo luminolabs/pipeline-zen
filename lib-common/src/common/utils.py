@@ -76,7 +76,6 @@ def get_results_path(job_id: str) -> str:
     :return: Returns the path to the results directory
     """
     path = os.path.join(config.root_path, config.results_path, job_id)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
 
@@ -86,7 +85,6 @@ def get_model_weights_path(job_id: str) -> str:
     :return: Returns the path to the model weights file
     """
     path = os.path.join(get_results_path(job_id), config.weights_file)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
 
@@ -96,7 +94,6 @@ def get_logs_path(job_id: str) -> str:
     :return: Returns the path to the logs directory
     """
     path = os.path.join(config.root_path, config.logs_path, job_id)
-    os.makedirs(path, exist_ok=True)
     return path
 
 
