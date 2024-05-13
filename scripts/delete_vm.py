@@ -25,7 +25,7 @@ def delete_vm(instance_client, vm_name: str) -> None:
     :param vm_name: Name of the VM to delete
     :return:
     """
-    # First, allow logs to flush to GCP logging service
+    # Allow logs to flush to GCP logging service
     print('Flushing logs to GCP...')
     time.sleep(10)
 
