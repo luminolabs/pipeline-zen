@@ -1,6 +1,7 @@
 #!python
 
 import argparse
+import time
 
 from google.cloud import compute_v1
 
@@ -24,6 +25,10 @@ def delete_vm(instance_client, vm_name: str) -> None:
     :param vm_name: Name of the VM to delete
     :return:
     """
+    # First, allow logs to flush to GCP logging service
+    print('Flushing logs to GCP...')
+    time.sleep(10)
+
     print('Deleting VM...')
     operation = instance_client.delete(project=PROJECT_ID, zone=ZONE, instance=vm_name)
     operation.result()
@@ -36,5 +41,5 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     main(
-        args.job_id,
+        args.job_id.strip(),
     )

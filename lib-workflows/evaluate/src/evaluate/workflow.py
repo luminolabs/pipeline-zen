@@ -94,6 +94,7 @@ def run(job_config: dict, logger: Logger) -> dict:
         'f1': f1,
     }
     save_job_results(job_id, results, 'evaluate')
+    scores_logger.info('The job id was: ' + job_id)
     return results
 
 
