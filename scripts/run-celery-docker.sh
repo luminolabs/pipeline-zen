@@ -37,8 +37,8 @@ $image_use "${@}"
 # TODO: Make this optional
 # see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
 if [[ "$PZ_ENV" != "local" ]]; then
-  print "Celery workflow finished!"
-  print "Deleting VM..."
+  echo "Celery workflow finished!"
+  echo "Deleting VM..."
   # Run `delete_vm.py` in the background to
   # allow client to disconnect gracefully while
   # the VM is shutting down
