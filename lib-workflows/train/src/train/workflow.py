@@ -96,6 +96,7 @@ def run(job_config: dict, logger: Logger) -> dict:
 
     results = {'loss': epoch_loss}
     save_job_results(job_id, results, 'train')
+    scores_logger.info('The job id was: ' + job_id)
     return results
 
 

@@ -12,6 +12,7 @@ Install python dependencies:
 ```
 
 ### Run train and evaluate workflows in one go
+
 ```
 ./scripts/run-celery.sh \
   --job_config_name imdb_nlp_classification \
@@ -20,6 +21,23 @@ Install python dependencies:
   --num_batches 3
 ```
 NOTE: `imdb_nlp_classification` above points to a file under `job-configs`
+
+## Running remotely on a VM (aka on `dev`)
+
+Make sure you have `gcloud` installed and that you
+are authenticated. Try this: `gcloud auth list`; 
+you should see your email in that list, with a `*` next to it
+
+```
+./scripts/run_remote.py \
+  --job_config_name imdb_nlp_classification \
+  --batch_size 8 \
+  --num_epochs 2 \
+  --num_batches 3 \
+  --job_id my-experiment999
+```
+
+## Running individual workflows locally
 
 ### Running the train workflow
 
@@ -40,7 +58,6 @@ NOTE: `imdb_nlp_classification` above points to a file under `job-configs`
   --batch_size 8 \
   --num_batches 3
 ```
-
 
 ## Running with docker
 
@@ -69,7 +86,6 @@ run the following command to change filesystem permissions back to your user:
 ```
 sudo chown $(whoami) -R .results .cache .logs .secrets
 ```
-
 
 ## Outputs
 

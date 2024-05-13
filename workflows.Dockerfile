@@ -45,5 +45,10 @@ COPY lib-workflows/${TARGET_WORKFLOW}/src .
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
 
+# Since we can't use ARG vars in the ENTRYPOINT command below,
+# make a symlink to cli.py under the WORKDIR so that we are
+# able to call it
+RUN ln -s ${TARGET_WORKFLOW}/cli.py cli.py
+
 # Run workflow
-ENTRYPOINT ["python", "${TARGET_WORKFLOW}/cli.py"]
+ENTRYPOINT ["python", "cli.py"]
