@@ -46,8 +46,10 @@ jobs:
         with:
           project_id: 'neat-airport-407301'
           workload_identity_provider: 'projects/482988686822/locations/global/workloadIdentityPools/github/providers/pipeline-zen'
-      - name: Debug Subject Claim
-        run: echo "$ACTIONS_ID_TOKEN_REQUEST_TOKEN"
+      - name: Extract Subject Claim
+        run: |
+          SUBJECT=$(echo "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.sub')
+          echo "Subject Claim: $SUBJECT"
 #      - name: "Set up Cloud SDK"
 #        uses: "google-github-actions/setup-gcloud@v2"
 #      - name: "Use gcloud CLI"
