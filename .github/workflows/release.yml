@@ -52,7 +52,7 @@ jobs:
         run: "gcloud info"
       - name: "Docker auth"
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev --key-file=${{env.GOOGLE_APPLICATION_CREDENTIALS}}
+          gcloud auth configure-docker us-central1-docker.pkg.dev
       - name: Bump Version
         run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump_version.py -p minor
       - name: Build Docker Image
