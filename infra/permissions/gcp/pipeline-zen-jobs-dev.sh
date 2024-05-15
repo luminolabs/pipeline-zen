@@ -27,7 +27,7 @@ gcloud storage buckets add-iam-policy-binding gs://lum-pipeline-zen \
 #version: 1
 
 # 2a. Create new role for listing buckets
-gcloud iam roles update bucket_lister \
+gcloud iam roles create bucket_lister \
   --project neat-airport-407301 \
   --title "Bucket Lister" \
   --description "Grants permission to list Cloud Storage buckets." \
@@ -72,7 +72,7 @@ gcloud projects add-iam-policy-binding neat-airport-407301 \
 # starts with `ubuntu-1xv100-pipeline-zen-jobs-` only
 # ie. only Job VMs
 # 1. Create new role for deleting VMs
-gcloud iam roles update compute_instance_deleter \
+gcloud iam roles create compute_instance_deleter \
   --project=neat-airport-407301 \
   --title="Compute Instance Deleter" \
   --description="Grants permission to delete Compute Engine instances." \
