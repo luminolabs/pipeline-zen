@@ -51,6 +51,8 @@ jobs:
       - name: "Use gcloud CLI"
         run: "gcloud info"
       - name: "Docker auth"
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.token }}
         run: |
           gcloud auth configure-docker us-central1-docker.pkg.dev --quiet
       - name: Bump Version
@@ -89,5 +91,5 @@ jobs:
       - name: Notify Slack - Failure
         run: |
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"version: `none` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `failed` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
+          --data '{"text":"commit: `${{github.SHA}}` | status: `failed` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
           https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
