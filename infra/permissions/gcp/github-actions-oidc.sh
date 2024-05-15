@@ -31,7 +31,7 @@ gcloud iam workload-identity-pools providers create-oidc "pipeline-zen" \
   --location="global" \
   --workload-identity-pool="github" \
   --display-name="GitHub Repo Provider" \
-  --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
+  --attribute-mapping="google.subject=assertion.repository,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="assertion.repository_owner == 'luminolabs'" \
   --issuer-uri="https://token.actions.githubusercontent.com"
 #Created workload identity pool provider [pipeline-zen].
@@ -52,14 +52,14 @@ gcloud iam workload-identity-pools providers describe "pipeline-zen" \
 
 # 2. Allows writing docker image to `lum-docker-images` repo only
 gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
-  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/pipeline-zen" \
+  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
   --role=roles/artifactregistry.writer
 #Updated IAM policy for repository [lum-docker-images].
 #bindings:
 #...
 #...
 #- members:
-#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/pipeline-zen
+#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
 #  role: roles/artifactregistry.writer
 #etag: BwYYc2Z8Shg=
 #version: 1

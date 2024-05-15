@@ -33,11 +33,11 @@ jobs:
       # To capture the author, the following step needs to run after git checkout
       - name: Set COMMIT_AUTHOR env
         run: echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
-#      - name: Notify Slack - Started
-#        run: |
-#          curl -X POST -H 'Content-type: application/json' \
-#          --data '{"text":"version: `pending` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `started` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
-#          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
+      - name: Notify Slack - Started
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"version: `pending` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `started` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -75,19 +75,19 @@ jobs:
           git config --global user.email 'lumino-bot@luminolabs.ai'
           git commit -am "Version bump to $(cat VERSION)"
           git push
-#      - name: Notify Slack - Success
-#        run: |
-#          VERSION=$(cat VERSION)
-#          curl -X POST -H 'Content-type: application/json' \
-#          --data '{"text":"version: `'"$VERSION"'` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `success` | <${{env.WORKFLOW_URL}}|GHA link> | <${{env.ARTIFACT_REPO_URL}}|image link>"}' \
-#          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
-#  on-failure:
-#    if: failure() || cancelled()
-#    needs: [ release ]
-#    runs-on: ubuntu-latest
-#    steps:
-#      - name: Notify Slack - Failure
-#        run: |
-#          curl -X POST -H 'Content-type: application/json' \
-#          --data '{"text":"commit: `${{github.SHA}}` | status: `failed` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
-#          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
+      - name: Notify Slack - Success
+        run: |
+          VERSION=$(cat VERSION)
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"version: `'"$VERSION"'` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `success` | <${{env.WORKFLOW_URL}}|GHA link> | <${{env.ARTIFACT_REPO_URL}}|image link>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
+  on-failure:
+    if: failure() || cancelled()
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Slack - Failure
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+          --data '{"text":"commit: `${{github.SHA}}` | status: `failed` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
+          https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
