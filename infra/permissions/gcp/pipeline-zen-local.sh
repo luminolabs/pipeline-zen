@@ -1,13 +1,18 @@
+ENV="dev"
+PROJECT_ID="neat-airport-407301"
+
+# Note: The results of commands are stored as comments
+
 # Allow storing results to `lum-pipeline-zen` bucket only
 # 1. Assign Storage Admin
 gcloud storage buckets add-iam-policy-binding gs://lum-pipeline-zen \
-  --member=serviceAccount:pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com \
+  --member=serviceAccount:pipeline-zen-local-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/storage.objectAdmin
 #bindings:
 #...
 #...
 #- members:
-#  - serviceAccount:pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com
+#  - serviceAccount:pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com
 #  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
 #  role: roles/storage.objectAdmin
 #etag: CAg=
@@ -17,7 +22,7 @@ gcloud storage buckets add-iam-policy-binding gs://lum-pipeline-zen \
 
 # 2a. Create new role for listing buckets
 gcloud iam roles create bucket_lister \
-  --project neat-airport-407301 \
+  --project $PROJECT_ID \
   --title "Bucket Lister" \
   --description "Grants permission to list Cloud Storage buckets." \
   --permissions storage.buckets.list,storage.buckets.get
@@ -32,15 +37,15 @@ gcloud iam roles create bucket_lister \
 #title: Bucket Lister
 
 # 2b. Assign Bucket Lister
-gcloud projects add-iam-policy-binding neat-airport-407301 \
-  --member=serviceAccount:pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com \
-  --role=projects/neat-airport-407301/roles/bucket_lister
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=serviceAccount:pipeline-zen-local-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --role=projects/$PROJECT_ID/roles/bucket_lister
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
 #...
 #...
 #- members:
-#  - serviceAccount:pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com
+#  - serviceAccount:pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com
 #  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
 #  role: projects/neat-airport-407301/roles/bucket_lister
 #etag: BwYYc7HNeJk=
@@ -50,7 +55,7 @@ gcloud projects add-iam-policy-binding neat-airport-407301 \
 # NOTE: needs `bq.json present, see below
 bq update \
 --source bq.json \
-neat-airport-407301:pipeline_zen
+$PROJECT_ID:pipeline_zen
 #Dataset 'neat-airport-407301:pipeline_zen' successfully updated.
 
 #bq.json contents
@@ -63,7 +68,7 @@ neat-airport-407301:pipeline_zen
 #    },
 #    {
 #      "role": "WRITER",
-#      "userByEmail": "pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com"
+#      "userByEmail": "pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com"
 #    },
 #    {
 #      "role": "OWNER",
@@ -75,7 +80,7 @@ neat-airport-407301:pipeline_zen
 #    },
 #    {
 #      "role": "READER",
-#      "userByEmail": "pipeline-zen-dev@neat-airport-407301.iam.gserviceaccount.com"
+#      "userByEmail": "pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com"
 #    }
 #  ],
 #  "creationTime": "1714347117639",

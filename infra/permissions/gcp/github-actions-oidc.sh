@@ -9,31 +9,35 @@
 # We'll still grant specific permissions to the OIDC principal on
 # GCP, so it'll only able to access what we want it to access
 
+PROJECT_ID="neat-airport-407301"
+
+# Note: The results of commands are stored as comments
+
 # 1. Setup Workload Identity Pool
 gcloud iam workload-identity-pools create "github" \
-  --project="${PROJECT_ID}" \
+  --project=$PROJECT_ID \
   --location="global" \
   --display-name="GitHub Actions Pool"
 #Created workload identity pool [github].
 
 gcloud iam workload-identity-pools describe "github" \
-  --project="${PROJECT_ID}" \
+  --project=$PROJECT_ID \
   --location="global" \
   --format="value(name)"
 #projects/482988686822/locations/global/workloadIdentityPools/github
 
 gcloud iam workload-identity-pools providers create-oidc "pipeline-zen" \
-  --project="${PROJECT_ID}" \
+  --project=$PROJECT_ID \
   --location="global" \
   --workload-identity-pool="github" \
-  --display-name="My GitHub repo Provider" \
+  --display-name="GitHub Repo Provider" \
   --attribute-mapping="google.subject=assertion.sub,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="assertion.repository_owner == 'luminolabs'" \
   --issuer-uri="https://token.actions.githubusercontent.com"
 #Created workload identity pool provider [pipeline-zen].
 
 gcloud iam workload-identity-pools providers describe "pipeline-zen" \
-  --project="${PROJECT_ID}" \
+  --project=$PROJECT_ID \
   --location="global" \
   --workload-identity-pool="github" \
   --format="value(name)"
