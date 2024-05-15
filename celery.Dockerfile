@@ -61,4 +61,3 @@ ENV PYTHONPATH=/project
 
 # Run workflow
 ENTRYPOINT ["python", "pipeline/train_evaluate.py"]
-
