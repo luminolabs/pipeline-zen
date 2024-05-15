@@ -52,4 +52,3 @@ RUN ln -s ${TARGET_WORKFLOW}/cli.py cli.py
 
 # Run workflow
 ENTRYPOINT ["python", "cli.py"]
-
