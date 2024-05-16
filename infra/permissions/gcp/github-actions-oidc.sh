@@ -63,3 +63,44 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 #  role: roles/artifactregistry.writer
 #etag: BwYYc2Z8Shg=
 #version: 1
+
+# 3.
+gcloud iam roles create jobs_image_creator --project $PROJECT_ID \
+  --title "VM Manager for ubuntu-1xv100-vasilis" \
+  --description "Manage VM ubuntu-1xv100-vasilis for automated creating of new Jobs VM Image" \
+  --permissions compute.instances.start,compute.instances.stop,compute.instances.getGuestAttributes,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get
+#Created role [jobs_image_creator].
+#description: Manage VM ubuntu-1xv100-vasilis for automated creating of new Jobs VM
+#  Image
+#etag: BwYYlob_iKE=
+#includedPermissions:
+#- compute.disks.get
+#- compute.disks.use
+#- compute.images.create
+#- compute.images.get
+#- compute.instances.getGuestAttributes
+#- compute.instances.start
+#- compute.instances.stop
+#name: projects/neat-airport-407301/roles/jobs_image_creator
+#stage: ALPHA
+#title: VM Manager for ubuntu-1xv100-vasilis
+
+# 4.
+ gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
+  --role "projects/$PROJECT_ID/roles/jobs_image_creator" \
+  --condition=expression="(resource.name=='projects/$PROJECT_ID/zones/us-central1-a/instances/ubuntu-1xv100-vasilis' && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'",title="limit_to_jobs_vm_instance_template",description="Limit compute perms to ubuntu-1xv100-vasilis VM"
+#Updated IAM policy for project [neat-airport-407301].
+#bindings:
+#...
+#...
+#- condition:
+#    description: Limit compute perms to ubuntu-1xv100-vasilis VM
+#    expression: (resource.name=='projects/neat-airport-407301/zones/us-central1-a/instances/ubuntu-1xv100-vasilis'
+#      && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'
+#    title: limit_to_jobs_vm_instance_template
+#  members:
+#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
+#  role: projects/neat-airport-407301/roles/jobs_image_creator
+#etag: BwYYlp1yW3Q=
+#version: 3
