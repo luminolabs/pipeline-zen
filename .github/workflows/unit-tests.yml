@@ -1,9 +1,14 @@
-name: Unit Tests
+name: Run Unit Tests
 
 on:
   push:
+    # Don't run this workflow on master branch,
+    # we run a different workflow when merging on master
+    branches:
+      - '**'
+      - '!master'
     # Run workflow only if these folders changed
-    paths: [ 'lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile', 'scripts/**' ]
+    paths: [ 'lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'scripts/**' ]
 
 jobs:
   unit-tests:

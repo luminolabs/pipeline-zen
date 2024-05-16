@@ -1,19 +1,24 @@
-name: Release
+name: Create Release
+
+# Allow only one Release at a time
+# to avoid race conditions when multiple PRs are merged to master
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 on:
-  # Run workflow only if the unit tests workflow succeeds
-  workflow_run:
-    workflows: [ "Unit Tests" ]
-    types: [ completed ]
-    # Run workflow only in master branch
+  pull_request:
+    # Only trigger on PR closure and merge to master branch
+    types: [ closed ]
     branches: [ master ]
     # Run workflow only if these folders changed
     paths: ['lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'celery.Dockerfile', 'scripts/**']
 
-# Allows this workflow to push changes to the git repo
-# we need this to commit and push the updated VERSION file
 permissions:
+  # Allows this workflow to push changes to the git repo
+  # we need this to commit and push the updated VERSION file
   contents: write
+  # Needed by the OIDC token exchange process with GCP
   id-token: write
 
 env:
@@ -23,14 +28,15 @@ env:
   ARTIFACT_REPO_URL: "https://console.cloud.google.com/artifacts/docker/neat-airport-407301/us-central1/lum-docker-images/train_evaluate-workflow?project=neat-airport-407301"
 
 jobs:
+  unit-tests:
+    if: github.event.pull_request.merged == true
+    uses: ./.github/workflows/unit-tests.yml
   release:
+    needs: unit-tests
     runs-on: ubuntu-latest
-    # Run workflow only if the unit tests workflow succeeds
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Checkout Git Repo
         uses: actions/checkout@v4
-      # To capture the author, the following step needs to run after git checkout
       - name: Set COMMIT_AUTHOR env
         run: echo "COMMIT_AUTHOR=$(git log -1 --pretty=%an)" >> $GITHUB_ENV
       - name: Notify Slack - Started
@@ -38,9 +44,6 @@ jobs:
           curl -X POST -H 'Content-type: application/json' \
           --data '{"text":"version: `pending` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `started` | <${{env.WORKFLOW_URL}}|GHA link>"}' \
           https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
       - name: Set up Google Cloud SDK Authentication
         uses: google-github-actions/auth@v2
         with:
@@ -48,38 +51,42 @@ jobs:
           workload_identity_provider: 'projects/482988686822/locations/global/workloadIdentityPools/github/providers/pipeline-zen'
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v2"
-      - name: "Use gcloud CLI"
-        run: "gcloud info"
       - name: "Docker auth"
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+        run: gcloud auth configure-docker us-central1-docker.pkg.dev
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
       - name: Bump Version
-        run: PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump_version.py -p minor
-      - name: Build Docker Image
         run: |
-          VERSION=$(cat VERSION)
-          docker build -f celery.Dockerfile -t $IMAGE_NAME:$VERSION .
-      - name: Build image
-        run: docker build . -f celery.Dockerfile -t $IMAGE_NAME
-      - name: Tag image with version tag and artifact registry URL
-        run: docker tag $IMAGE_NAME $IMAGE_TAG:$(cat VERSION)
-      - name: Tag image `latest` tag and artifact registry URL
-        run: docker tag $IMAGE_NAME $IMAGE_TAG:latest
-      - name: Push image (version tag)
-        run: docker push $IMAGE_TAG:$(cat VERSION)
-      - name: Push image (latest tag)
-        run: docker push $IMAGE_TAG:latest
+          PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump_version.py -p minor
+          echo "NEXT_VERSION=$(cat VERSION)" >> $GITHUB_ENV
       - name: Commit new version and push to git repo
         run: |
           git config --global user.name 'lumino-bot'
           git config --global user.email 'lumino-bot@luminolabs.ai'
-          git commit -am "Version bump to $(cat VERSION)"
+          git commit -am "Version bump to ${{env.NEXT_VERSION}}"
           git push
+      - name: Create Git tag
+        run: git tag -a v${{ env.NEXT_VERSION }} -m "Release ${{ env.NEXT_VERSION }}"
+      - name: Push Git tag
+        run: git push origin ${{ env.NEXT_VERSION }}
+      - name: Build and push Docker image
+        run: |
+          docker buildx build -f celery.Dockerfile --push \
+            --tag ${{env.IMAGE_TAG}}:latest} \
+            --tag ${{env.IMAGE_TAG}}:${{ env.NEXT_VERSION }} \
+            --tag ${{env.IMAGE_TAG}}:${{ github.sha }} \
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.NEXT_VERSION }}
+          name: Release ${{ env.NEXT_VERSION }}
       - name: Notify Slack - Success
         run: |
-          VERSION=$(cat VERSION)
           curl -X POST -H 'Content-type: application/json' \
-          --data '{"text":"version: `'"$VERSION"'` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `success` | <${{env.WORKFLOW_URL}}|GHA link> | <${{env.ARTIFACT_REPO_URL}}|image link>"}' \
+          --data '{"text":"version: `${{env.NEXT_VERSION}}` | commit: `${{github.SHA}}` | user: `${{env.COMMIT_AUTHOR}}` | status: `success` | <${{env.WORKFLOW_URL}}|GHA link> | <${{env.ARTIFACT_REPO_URL}}|image link>"}' \
           https://hooks.slack.com/services/${{secrets.SLACK_KEY_RELEASES}}
   on-failure:
     if: failure() || cancelled()
