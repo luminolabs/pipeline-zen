@@ -38,6 +38,9 @@ gcloud compute instances start $VM_NAME --zone $VM_ZONE
 log "Copying files to VM..."
 gcloud compute scp --recurse ./scripts VERSION $VM_NAME:~/pipeline-zen-jobs --zone $VM_ZONE
 
+# Install python dependencies
+gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "pip install -Ur /pipeline-zen-jobs/requirements.txt"
+
 # Delete previous Docker Image
 log "Deleting older VM image..."
 gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "docker image rm $(docker image ls -q) || true"
