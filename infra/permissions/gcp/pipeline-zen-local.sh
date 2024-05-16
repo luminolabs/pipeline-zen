@@ -52,14 +52,16 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 #version: 3
 
 # Bigquery write access to `pipeline_zen` dataset only
-# NOTE: needs `bq.json present, see below
+# NOTE: needs `bq-policy.json` present, and edited with new permissions
+# See below
 bq update \
---source bq.json \
+--source bq-policy.json \
 $PROJECT_ID:pipeline_zen
 #Dataset 'neat-airport-407301:pipeline_zen' successfully updated.
 
-#bq.json contents
-#.......
+# bq show --format=prettyjson $PROJECT_ID:pipeline_zen > bq-policy.json
+#cat bq-policy.json
+#
 #{
 #  "access": [
 #    {
@@ -69,6 +71,10 @@ $PROJECT_ID:pipeline_zen
 #    {
 #      "role": "WRITER",
 #      "userByEmail": "pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com"
+#    },
+#    {
+#      "role": "WRITER",
+#      "userByEmail": "pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 #    },
 #    {
 #      "role": "OWNER",
@@ -81,6 +87,10 @@ $PROJECT_ID:pipeline_zen
 #    {
 #      "role": "READER",
 #      "userByEmail": "pipeline-zen-local-dev@neat-airport-407301.iam.gserviceaccount.com"
+#    },
+#    {
+#      "role": "READER",
+#      "userByEmail": "pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 #    }
 #  ],
 #  "creationTime": "1714347117639",
@@ -88,11 +98,11 @@ $PROJECT_ID:pipeline_zen
 #    "datasetId": "pipeline_zen",
 #    "projectId": "neat-airport-407301"
 #  },
-#  "etag": "CJIdupQnEMpnAebFqW5csw==",
+#  "etag": "jl/Ehp27S263jt2X0YcUfQ==",
 #  "id": "neat-airport-407301:pipeline_zen",
 #  "isCaseInsensitive": false,
 #  "kind": "bigquery#dataset",
-#  "lastModifiedTime": "1715724490522",
+#  "lastModifiedTime": "1715735182114",
 #  "location": "us-central1",
 #  "maxTimeTravelHours": "168",
 #  "selfLink": "https://bigquery.googleapis.com/bigquery/v2/projects/neat-airport-407301/datasets/pipeline_zen",
