@@ -64,7 +64,7 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 #etag: BwYYc2Z8Shg=
 #version: 1
 
-# 3.
+# 3. New role to allow GHA to create a new Jobs VM image upon creating a new release
 gcloud iam roles create jobs_image_creator --project $PROJECT_ID \
   --title "VM Manager for ubuntu-1xv100-vasilis" \
   --description "Manage VM ubuntu-1xv100-vasilis for automated creating of new Jobs VM Image" \
@@ -85,7 +85,7 @@ gcloud iam roles create jobs_image_creator --project $PROJECT_ID \
 #stage: ALPHA
 #title: VM Manager for ubuntu-1xv100-vasilis
 
-# 4.
+# 4. Assign jobs_image_creator
  gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
   --role "projects/$PROJECT_ID/roles/jobs_image_creator" \
