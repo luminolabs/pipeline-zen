@@ -65,22 +65,26 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 #version: 1
 
 # 3. New role to allow GHA to create a new Jobs VM image upon creating a new release
-gcloud iam roles create jobs_image_creator --project $PROJECT_ID \
+gcloud iam roles update jobs_image_creator --project $PROJECT_ID \
   --title "VM Manager for ubuntu-1xv100-vasilis" \
   --description "Manage VM ubuntu-1xv100-vasilis for automated creating of new Jobs VM Image" \
-  --permissions compute.instances.start,compute.instances.stop,compute.instances.getGuestAttributes,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get
+  --permissions compute.projects.get,compute.instances.start,compute.instances.stop,compute.instances.get,compute.instances.getGuestAttributes,compute.disks.useReadOnly,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get,compute.globalOperations.get
 #Created role [jobs_image_creator].
 #description: Manage VM ubuntu-1xv100-vasilis for automated creating of new Jobs VM
 #  Image
-#etag: BwYYlob_iKE=
+#etag: BwYYl7w29bs=
 #includedPermissions:
 #- compute.disks.get
 #- compute.disks.use
+#- compute.disks.useReadOnly
+#- compute.globalOperations.get
 #- compute.images.create
 #- compute.images.get
+#- compute.instances.get
 #- compute.instances.getGuestAttributes
 #- compute.instances.start
 #- compute.instances.stop
+#- compute.projects.get
 #name: projects/neat-airport-407301/roles/jobs_image_creator
 #stage: ALPHA
 #title: VM Manager for ubuntu-1xv100-vasilis
