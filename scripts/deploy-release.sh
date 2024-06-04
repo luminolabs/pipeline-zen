@@ -41,7 +41,7 @@ gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "pip install -Ur /pipeline
 
 # Delete previous Docker Image
 echo "Deleting older VM image..."
-gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "docker image rm $(docker image ls -q) || true"
+gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "docker image rm \$(docker image ls -q) || true"
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
