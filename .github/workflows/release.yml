@@ -78,6 +78,8 @@ jobs:
             --tag ${{env.IMAGE_TAG}}:latest} \
             --tag ${{env.IMAGE_TAG}}:${{ env.NEXT_VERSION }} \
             --tag ${{env.IMAGE_TAG}}:${{ github.sha }} \
+      - name: Build Jobs VM image
+        run: ./scripts/deploy-release.sh
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
