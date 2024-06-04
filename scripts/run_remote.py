@@ -26,11 +26,15 @@ JOB_DIRECTORY = '/pipeline-zen-jobs'
 JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '.results', '.finished')
 
 
-def main(job_config_name: str, job_id: Optional[str],
+def main(version: str,
+         job_config_name: str, job_id: Optional[str],
          batch_size: Optional[int], num_epochs: Optional[int], num_batches: Optional[int]):
 
     # Create auto-generated job id of one is not given
     job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
+
+    # Construct image name; image names are suffixed with version
+    image_name = IMAGE_NAME + '-' + version.replace('.', '-')
 
     # Network Interface Configuration
     network_interface = compute_v1.NetworkInterface()
@@ -62,7 +66,7 @@ def main(job_config_name: str, job_id: Optional[str],
             boot=True,
             auto_delete=True,
             initialize_params=compute_v1.AttachedDiskInitializeParams(
-                source_image=f'projects/{PROJECT_ID}/global/images/{IMAGE_NAME}',
+                source_image=f'projects/{PROJECT_ID}/global/images/{image_name}',
             ),
         )
     ]
@@ -147,10 +151,14 @@ if __name__ == '__main__':
     parser.add_argument('--num_batches', type=int, required=False)
     args = parser.parse_args()
 
+    with open('VERSION', 'r') as f:
+        version = f.read()
+
     main(
+        version,
         args.job_config_name,
         args.job_id,
         args.batch_size,
         args.num_epochs,
-        args.num_batches,
+        args.num_batches
     )

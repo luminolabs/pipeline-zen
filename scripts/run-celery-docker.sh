@@ -1,6 +1,7 @@
 #!/bin/bash
 
-image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:latest
+VERSION=$(cat VERSION)
+image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:$VERSION
 image_local=train_evaluate-workflow:local
 
 env="local"
