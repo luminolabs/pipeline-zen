@@ -50,5 +50,5 @@ ENV PYTHONPATH=/project
 # able to call it
 RUN ln -s ${TARGET_WORKFLOW}/cli.py cli.py
 
-# Run workflow
+# Run workflow 
 ENTRYPOINT ["python", "cli.py"]
