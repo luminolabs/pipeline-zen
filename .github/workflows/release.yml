@@ -74,10 +74,11 @@ jobs:
         run: git push origin ${{ env.NEXT_VERSION }}
       - name: Build and push Docker image
         run: |
-          docker buildx build -f celery.Dockerfile --push \
-            --tag ${{env.IMAGE_TAG}}:latest} \
+          docker buildx build -f celery.Dockerfile \
+            --tag ${{env.IMAGE_TAG}}:latest \
             --tag ${{env.IMAGE_TAG}}:${{ env.NEXT_VERSION }} \
             --tag ${{env.IMAGE_TAG}}:${{ github.sha }} \
+            --push .
       - name: Build Jobs VM image
         run: ./scripts/deploy-release.sh
       - name: Create GitHub Release
