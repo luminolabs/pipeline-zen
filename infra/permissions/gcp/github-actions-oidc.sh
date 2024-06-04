@@ -69,7 +69,7 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 gcloud iam roles update jobs_image_creator --project $PROJECT_ID \
   --title "VM Manager for gha-jobs-vm-image-creator" \
   --description "Manage VM gha-jobs-vm-image-creator for automated creating of new Jobs VM Image" \
-  --permissions compute.projects.get,compute.instances.start,compute.instances.stop,compute.instances.get,compute.instances.getGuestAttributes,compute.disks.useReadOnly,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get,compute.globalOperations.get
+  --permissions compute.projects.get,compute.instances.start,compute.instances.stop,compute.instances.get,compute.instances.getGuestAttributes,compute.instances.setMetadata,compute.disks.useReadOnly,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get,compute.globalOperations.get
 #Created role [jobs_image_creator].
 #description: Manage VM gha-jobs-vm-image-creator for automated creating of new Jobs VM
 #  Image
@@ -83,6 +83,7 @@ gcloud iam roles update jobs_image_creator --project $PROJECT_ID \
 #- compute.images.get
 #- compute.instances.get
 #- compute.instances.getGuestAttributes
+#- compute.instances.setMetadata
 #- compute.instances.start
 #- compute.instances.stop
 #- compute.projects.get
