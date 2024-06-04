@@ -9,6 +9,8 @@ on:
       - '!master'
     # Run workflow only if these folders changed
     paths: [ 'lib-celery/**', 'lib-common/**', 'lib-workflows/**', 'app-configs/**', 'job-configs/**', 'scripts/**' ]
+  workflow_call:
+  # empty because no inputs or other options are needed
 
 jobs:
   unit-tests:
