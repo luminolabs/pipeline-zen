@@ -69,7 +69,7 @@ jobs:
           git commit -am "Version bump to ${{env.NEXT_VERSION}}"
           git push
       - name: Create Git tag
-        run: git tag -a v${{ env.NEXT_VERSION }} -m "Release ${{ env.NEXT_VERSION }}"
+        run: git tag -a ${{ env.NEXT_VERSION }} -m "Release ${{ env.NEXT_VERSION }}"
       - name: Push Git tag
         run: git push origin ${{ env.NEXT_VERSION }}
       - name: Build and push Docker image
