@@ -59,5 +59,5 @@ COPY VERSION .
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
 
-# Run workflow
+# Run workflow 
 ENTRYPOINT ["python", "pipeline/train_evaluate.py"]
