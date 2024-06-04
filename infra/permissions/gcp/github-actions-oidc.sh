@@ -128,7 +128,7 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 #version: 1
 
 # 6. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
-# when ssh into ``gha-jobs-vm-image-creator` VM
+# when logging into `gha-jobs-vm-image-creator` VM
 gcloud iam service-accounts add-iam-policy-binding \
   gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
   --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
