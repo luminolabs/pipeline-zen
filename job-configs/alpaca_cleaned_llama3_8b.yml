@@ -1,0 +1,7 @@
+job_id: alpaca-cleaned-llama3-8b
+category: LLM
+type: INSTRUCTION
+dataset_id: yahma/alpaca-cleaned
+model_base: meta-llama/Meta-Llama-3-8B
+torchtune_recipe: lora_finetune_single_device
+torchtune_config: llama3/8B_lora_single_device
