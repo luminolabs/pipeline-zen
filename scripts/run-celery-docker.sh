@@ -6,7 +6,7 @@ image_local=train_evaluate-workflow:local
 
 env="local"
 image_use=$image_local
-if [[ "$PZ_ENV" != "local" ]]; then
+if [[ "$PZ_ENV" != "local" && "$PZ_ENV" != "" ]]; then
   env=$PZ_ENV
   image_use=$image_remote
 fi
@@ -33,12 +33,12 @@ docker run $gpus \
 -e PZ_ENV=$env \
 $image_use "${@}"
 
+echo "Celery workflow finished!"
 
 # If we're not on a local env, let's delete the VM that run this job
 # TODO: Make this optional
 # see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
-if [[ "$PZ_ENV" != "local" ]]; then
-  echo "Celery workflow finished!"
+if [[ "$env" != "local" ]]; then
   echo "Deleting VM..."
   # Run `delete_vm.py` in the background to
   # allow client to disconnect gracefully while

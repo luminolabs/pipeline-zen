@@ -2,7 +2,8 @@
 
 # Creates a new Jobs VM image with updated:
 # - ./scripts and VERSION
-# - latest Docker Image
+# - python dependencies
+# - Docker Image
 
 set -e  # Exit immediately if a command fails
 
@@ -31,20 +32,23 @@ gcloud compute instances start $VM_NAME --zone $VM_ZONE
 echo "Wait 60s to allow VM to start services..."
 sleep 60
 
-# Copy Files to VM
 echo "Copying files to VM..."
+# Make sure we have access to the files and folders
+gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /pipeline-zen-jobs"
+# Copy Files to VM
 gcloud compute scp --recurse ./scripts VERSION $VM_NAME:/pipeline-zen-jobs --zone $VM_ZONE
 
 # Install python dependencies
 echo "Installing python dependencies..."
 gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "pip install -Ur /pipeline-zen-jobs/scripts/requirements.txt"
 
-# Delete previous Docker Image
+# Delete older Docker Image
 echo "Deleting older VM image..."
 gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "docker image rm \$(docker image ls -q) || true"
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
+gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "gcloud auth configure-docker us-central1-docker.pkg.dev  --quiet"
 gcloud compute ssh $VM_NAME --zone $VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
 
 # Stop VM
