@@ -213,11 +213,13 @@ def load_job_config(job_config_name: str) -> dict:
     return {**base_config, **template_config, **job_config}
 
 
-def read_job_config_from_file(job_config_name: str, is_torchtune: bool = False) -> DictConfig:
+def read_job_config_from_file(job_config_name: str,
+                              overrides: Optional[dict] = None, is_torchtune: bool = False) -> DictConfig:
     """
     Reads the job config from a YAML file
 
     :param job_config_name: Name of the job configuration
+    :param overrides: Overrides to apply to the job config
     :param is_torchtune: Whether the job config is a torchtune config file or not
     :return: The job config dictionary
     """
@@ -231,7 +233,7 @@ def read_job_config_from_file(job_config_name: str, is_torchtune: bool = False) 
         'torchtune' if is_torchtune else '',
         job_config_name)
     try:
-        job_config = OmegaConf.load(path)
+        job_config = OmegaConf.merge(OmegaConf.load(path), overrides or {})
     except FileNotFoundError:
         # User friendly error
         raise FileNotFoundError(f'job_config_name: {job_config_name} not found under {path}')

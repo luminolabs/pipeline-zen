@@ -11,7 +11,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizerBase
 from common.dataset.kind.utils import dataset_kind_factory
 from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.dataset.provider.utils import dataset_provider_factory
-from common.model.utils import model_factory
+from common.model.factory import model_factory
 from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path
 

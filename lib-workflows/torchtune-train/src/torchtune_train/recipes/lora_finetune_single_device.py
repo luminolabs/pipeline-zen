@@ -457,7 +457,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             intermediate_checkpoint=(epoch + 1 < self.total_epochs),
         )
 
-    def train(self) -> None:
+    def train(self) -> float:
         """
         The core training loop.
         """
@@ -471,6 +471,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         t0 = time.perf_counter()
         running_loss = 0
         num_tokens = 0
+        loss_to_log = None
 
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
@@ -559,13 +560,13 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
+        return loss_to_log
 
     def cleanup(self) -> None:
         self._metric_logger.close()
 
 
-# @config.parse
-def recipe_main(cfg: DictConfig) -> None:
+def recipe_main(cfg: DictConfig) -> float:
     """
     Entry point for the recipe.
 
@@ -576,5 +577,6 @@ def recipe_main(cfg: DictConfig) -> None:
     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
     recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg)
     recipe.setup(cfg=cfg)
-    recipe.train()
+    loss = recipe.train()
     recipe.cleanup()
+    return loss

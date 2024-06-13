@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import pytest
 
-from common.model.utils import model_factory
+from common.model.factory import model_factory
 
 
 @patch('common.model.utils.image.resnet')

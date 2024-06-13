@@ -21,7 +21,7 @@ def test_base_dataset_provider():
         BaseDatasetProvider._validate_init(dataset_id='foo', split=1)
 
     # Downloads cache dir is a string
-    assert BaseDatasetProvider.get_cache_dir() == \
+    assert BaseDatasetProvider.get_dataset_cache_dir() == \
            './.cache/datasets/basedatasetprovider'
 
 

@@ -1,20 +1,11 @@
-# Config for single device LoRA finetuning in lora_finetune_single_device.py
+# Config for single device LoRA fine-tuning with lora_finetune_single_device.py
 # using a Llama3 8B Instruct model
-#
-# This config assumes that you've run the following command before launching
-# this run:
-#   tune download meta-llama/Meta-Llama-3-8B-Instruct --output-dir /home/vasilis/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B/snapshots/62bd457b6fe961a42a631306577e622c83876cb6/ --hf-token <HF_TOKEN>
-#
-# To launch on a single device, run the following command from root:
-#   tune run lora_finetune_single_device --config llama3/8B_lora_single_device
-#
-# You can add specific overrides through the command line. For example
-# to override the checkpointer directory while launching training
-# you can run:
-#   tune run lora_finetune_single_device --config llama3/8B_lora_single_device checkpointer.checkpoint_dir=<YOUR_CHECKPOINT_DIR>
-#
-# This config works only for training on single device.
 
+
+# These are set by the job launcher, don't set them manually
+base_model_path:
+logs_path:
+results_path:
 
 # Model Arguments
 model:
@@ -28,11 +19,11 @@ model:
 # Tokenizer
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
-  path: /home/vasilis/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B/snapshots/62bd457b6fe961a42a631306577e622c83876cb6/original/tokenizer.model
+  path: ${base_model_path}/original/tokenizer.model
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
-  checkpoint_dir: /home/vasilis/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B/snapshots/62bd457b6fe961a42a631306577e622c83876cb6/
+  checkpoint_dir: ${base_model_path}
   checkpoint_files: [
     model-00001-of-00004.safetensors,
     model-00002-of-00004.safetensors,
@@ -40,7 +31,7 @@ checkpointer:
     model-00004-of-00004.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: /home/vasilis/.cache/huggingface/hub/models--meta-llama--Meta-Llama-3-8B/snapshots/62bd457b6fe961a42a631306577e622c83876cb6/
+  output_dir: ${results_path}
   model_type: LLAMA3
 resume_from_checkpoint: False
 
@@ -70,12 +61,11 @@ gradient_accumulation_steps: 64
 compile: False
 
 # Logging
-output_dir: /tmp/lora_finetune_output
 metric_logger:
   _component_: torchtune.utils.metric_logging.DiskLogger
-  log_dir: ${output_dir}
+  log_dir: ${logs_path}
 log_every_n_steps: 1
-log_peak_memory_stats: False
+log_peak_memory_stats: True
 
 # Environment
 device: cuda

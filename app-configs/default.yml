@@ -25,3 +25,6 @@ celery_broker_url: memory://localhost/
 # GCP
 gcp_project: neat-airport-407301
 bq_dataset: pipeline_zen
+
+# Hugging Face
+hf_token: # Set this in your .env file

@@ -23,7 +23,7 @@ class HuggingFace(BaseDatasetProvider):
             path=self.dataset_id,
             # Only store in disk
             keep_in_memory=False,
-            cache_dir=os.path.join(self.get_cache_dir(), self.dataset_id),
+            cache_dir=os.path.join(self.get_dataset_cache_dir(), self.dataset_id),
             split=self.split,
             # Some datasets require running a script
             # to prepare data upon download
