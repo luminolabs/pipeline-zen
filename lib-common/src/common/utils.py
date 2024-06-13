@@ -10,7 +10,6 @@ from os.path import basename
 from typing import Optional, Union
 from datetime import datetime
 
-import yaml
 from google.cloud import storage
 from google.cloud.storage import Bucket
 from omegaconf import OmegaConf, DictConfig

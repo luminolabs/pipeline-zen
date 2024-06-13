@@ -5,10 +5,12 @@ from typing import Optional, Callable
 
 from omegaconf import OmegaConf, DictConfig
 
+from common.model.utils import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file
 
 
 def run(job_config: DictConfig, tt_config: DictConfig, tt_recipe_fn: Callable, logger: Logger) -> dict:
+    model_factory(model_kind=None, model_base=job_config['model_base'], logger=logger, token='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')
     r = tt_recipe_fn(tt_config)
     return {}
 

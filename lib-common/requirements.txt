@@ -15,4 +15,5 @@ segmentation_models_pytorch
 
 # Other libs
 xmltodict
-pyyaml
+pyyaml  # TODO: replace with omegaconf
+omegaconf
