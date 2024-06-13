@@ -6,18 +6,37 @@ from omegaconf import DictConfig, OmegaConf
 
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
-    get_logs_path, get_results_path
+    get_logs_path, get_results_path, save_job_results
 
 
 def run(job_config: DictConfig, tt_config: DictConfig, tt_recipe_fn: Callable, logger: Logger) -> dict:
+    """
+    Trains a model using torchtune recipies
+
+    :param job_config: The job configuration
+    :param tt_config: The torchtune specific job configuration
+    :param tt_recipe_fn: The torchtune recipe function (the callable, not the name of the function)
+    :param logger: The logger instance
+    :return: The final loss value
+    """
+    job_id = job_config['job_id']
+
+    # TODO: Possibly implement custom torchtune logger
+    # TODO: Stream logs to cloud logging
+    # TODO: Save the fine-tuned model weights to cloud storage
+
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # it's the path in this case
     # Run the torchtune recipe, which will fine-tune the model
     loss = tt_recipe_fn(tt_config)
-    # Return the loss value
-    return {'loss': loss}
+
+    # Save and return the results
+    results = {'loss': loss}
+    save_job_results(job_id, results, 'torchtune_train')
+    logger.info('The job id was: ' + job_id)
+    return results
 
 
 def import_recipe_main(recipe: str) -> Callable:
