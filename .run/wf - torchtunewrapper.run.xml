@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="wf - torchtune" type="PythonConfigurationType" factoryName="Python">
+  <configuration default="false" name="wf - torchtunewrapper" type="PythonConfigurationType" factoryName="Python">
     <module name="pipeline-zen" />
     <option name="ENV_FILES" value="$PROJECT_DIR$/.env" />
     <option name="INTERPRETER_OPTIONS" value="" />
@@ -52,8 +52,8 @@
         <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
       </ENTRIES>
     </EXTENSION>
-    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib-workflows/torchtune/src/torchtune/cli.py" />
-    <option name="PARAMETERS" value="--job_config_name alpaca_cleaned_llama3_8b --job_id alpaca_cleaned_llama3_8b-experiment1" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib-workflows/torchtunewrapper/src/torchtunewrapper/cli.py" />
+    <option name="PARAMETERS" value="--job_config_name llm_llama3_8b --job_id llm_llama3_8b-experiment1 --dataset yahma/alpaca-cleaned --batch_size 2 --shuffle true" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

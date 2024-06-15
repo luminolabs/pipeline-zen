@@ -25,6 +25,6 @@ def add_hf_params(model_base: str, **kwargs) -> dict:
     """
     if 'token' not in kwargs:
         kwargs['token'] = config.hf_token
-    if 'local_dir' not in kwargs:
-        kwargs['local_dir'] = get_model_cache_dir('huggingface', model_base)
+    if 'cache_dir' not in kwargs:
+        kwargs['cache_dir'] = get_model_cache_dir('huggingface', model_base)
     return kwargs

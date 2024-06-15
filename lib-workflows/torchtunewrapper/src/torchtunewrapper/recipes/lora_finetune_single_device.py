@@ -17,7 +17,7 @@ from omegaconf import DictConfig, ListConfig
 
 from torch import nn
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader, DistributedSampler, Dataset
 from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.modules.peft.peft_utils import (
@@ -96,8 +96,8 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
 
     """
 
-    def __init__(self, cfg: DictConfig) -> None:
-
+    def __init__(self, cfg: DictConfig, dataset: Optional[Dataset] = None) -> None:
+        self._dataset = dataset
         self._device = utils.get_device(device=cfg.device)
         # Reduced precision logic
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
@@ -363,16 +363,21 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         Map-style Datasets which fit into memory and an option for random shuffling.
         Samplers, iterable datasets, and streaming datasets are not supported.
         """
-        if isinstance(cfg_dataset, ListConfig):
-            datasets = [
-                config.instantiate(single_cfg_dataset, tokenizer=self._tokenizer)
-                for single_cfg_dataset in cfg_dataset
-            ]
-            ds = ConcatDataset(datasets=datasets)
-            packed = False
-        else:
-            ds = config.instantiate(cfg_dataset, tokenizer=self._tokenizer)
+        if self._dataset:
+            ds = self._dataset
+            ds._tokenizer = self._tokenizer
             packed = cfg_dataset.get("packed", False)
+        else:
+            if isinstance(cfg_dataset, ListConfig):
+                datasets = [
+                    config.instantiate(single_cfg_dataset, tokenizer=self._tokenizer)
+                    for single_cfg_dataset in cfg_dataset
+                ]
+                ds = ConcatDataset(datasets=datasets)
+                packed = False
+            else:
+                ds = config.instantiate(cfg_dataset, tokenizer=self._tokenizer)
+                packed = cfg_dataset.get("packed", False)
 
         sampler = DistributedSampler(
             ds,
@@ -566,7 +571,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         self._metric_logger.close()
 
 
-def recipe_main(cfg: DictConfig) -> float:
+def recipe_main(cfg: DictConfig, dataset: Dataset) -> float:
     """
     Entry point for the recipe.
 
@@ -575,7 +580,7 @@ def recipe_main(cfg: DictConfig) -> float:
         - Overwritten by arguments from the command-line
     """
     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
-    recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg)
+    recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg, dataset=dataset)
     recipe.setup(cfg=cfg)
     loss = recipe.train()
     recipe.cleanup()
