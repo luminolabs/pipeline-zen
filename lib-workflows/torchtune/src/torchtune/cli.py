@@ -1,6 +1,6 @@
 import argparse
 
-from torchtune_train.workflow import main
+from torchtune.workflow import main
 
 
 def parse_args() -> tuple:
@@ -19,5 +19,5 @@ def parse_args() -> tuple:
 
 
 if __name__ == '__main__':
-    # Run train workflow
+    # Run torchtune workflow
     main(*parse_args())

@@ -1,10 +1,15 @@
-# Use with lora_finetune_single_device.py
+# Use with lora_finetune_distributed.py
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
 logs_path:
 results_path:
 output_dir: ${results_path}
+
+# Tokenizer
+tokenizer:
+  _component_: torchtune.models.llama3.llama3_tokenizer
+  path: ${base_model_path}/original/tokenizer.model
 
 # Model Arguments
 model:
@@ -14,11 +19,6 @@ model:
   apply_lora_to_output: False
   lora_rank: 8
   lora_alpha: 16
-
-# Tokenizer
-tokenizer:
-  _component_: torchtune.models.llama3.llama3_tokenizer
-  path: ${base_model_path}/original/tokenizer.model
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
@@ -56,22 +56,16 @@ loss:
 # Training
 epochs: 1
 max_steps_per_epoch: null
-gradient_accumulation_steps: 64
-compile: False
+gradient_accumulation_steps: 32
 
 # Logging
 metric_logger:
   _component_: torchtune.utils.metric_logging.DiskLogger
   log_dir: ${logs_path}
 log_every_n_steps: 1
-log_peak_memory_stats: True
+log_peak_memory_stats: False
 
 # Environment
 device: cuda
 dtype: bf16
 enable_activation_checkpointing: True
-
-# Profiler (disabled)
-profiler:
-  _component_: torchtune.utils.profiler
-  enabled: False

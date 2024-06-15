@@ -34,14 +34,14 @@ def run(job_config: DictConfig, tt_config: DictConfig, tt_recipe_fn: Callable, l
 
     # Save and return the results
     results = {'loss': loss}
-    save_job_results(job_id, results, 'torchtune_train')
+    save_job_results(job_id, results, 'torchtune')
     logger.info('The job id was: ' + job_id)
     return results
 
 
 def import_recipe_main(recipe: str) -> Callable:
     # Dynamically import the recipe module
-    module = importlib.import_module(f'torchtune_train.recipes.{recipe}')
+    module = importlib.import_module(f'torchtune.recipes.{recipe}')
     # Access the function from the recipe module
     return getattr(module, 'recipe_main')
 
@@ -69,7 +69,7 @@ def main(job_config_name: str, job_id: Optional[str]):
 
     # Instantiate the main logger
     logger = setup_logger('torchtune_train_workflow', job_id)
-    # Run the `torchtune_train` workflow, and handle unexpected exceptions
+    # Run the `torchtune` workflow, and handle unexpected exceptions
     try:
         return run(job_config, tt_config, tt_recipe_fn, logger)
     except Exception as ex:
