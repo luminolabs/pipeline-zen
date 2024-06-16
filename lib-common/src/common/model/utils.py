@@ -24,7 +24,7 @@ def add_hf_params(model_base: str, **kwargs) -> dict:
     :return: Updated keyword arguments
     """
     if 'token' not in kwargs:
-        kwargs['token'] = config.hf_token
+        kwargs['token'] = config.huggingface_token
     if 'cache_dir' not in kwargs:
         kwargs['cache_dir'] = get_model_cache_dir('huggingface', model_base)
     return kwargs

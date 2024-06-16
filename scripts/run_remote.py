@@ -1,100 +1,57 @@
 #!python
 
+import argparse
 import sys
-import os
 import subprocess
 import time
 import uuid
-from typing import Optional
 
 from google.cloud import compute_v1
 
 from delete_vm import delete_vm
 
-# TODO: Make options below configurable
-# see: https://linear.app/luminoai/issue/LUM-178/make-machine-type-configurable-when-deploying-job
-
 # Configuration (adjust as needed)
 PROJECT_ID = 'neat-airport-407301'
-ZONE = 'us-central1-a'
-SERVICE_ACCOUNT_EMAIL = f'pipeline-zen-jobs-dev@{PROJECT_ID}.iam.gserviceaccount.com'
-TEMPLATE_NAME = 'ubuntu-1xv100-pipeline-zen-jobs'
-IMAGE_NAME = 'ubuntu-pipeline-zen-jobs'
-MACHINE_TYPE = 'n1-highcpu-8'
-GPU = 'nvidia-tesla-v100'
+REGION = 'us-central1'
+ZONE = f'{REGION}-a'
+BASE_TEMPLATE_NAME = 'ubuntu-1xv100-pipeline-zen-jobs'
 JOB_DIRECTORY = '/pipeline-zen-jobs'
 
 
-def main(version: str,
-         job_config_name: str, job_id: Optional[str],
-         batch_size: Optional[int], num_epochs: Optional[int], num_batches: Optional[int]):
+def main(version: str, job_config_name: str, job_id: str, *args):
+    """
+    Run the model training workflow remotely on a compute instance.
 
-    # Create auto-generated job id of one is not given
+    :param version: The version of the template to use
+    :param job_config_name: The name of the job config file, without the `.py` extension
+    :param job_id: The job_id to use for training; logs and other job results and artifacts will be named after this.
+    :param args: Arguments to pass from the CLI to the job
+    :return:
+    """
+
+    # Create auto-generated job id if one is not given
     job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
 
-    # Construct image name; image names are suffixed with version
-    image_name = IMAGE_NAME + '-' + version.replace('.', '-')
+    vm_name = f'{BASE_TEMPLATE_NAME}-{job_id}'.replace('_', '-')
+    print(f'Creating VM from template: {vm_name}')
 
-    # Network Interface Configuration
-    network_interface = compute_v1.NetworkInterface()
-    network_interface.name = "global/networks/default"  # Use the default network
-    network_interface.access_configs = [
-        compute_v1.AccessConfig(
-            name="External NAT",
-            type_=compute_v1.AccessConfig.Type.ONE_TO_ONE_NAT.name,
-            network_tier="PREMIUM",
-        )
-    ]
-
-    # Create VM instance
-    vm_name = f'{TEMPLATE_NAME}-{job_id}'
-    print(f'Creating VM: {vm_name}')
+    # Create VM instance from template
     instance_client = compute_v1.InstancesClient()
-    instance_resource = compute_v1.Instance()
-    instance_resource.name = vm_name
-    instance_resource.zone = ZONE
-    instance_resource.machine_type = f'zones/{ZONE}/machineTypes/{MACHINE_TYPE}'
-    instance_resource.service_accounts = [
-        compute_v1.ServiceAccount(
-            email=SERVICE_ACCOUNT_EMAIL,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+
+    try:
+        # Insert the compute instance using the template
+        operation = instance_client.insert(
+            project=PROJECT_ID,
+            zone=ZONE,
+            instance_resource=compute_v1.Instance(name=vm_name),
+            source_instance_template=f'global/instanceTemplates/{BASE_TEMPLATE_NAME}-{version}'
         )
-    ]
-    instance_resource.disks = [
-        compute_v1.AttachedDisk(
-            boot=True,
-            auto_delete=True,
-            initialize_params=compute_v1.AttachedDiskInitializeParams(
-                source_image=f'projects/{PROJECT_ID}/global/images/{image_name}',
-            ),
-        )
-    ]
-    instance_resource.guest_accelerators = [
-        compute_v1.AcceleratorConfig(
-            accelerator_count=1,
-            accelerator_type=f"zones/{ZONE}/acceleratorTypes/{GPU}",
-        )
-    ]
-    # Disable live migration; no need for High Availability
-    # We can't migrate a running job, and
-    # in any case, GPU VMs don't support live migration
-    instance_resource.scheduling = compute_v1.Scheduling(
-        automatic_restart=False,
-        on_host_maintenance="TERMINATE",
-    )
-    instance_resource.network_interfaces = [network_interface]  # Attach the network interface
-    instance_resource.service_accounts = [
-        compute_v1.ServiceAccount(
-            email=SERVICE_ACCOUNT_EMAIL,
-            scopes=["https://www.googleapis.com/auth/cloud-platform"],
-        )
-    ]
-    operation = instance_client.insert(
-        project=PROJECT_ID, zone=ZONE, instance_resource=instance_resource
-    )
-    # Wait for operation to complete
-    operation.result()
-    print(f'...VM created')
+        # Wait for operation to complete
+        operation.result()
+        print(f'...VM created')
+    except Exception as e:
+        print(f'Failed to create VM: {e}')
+        return
 
     # Wait for VM to start
     print('Starting VM...')
@@ -113,8 +70,8 @@ def main(version: str,
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
 
     # Execute job directly (change directory and run command)
-    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev '
-                   f'./scripts/run-celery-docker.sh {" ".join(args)}')
+    job_command = (f'cd {JOB_DIRECTORY} && source ./scripts/export-secrets.sh && '
+                   f'PZ_ENV=dev ./scripts/run-celery-docker.sh {" ".join(args)}')
     try:
         # This will monitor and echo job output
         print(f'Running job: {job_id}')
@@ -138,10 +95,21 @@ def main(version: str,
 
 
 if __name__ == '__main__':
-    # Get all arguments
-    args = sys.argv[1:]  # Skip the first element which is the script name
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Run the model training workflow remotely")
+    parser.add_argument('-jc', '--job_config_name', type=str, required=True,
+                        help="The name of the job config file, without the `.py` extension")
+    parser.add_argument('-jid', '--job_id', type=str, required=False,
+                        help="The job_id to use for training; "
+                             "logs and other job results and artifacts will be named after this.")
+    known_args, _ = parser.parse_known_args()
+    job_config_name, job_id = known_args.job_config_name, known_args.job_id
+
     # Get version from VERSION file
     with open('VERSION', 'r') as f:
-        version = f.read()
+        version = f.read().strip().replace('.', '-')
+
+    # Get all arguments
+    all_args = sys.argv[1:]  # Skip the first element which is the script name
     # Run the workflow remotely
-    main(version, *args)
+    main(version, job_config_name, job_id, *all_args)
