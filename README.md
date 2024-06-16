@@ -16,7 +16,7 @@ Install python dependencies:
 ### Run the torchtune-wrapper workflow
 
 ```
-./scripts/run-celery.sh torchtunewrapper_wf \
+./scripts/run-celery.sh torchtunewrapper \
   --job_config_name llm_llama3_8b 
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id yahma/alpaca-cleaned 
@@ -43,7 +43,7 @@ Install python dependencies:
 ### Run train and evaluate workflows in one go
 
 ```
-./scripts/run-celery.sh train_evaluate_wf \
+./scripts/run-celery.sh train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \

@@ -61,12 +61,3 @@ COPY VERSION .
 
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
-
-# Since we can't use ARG vars in the ENTRYPOINT command below,
-# make a symlink to workflow.py under the pipeline/ so that we are
-# able to call it
-ARG TARGET_WORKFLOW
-RUN ln -s ${TARGET_WORKFLOW}.py pipeline/workflow.py
-
-# Run workflow
-ENTRYPOINT ["python", "pipeline/workflow.py"]
