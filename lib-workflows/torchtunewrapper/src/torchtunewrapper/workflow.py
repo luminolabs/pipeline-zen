@@ -5,6 +5,7 @@ from typing import Optional
 from omegaconf import DictConfig, OmegaConf
 from torchtune.datasets._instruct import instruct_dataset
 
+from common.dataset.provider.huggingface import HuggingFace
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
     get_logs_path, get_results_path, save_job_results
@@ -25,6 +26,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
     # TODO: Possibly implement custom torchtune logger
     # TODO: Stream logs to cloud logging
+    # TODO: Unit tests
     # TODO: Put together detailed how to use instructions
 
     # Instantiate dataset
@@ -36,6 +38,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         max_seq_len=job_config.get('max_seq_len', None),
         packed=job_config.get('packed', False),
         split=job_config.get('split', 'train'),
+        cache_dir=HuggingFace.get_dataset_cache_dir(),
     )
 
     # Get the torchtune recipe function
@@ -45,7 +48,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
     # Update the base model path in the torchtune configuration
-    tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # it's the path in this case
+    tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
     # Run the torchtune recipe, which will fine-tune the model
     loss = tt_recipe_fn(tt_config)
 

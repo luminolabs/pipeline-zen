@@ -2,10 +2,13 @@ import importlib
 from typing import Callable
 
 
-def import_torchtune_recipe_fn(lora: bool, single_device: bool) -> Callable:
+def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Callable:
+    """
+    :return: The imported torchtune recipe function
+    """
     # Build recipe name
-    finetune_type = 'lora' if lora else 'full'
-    device_type = 'single_device' if single_device else 'distributed'
+    finetune_type = 'lora' if use_lora else 'full'
+    device_type = 'single_device' if use_single_device else 'distributed'
     recipe = f'{finetune_type}_finetune_{device_type}'
     # Dynamically import the recipe module
     module = importlib.import_module(f'torchtunewrapper.recipes.{recipe}')
@@ -14,6 +17,9 @@ def import_torchtune_recipe_fn(lora: bool, single_device: bool) -> Callable:
 
 
 def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_device: bool) -> str:
+    """
+    :return: The torchtune config filename
+    """
     # Map model base to config prefix;
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
@@ -31,6 +37,9 @@ def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_de
 
 
 def get_torchtune_dataset_template(dataset_template: str) -> str:
+    """
+    :return: The torchtune dataset template class name
+    """
     # Map dataset templates to actual classes;
     # also serves as a check for supported templates
     template_to_class = {
