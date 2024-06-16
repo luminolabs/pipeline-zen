@@ -45,44 +45,44 @@ CONFIGS=(
 
 # --- Main Script ---
 
-#echo "Starting deployment process..."
-#
-## Start VM
-#echo "Starting VM..."
-#gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $ZONE
-#
-## Wait for machine to be ready, give it a few seconds
-#echo "Wait 60s to allow VM to start services..."
-#sleep 60
-#
-#echo "Copying files to VM..."
-## Make sure we have access permissions to the files and folders
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "sudo chown -R $(whoami):$(whoami) /pipeline-zen-jobs"
-## Remove old files
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "rm -rf /pipeline-zen-jobs/scripts /pipeline-zen-jobs/VERSION || true"
-## Copy files to VM
-#gcloud compute scp --recurse ./scripts VERSION $IMAGE_CREATOR_VM_NAME:/pipeline-zen-jobs --zone $ZONE
-#
-## Install python dependencies
-#echo "Installing python dependencies..."
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "pip install -Ur /pipeline-zen-jobs/scripts/requirements.txt"
-#
-## Delete older Docker Image
-#echo "Deleting older VM image..."
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "docker image rm \$(docker image ls -q) || true"
-#
-## Pull Docker Image on VM
-#echo "Pulling new Docker image on VM: $VERSION..."
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "gcloud auth configure-docker us-central1-docker.pkg.dev --quiet"
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "docker pull $DOCKER_IMAGE_PATH"
-#
-## Stop VM
-#echo "Stopping VM..."
-#gcloud compute instances stop $IMAGE_CREATOR_VM_NAME --zone $ZONE
-#
-## Create Image from VM Disk
-#echo "Creating new VM image..."
-#gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAME --source-disk-zone $ZONE
+echo "Starting deployment process..."
+
+# Start VM
+echo "Starting VM..."
+gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $ZONE
+
+# Wait for machine to be ready, give it a few seconds
+echo "Wait 60s to allow VM to start services..."
+sleep 60
+
+echo "Copying files to VM..."
+# Make sure we have access permissions to the files and folders
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "sudo chown -R $(whoami):$(whoami) /pipeline-zen-jobs"
+# Remove old files
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "rm -rf /pipeline-zen-jobs/scripts /pipeline-zen-jobs/VERSION || true"
+# Copy files to VM
+gcloud compute scp --recurse ./scripts VERSION $IMAGE_CREATOR_VM_NAME:/pipeline-zen-jobs --zone $ZONE
+
+# Install python dependencies
+echo "Installing python dependencies..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "pip install -Ur /pipeline-zen-jobs/scripts/requirements.txt"
+
+# Delete older Docker Image
+echo "Deleting older VM image..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "docker image rm \$(docker image ls -q) || true"
+
+# Pull Docker Image on VM
+echo "Pulling new Docker image on VM: $VERSION..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "gcloud auth configure-docker us-central1-docker.pkg.dev --quiet"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "docker pull $DOCKER_IMAGE_PATH"
+
+# Stop VM
+echo "Stopping VM..."
+gcloud compute instances stop $IMAGE_CREATOR_VM_NAME --zone $ZONE
+
+# Create Image from VM Disk
+echo "Creating new VM image..."
+gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAME --source-disk-zone $ZONE
 
 # Create new compute instance templates for each configuration
 echo "Creating new compute instance templates..."
