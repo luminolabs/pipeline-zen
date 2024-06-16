@@ -1,11 +1,12 @@
 ENV="dev"
 PROJECT_ID="neat-airport-407301"
+SERVICE_ACCOUNT="serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com"
 
 # Note: The results of commands are stored as comments
 
 # Allows downloading docker image from `lum-docker-images` repo only
 gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/artifactregistry.reader
 #Updated IAM policy for repository [lum-docker-images].
 #bindings:
@@ -18,7 +19,7 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
 # Allow storing results to `lum-pipeline-zen` bucket only
 # 1. Assign Storage Admin
 gcloud storage buckets add-iam-policy-binding gs://lum-pipeline-zen \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=SERVICE_ACCOUNT \
   --role=roles/storage.objectAdmin
 #bindings:
 #...
@@ -49,7 +50,7 @@ gcloud iam roles create bucket_lister \
 
 # 2b. Assign Bucket Lister
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=$SERVICE_ACCOUNT \
   --role=projects/$PROJECT_ID/roles/bucket_lister
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
@@ -61,7 +62,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 # Allow writes to logging service
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/logging.logWriter
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
@@ -93,7 +94,7 @@ gcloud iam roles create compute_instance_deleter \
 
 # 2. Assign Compute Instance Deleter
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=$SERVICE_ACCOUNT \
   --role=projects/$PROJECT_ID/roles/compute_instance_deleter \
   --condition=expression="resource.name.startsWith('projects/$PROJECT_ID/zones/us-central1-a/instances/ubuntu-1xv100-pipeline-zen-jobs-')",title='ml-pipeline-job-vms',description="ML Pipeline Job VMs"
 #Updated IAM policy for project [neat-airport-407301].
@@ -112,7 +113,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 
 # 3. Assign Compute Viewer, needed by the gcloud library
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/compute.viewer
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
@@ -170,3 +171,15 @@ $PROJECT_ID:pipeline_zen
 #  "storageBillingModel": "LOGICAL",
 #  "type": "DEFAULT"
 #}
+
+# 4. Allow access to GCP secrets such as `huggingface_token`
+gcloud beta projects add-iam-policy-binding $PROJECT_ID \
+  --member=serviceAccount:$SERVICE_ACCOUNT \
+  --role=roles/secretmanager.secretAccessor
+#Updated IAM policy for project [neat-airport-407301].
+#bindings:
+#- members:
+#  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
+#  role: roles/secretmanager.secretAccessor
+#etag: BwYbB-V550A=
+#version: 3
