@@ -10,11 +10,15 @@ from google.cloud import compute_v1
 
 from delete_vm import delete_vm
 
+# This script is used to run the workflow using on-demand compute instances.
+# Because bigger GPUs can only be used within a DWS MIG, this script is limited
+# to only use 1xV100 GPUs. For bigger GPUs, like the A100, use the `run_remote_mig.py` script.
+
 # Configuration (adjust as needed)
 PROJECT_ID = 'neat-airport-407301'
 REGION = 'us-central1'
 ZONE = f'{REGION}-a'
-BASE_TEMPLATE_NAME = 'ubuntu-1xv100-pipeline-zen-jobs'
+BASE_TEMPLATE_NAME = 'pipeline-zen-jobs-1xv100'
 JOB_DIRECTORY = '/pipeline-zen-jobs'
 
 
