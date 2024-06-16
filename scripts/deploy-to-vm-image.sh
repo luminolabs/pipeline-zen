@@ -47,9 +47,11 @@ echo "Wait 60s to allow VM to start services..."
 sleep 60
 
 echo "Copying files to VM..."
-# Make sure we have access to the files and folders
+# Make sure we have access permissions to the files and folders
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "sudo chown -R $(whoami):$(whoami) /pipeline-zen-jobs"
-# Copy Files to VM
+# Remove old files
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $ZONE --command "rm -rf /pipeline-zen-jobs/scripts /pipeline-zen-jobs/VERSION || true"
+# Copy files to VM
 gcloud compute scp --recurse ./scripts VERSION $IMAGE_CREATOR_VM_NAME:/pipeline-zen-jobs --zone $ZONE
 
 # Install python dependencies

@@ -173,13 +173,19 @@ $PROJECT_ID:pipeline_zen
 #}
 
 # 4. Allow access to GCP secrets such as `huggingface_token`
-gcloud beta projects add-iam-policy-binding $PROJECT_ID \
-  --member=serviceAccount:$SERVICE_ACCOUNT \
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/secretmanager.secretAccessor
+gcloud beta projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/secretmanager.viewer
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
 #- members:
 #  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
 #  role: roles/secretmanager.secretAccessor
-#etag: BwYbB-V550A=
+#- members:
+#  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
+#  role: roles/secretmanager.viewer
+#etag: BwYbCCnmQhk=
 #version: 3

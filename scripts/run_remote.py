@@ -37,15 +37,16 @@ def main(version: str, job_config_name: str, job_id: str, *args):
 
     # Create VM instance from template
     instance_client = compute_v1.InstancesClient()
+    instance_insert_request = compute_v1.InsertInstanceRequest()
+    instance_insert_request.project = PROJECT_ID
+    instance_insert_request.zone = ZONE
+    instance_insert_request.source_instance_template = \
+        f'global/instanceTemplates/{BASE_TEMPLATE_NAME}-{version}'
+    instance_insert_request.instance_resource.name = vm_name
 
     try:
         # Insert the compute instance using the template
-        operation = instance_client.insert(
-            project=PROJECT_ID,
-            zone=ZONE,
-            instance_resource=compute_v1.Instance(name=vm_name),
-            source_instance_template=f'global/instanceTemplates/{BASE_TEMPLATE_NAME}-{version}'
-        )
+        operation = instance_client.insert(instance_insert_request)
         # Wait for operation to complete
         operation.result()
         print(f'...VM created')

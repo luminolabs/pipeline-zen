@@ -31,6 +31,7 @@ docker run $gpus \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
+-e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 $image_use python pipeline/$1_wf.py "${@:2}"
 
 echo "Celery workflow finished!"
