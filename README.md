@@ -1,3 +1,32 @@
+# Fine-tuning LLMs with Torchtune
+
+## Running locally (recommended)
+
+### First time setup
+
+Download and copy the GCP service account credentials file to `.secrets` under the repo root.
+[Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
+This step isn't needed unless `config.provider_log_scores` is enabled
+
+Install python dependencies:
+```
+./scripts/install-deps.sh
+```
+
+### Run the torchtune-wrapper workflow
+
+```
+./scripts/run-celery.sh torchtunewrapper_wf \
+  --job_config_name llm_llama3_8b 
+  --job_id llm_llama3_8b-experiment1 \
+  --dataset_id yahma/alpaca-cleaned 
+  --dataset_template instruct \
+  --batch_size 2 --shuffle true --num_epochs 1 \
+  --use_lora true --use_single_device true
+```
+
+# Training other types of models
+
 ## Running locally (recommended)
 
 ### First time setup
@@ -14,7 +43,7 @@ Install python dependencies:
 ### Run train and evaluate workflows in one go
 
 ```
-./scripts/run-celery.sh \
+./scripts/run-celery.sh train_evaluate_wf \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \

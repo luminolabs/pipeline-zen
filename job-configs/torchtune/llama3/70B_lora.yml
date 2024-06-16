@@ -63,7 +63,7 @@ resume_from_checkpoint: False
 
 # Dataset and Sampler
 dataset:
-  _component_: torchtune.datasets.alpaca_dataset
+  _component_:  # leave empty, this is injected by the job launcher
 seed: null
 
 # Optimizer and Scheduler

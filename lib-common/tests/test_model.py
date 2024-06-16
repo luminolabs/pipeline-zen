@@ -5,7 +5,7 @@ import pytest
 from common.model.factory import model_factory
 
 
-@patch('common.model.utils.image.resnet')
+@patch('common.model.image.resnet')
 def test_model_factory(resnet, logger):
     # Invalid `loss_func_name` raises error
     with pytest.raises(TypeError):

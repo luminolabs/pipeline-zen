@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# Deploys a release
+# note: it doesn't release, it only deploys a release;
+# the actual release is handled in github actions
+# TODO: Create a script to handle the release, so that we can trigger and test release locally
+#
 # Creates a new Jobs VM image with updated:
 # - ./scripts and VERSION
 # - python dependencies
@@ -18,7 +23,7 @@ NEW_IMAGE_BASE_NAME="ubuntu-pipeline-zen-jobs"  # Base name without the version 
 VERSION=$(cat VERSION)
 VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
 NEW_IMAGE_NAME="${NEW_IMAGE_BASE_NAME}-${VERSION_FOR_IMAGE}"
-DOCKER_IMAGE_PATH="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/lum-docker-images/train_evaluate-workflow:${VERSION}"
+DOCKER_IMAGE_PATH="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/lum-docker-images/celery-workflow:${VERSION}"
 
 # --- Main Script ---
 

@@ -2,7 +2,7 @@ import importlib
 from typing import Callable
 
 
-def import_recipe_fn(lora: bool, single_device: bool) -> Callable:
+def import_torchtune_recipe_fn(lora: bool, single_device: bool) -> Callable:
     # Build recipe name
     finetune_type = 'lora' if lora else 'full'
     device_type = 'single_device' if single_device else 'distributed'
@@ -28,4 +28,18 @@ def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_de
     return (f'{model_base_to_config_prefix[model_base]}_'
             f'{"lora" if use_lora else "full"}'
             f'{"_single_device" if use_single_device else ""}.yml')
-    
+
+
+def get_torchtune_dataset_template(dataset_template: str) -> str:
+    # Map dataset templates to actual classes;
+    # also serves as a check for supported templates
+    template_to_class = {
+        'instruct': 'torchtune.data.AlpacaInstructTemplate',
+        'summarization': 'torchtune.data.SummarizeTemplate'
+    }
+    # Raise error if template is not supported
+    if dataset_template not in template_to_class:
+        raise ValueError(f'Unsupported dataset template: {dataset_template}; supported templates are: '
+                         f'{", ".join(template_to_class.keys())}')
+    # Return the dataset class
+    return template_to_class[dataset_template]

@@ -1,8 +1,8 @@
 #!/bin/bash
 
 VERSION=$(cat VERSION)
-image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:$VERSION
-image_local=train_evaluate-workflow:local
+image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/celery-workflow:$VERSION
+image_local=celery-workflow:local
 
 env="local"
 image_use=$image_local
@@ -12,7 +12,7 @@ if [[ "$PZ_ENV" != "local" && "$PZ_ENV" != "" ]]; then
 fi
 
 if [[ "$image_use" == "$image_local" ]]; then
-  docker build -f celery.Dockerfile -t $image_use .
+  docker build -f celery.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $image_use .
 else
   docker pull $image_use
 fi
@@ -31,7 +31,7 @@ docker run $gpus \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
-$image_use "${@}"
+$image_use "${@:2}"
 
 echo "Celery workflow finished!"
 

@@ -33,6 +33,8 @@ COPY lib-workflows/train/requirements.txt requirements-train.txt
 RUN pip install -r requirements-train.txt
 COPY lib-workflows/evaluate/requirements.txt requirements-evaluate.txt
 RUN pip install -r requirements-evaluate.txt
+COPY lib-workflows/torchtunewrapper/requirements.txt requirements-torchtunewrapper.txt
+RUN pip install -r requirements-torchtunewrapper.txt
 
 # Copy scripts, needed to allow deleting VMs
 COPY scripts scripts
@@ -46,6 +48,7 @@ COPY lib-celery/src .
 # Copy workflow source code
 COPY lib-workflows/train/src .
 COPY lib-workflows/evaluate/src .
+COPY lib-workflows/torchtunewrapper/src .
 
 # Copy application configuration folder
 COPY app-configs app-configs
@@ -59,5 +62,11 @@ COPY VERSION .
 # Python libraries are copied to `/project`, include them in the path
 ENV PYTHONPATH=/project
 
+# Since we can't use ARG vars in the ENTRYPOINT command below,
+# make a symlink to workflow.py under the pipeline/ so that we are
+# able to call it
+ARG TARGET_WORKFLOW
+RUN ln -s ${TARGET_WORKFLOW}.py pipeline/workflow.py
+
 # Run workflow
-ENTRYPOINT ["python", "pipeline/train_evaluate.py"]
+ENTRYPOINT ["python", "pipeline/workflow.py"]
