@@ -52,7 +52,7 @@
         <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
       </ENTRIES>
     </EXTENSION>
-    <option name="SCRIPT_NAME" value="\\wsl.localhost\Ubuntu\home\vasilis\devel\luminoai\pipeline-zen\lib-celery\src\pipeline\train_evaluate_wf.py" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib-celery/src/pipeline/train_evaluate_wf.py" />
     <option name="PARAMETERS" value="--job_config_name imdb_nlp_classification --job_id imdb_nlp_classification-experiment1 --batch_size 8 --num_epochs 2 --num_batches 3" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
