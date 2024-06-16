@@ -1,23 +1,26 @@
-# Use with lora_finetune_distributed.py
+# Use with full_finetune_distributed.py
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
 logs_path:
-results_path:
-output_dir: ${results_path}
+output_dir:
+shuffle:
+batch_size:
+epochs:
 
-# Model Arguments
-model:
-  _component_: torchtune.models.llama3.lora_llama3_70b
-  lora_attn_modules: ['q_proj', 'k_proj', 'v_proj']
-  apply_lora_to_mlp: False
-  apply_lora_to_output: False
-  lora_rank: 16
-  lora_alpha: 32
-
+# Tokenizer
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
   path: ${base_model_path}/original/tokenizer.model
+
+# Dataset
+dataset:
+  _component_: torchtune.datasets.alpaca_dataset
+seed: null
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3.llama3_8b
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
@@ -55,33 +58,30 @@ checkpointer:
     model-00030-of-00030.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: ${results_path}
+  output_dir: ${output_dir}
   model_type: LLAMA3
 resume_from_checkpoint: False
 
-# Dataset and Sampler
-dataset:
-  _component_: torchtune.datasets.alpaca_dataset
-seed: null
-shuffle: True
-batch_size: 2
-
-# Optimizer and Scheduler
 optimizer:
   _component_: torch.optim.AdamW
-  weight_decay: 0.01
-  lr: 3e-4
-lr_scheduler:
-  _component_: torchtune.modules.get_cosine_schedule_with_warmup
-  num_warmup_steps: 100
+  lr: 2e-5
+  foreach: False
 
 loss:
   _component_: torch.nn.CrossEntropyLoss
-
-# Training
-epochs: 1
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1
+
+
+# Training env
+device: cuda
+
+# Memory management
+enable_activation_checkpointing: True
+memory_efficient_fsdp_wrap: True
+
+# Reduced precision
+dtype: bf16
 
 # Logging
 metric_logger:
@@ -89,8 +89,3 @@ metric_logger:
   log_dir: ${logs_path}
 log_every_n_steps: 1
 log_peak_memory_stats: True
-
-# Environment
-device: cuda
-dtype: bf16
-enable_activation_checkpointing: True

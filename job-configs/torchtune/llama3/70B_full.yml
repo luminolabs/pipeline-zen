@@ -3,8 +3,10 @@
 # These are set by the job launcher, don't set them manually
 base_model_path:
 logs_path:
-results_path:
-output_dir: ${results_path}
+output_dir:
+shuffle:
+batch_size:
+epochs:
 
 # Tokenizer
 tokenizer:
@@ -15,7 +17,6 @@ tokenizer:
 dataset:
   _component_: torchtune.datasets.alpaca_dataset
 seed: null
-shuffle: True
 
 # Model Arguments
 model:
@@ -57,13 +58,9 @@ checkpointer:
     model-00030-of-00030.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: ${results_path}
+  output_dir: ${output_dir}
   model_type: LLAMA3
 resume_from_checkpoint: False
-
-# Fine-tuning arguments
-batch_size: 2
-epochs: 3
 
 optimizer:
   _component_: torch.optim.AdamW

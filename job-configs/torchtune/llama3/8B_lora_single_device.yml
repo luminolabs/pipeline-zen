@@ -3,8 +3,10 @@
 # These are set by the job launcher, don't set them manually
 base_model_path:
 logs_path:
-results_path:
-output_dir: ${results_path}
+output_dir:
+shuffle:
+batch_size:
+epochs:
 
 # Model Arguments
 model:
@@ -30,7 +32,7 @@ checkpointer:
     model-00004-of-00004.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: ${results_path}
+  output_dir: ${output_dir}
   model_type: LLAMA3
 resume_from_checkpoint: False
 
@@ -38,8 +40,6 @@ resume_from_checkpoint: False
 dataset:
   _component_: torchtune.datasets.alpaca_cleaned_dataset
 seed: null
-shuffle: True
-batch_size: 2
 
 # Optimizer and Scheduler
 optimizer:
@@ -54,7 +54,6 @@ loss:
   _component_: torch.nn.CrossEntropyLoss
 
 # Training
-epochs: 1
 max_steps_per_epoch: null
 gradient_accumulation_steps: 64
 compile: False

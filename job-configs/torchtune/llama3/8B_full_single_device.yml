@@ -1,4 +1,4 @@
-# Use with lora_finetune_distributed.py
+# Use with full_finetune_single_device.py
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -6,20 +6,21 @@ logs_path:
 output_dir:
 shuffle:
 batch_size:
+epochs:
 
 # Tokenizer
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
   path: ${base_model_path}/original/tokenizer.model
 
+# Dataset
+dataset:
+  _component_: torchtune.datasets.alpaca_dataset
+seed: null
+
 # Model Arguments
 model:
-  _component_: torchtune.models.llama3.lora_llama3_8b
-  lora_attn_modules: ['q_proj', 'v_proj']
-  apply_lora_to_mlp: False
-  apply_lora_to_output: False
-  lora_rank: 8
-  lora_alpha: 16
+  _component_: torchtune.models.llama3.llama3_8b
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
@@ -31,40 +32,33 @@ checkpointer:
     model-00004-of-00004.safetensors,
   ]
   recipe_checkpoint: null
-  output_dir: ${output_dir}
+  output_dir: ${results_path}
   model_type: LLAMA3
 resume_from_checkpoint: False
 
-# Dataset and Sampler
-dataset:
-  _component_:  # leave empty
-seed: null
-
-# Optimizer and Scheduler
+# Fine-tuning arguments
 optimizer:
-  _component_: torch.optim.AdamW
-  weight_decay: 0.01
-  lr: 3e-4
-lr_scheduler:
-  _component_: torchtune.modules.get_cosine_schedule_with_warmup
-  num_warmup_steps: 100
-
+  _component_: bitsandbytes.optim.PagedAdamW8bit
+  lr: 2e-5
 loss:
   _component_: torch.nn.CrossEntropyLoss
-
-# Training
-epochs: 1
 max_steps_per_epoch: null
-gradient_accumulation_steps: 32
+gradient_accumulation_steps: 1
+optimizer_in_bwd: True
+compile: False
+
+# Training environment
+device: cuda
+
+# Memory management
+enable_activation_checkpointing: True
+
+# Reduced precision
+dtype: bf16
 
 # Logging
 metric_logger:
   _component_: torchtune.utils.metric_logging.DiskLogger
   log_dir: ${logs_path}
 log_every_n_steps: 1
-log_peak_memory_stats: False
-
-# Environment
-device: cuda
-dtype: bf16
-enable_activation_checkpointing: True
+log_peak_memory_stats: True

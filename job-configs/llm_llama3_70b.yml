@@ -1,9 +1,12 @@
-# Don't change this file, instead use the CLI interface to set these
+# Don't change this file, instead use the CLI interface to set available configuration
 
-job_id:
+job_id: llm_llama3_70b
 category: LLM
 type: INSTRUCTION
-dataset_id:
 model_base: meta-llama/Meta-Llama-3-70B
-torchtune_recipe: lora_finetune_single_device
-torchtune_config: llama3/70B_lora
+dataset_id:
+batch_size:
+shuffle:
+num_epochs:
+use_lora:
+use_single_device:
