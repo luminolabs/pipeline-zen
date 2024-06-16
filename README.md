@@ -17,9 +17,25 @@ Install python dependencies:
 
 ```
 ./scripts/run-celery.sh torchtunewrapper \
-  --job_config_name llm_llama3_8b 
+  --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
-  --dataset_id yahma/alpaca-cleaned 
+  --dataset_id yahma/alpaca-cleaned \
+  --dataset_template instruct \
+  --batch_size 2 --shuffle true --num_epochs 1 \
+  --use_lora true --use_single_device true
+```
+
+## Running remotely on a VM (aka on `dev`)
+
+Make sure you have `gcloud` installed and that you
+are authenticated. Try this: `gcloud auth list`;
+you should see your email in that list, with a `*` next to it
+
+```
+python ./scripts/run_remote_new.py torchtunewrapper \
+  --job_config_name llm_llama3_8b \
+  --job_id llm_llama3_8b-experiment1 \
+  --dataset_id yahma/alpaca-cleaned \
   --dataset_template instruct \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true --use_single_device true
@@ -58,7 +74,7 @@ are authenticated. Try this: `gcloud auth list`;
 you should see your email in that list, with a `*` next to it
 
 ```
-./scripts/run_remote.py \
+python ./scripts/run_remote.py train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \

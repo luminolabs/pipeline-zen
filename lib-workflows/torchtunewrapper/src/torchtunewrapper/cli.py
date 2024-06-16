@@ -8,7 +8,23 @@ def parse_args() -> tuple:
     :return: Parsed command line arguments
     """
     parser = argparse.ArgumentParser(description="The model training workflow")
+    add_parser_args(parser)
+    args = parser.parse_args()
 
+    return (args.job_config_name, args.job_id,
+            args.dataset_id, args.dataset_template,
+            args.batch_size, args.shuffle,
+            args.num_epochs, args.use_lora, args.use_single_device,)
+
+
+def add_parser_args(parser: argparse.ArgumentParser):
+    """
+    Add command line arguments to the parser.
+    Allows for reuse of the argument parsing logic in other scripts.
+
+    :param parser: The parser to add arguments to
+    :return: None
+    """
     parser.add_argument('-jc', '--job_config_name', type=str, required=True,
                         help="The name of the job config file, without the `.py` extension")
     parser.add_argument('-jid', '--job_id', type=str, required=False,
@@ -31,13 +47,6 @@ def parse_args() -> tuple:
                         help="Whether to use the LoRA; default is True")
     parser.add_argument('-sd', '--use_single_device', type=bool, required=False, default=True,
                         help="Whether to use a single GPU device; default is True")
-
-    args = parser.parse_args()
-
-    return (args.job_config_name, args.job_id,
-            args.dataset_id, args.dataset_template,
-            args.batch_size, args.shuffle,
-            args.num_epochs, args.use_lora, args.use_single_device,)
 
 
 if __name__ == '__main__':

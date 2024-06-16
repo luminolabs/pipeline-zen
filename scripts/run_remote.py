@@ -1,6 +1,6 @@
 #!python
 
-import argparse
+import sys
 import os
 import subprocess
 import time
@@ -23,7 +23,6 @@ IMAGE_NAME = 'ubuntu-pipeline-zen-jobs'
 MACHINE_TYPE = 'n1-highcpu-8'
 GPU = 'nvidia-tesla-v100'
 JOB_DIRECTORY = '/pipeline-zen-jobs'
-JOB_COMPLETION_FILE = os.path.join(JOB_DIRECTORY, '.results', '.finished')
 
 
 def main(version: str,
@@ -114,12 +113,8 @@ def main(version: str,
     cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
 
     # Execute job directly (change directory and run command)
-    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev ./scripts/run-celery-docker.sh '
-                   f'--job_config_name {job_config_name} '
-                   f'--job_id {job_id} '
-                   f'--batch_size {batch_size} '
-                   f'--num_epochs {num_epochs} '
-                   f'--num_batches {num_batches}')
+    job_command = (f'cd {JOB_DIRECTORY} && PZ_ENV=dev '
+                   f'./scripts/run-celery-docker.sh {" ".join(args)}')
     try:
         # This will monitor and echo job output
         print(f'Running job: {job_id}')
@@ -143,22 +138,10 @@ def main(version: str,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--job_config_name', required=True)
-    parser.add_argument('--job_id', required=False)
-    parser.add_argument('--batch_size', type=int, required=False)
-    parser.add_argument('--num_epochs', type=int, required=False)
-    parser.add_argument('--num_batches', type=int, required=False)
-    args = parser.parse_args()
-
+    # Get all arguments
+    args = sys.argv[1:]  # Skip the first element which is the script name
+    # Get version from VERSION file
     with open('VERSION', 'r') as f:
         version = f.read()
-
-    main(
-        version,
-        args.job_config_name,
-        args.job_id,
-        args.batch_size,
-        args.num_epochs,
-        args.num_batches
-    )
+    # Run the workflow remotely
+    main(version, *args)
