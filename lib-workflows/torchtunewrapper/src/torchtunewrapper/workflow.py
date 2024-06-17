@@ -25,7 +25,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     job_id = job_config['job_id']
 
     # TODO: Possibly implement custom torchtune logger
-    # TODO: Stream logs to cloud logging
+    # TODO: Stream logs to cloud logging / bigquery
     # TODO: Unit tests
     # TODO: Put together detailed how to use instructions
 
