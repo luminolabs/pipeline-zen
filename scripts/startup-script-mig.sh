@@ -4,9 +4,15 @@
 # This script is used to pull jobs from a Pub/Sub subscription and process them.
 ###########################
 
+env="local"
+SUBSCRIPTION_ID="local"
+if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "local" ]]; then
+  env=$PZ_ENV
+  SUBSCRIPTION_ID="$(uname -n | sed 's/-[0-9]*-[0-9]*-[0-9]*$//')"
+fi
+
 # Set variables
 PROJECT_ID="neat-airport-407301"
-SUBSCRIPTION_ID="local"
 SLEEP_INTERVAL=10
 ACK_DEADLINE_EXTENSION=60
 WORKFLOW_SCRIPT="./scripts/run-celery-docker.sh"

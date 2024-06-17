@@ -16,6 +16,7 @@ project_id = 'neat-airport-407301'
 topic_id = 'pipeline-zen-jobs'
 topic_path = publisher.topic_path(project_id, topic_id)
 
+
 def publish_message(message: dict, target_mig: str):
     """
     Publish a message to the topic
@@ -26,6 +27,7 @@ def publish_message(message: dict, target_mig: str):
     """
     future = publisher.publish(topic_path, json.dumps(message).encode('utf-8'), **{'mig': target_mig})
     print(f'Published message ID: {future.result()}')
+
 
 if __name__ == '__main__':
     # Parse CLI arguments; we parse the job_config_name and job_id that are shared between all workflows
