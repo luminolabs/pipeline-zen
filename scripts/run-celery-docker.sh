@@ -26,14 +26,14 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   gpus=""
 fi
 
-tmux new-session -s pipeline-zen-jobs -d 'docker run $gpus \
+docker run $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
-$image_use python pipeline/$1_wf.py "${@:2}"'
+$image_use python pipeline/$1_wf.py "${@:2}" > out.log 2>&1
 
 echo "Celery workflow finished!"
 

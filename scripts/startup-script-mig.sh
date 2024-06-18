@@ -13,7 +13,7 @@ env="local"
 SUBSCRIPTION_ID="local"
 if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "local" ]]; then
   env=$PZ_ENV
-  SUBSCRIPTION_ID="$(uname -n | sed 's/-[^-]*$//')"
+  SUBSCRIPTION_ID="$(uname -n | sed 's/-[^-]*-[^-]*-[^-]*$//')"
   cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 fi
 

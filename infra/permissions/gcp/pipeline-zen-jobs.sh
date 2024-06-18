@@ -96,7 +96,8 @@ gcloud iam roles create compute_instance_deleter \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role=projects/$PROJECT_ID/roles/compute_instance_deleter \
-  --condition=expression="resource.name.startsWith('projects/$PROJECT_ID/zones/us-central1-a/instances/ubuntu-1xv100-pipeline-zen-jobs-')",title='ml-pipeline-job-vms',description="ML Pipeline Job VMs"
+  --condition=expression="resource.name.startsWith('projects/$PROJECT_ID/zones/us-central1-a/instances/pipeline-zen-jobs-')",title='ml-pipeline-job-vms',description="ML Pipeline Job VMs"
+# TODO: All these permissions need to be multi-zonal... Might be time to look into Terraform
 
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:

@@ -67,7 +67,7 @@ def main():
 
     # Delete the VM
     instance_client = compute_v1.InstancesClient()
-    delete_vm(instance_client, vm_zone, vm_name)
+    delete_vm(instance_client, vm_name, vm_zone)
 
 if __name__ == "__main__":
     main()
