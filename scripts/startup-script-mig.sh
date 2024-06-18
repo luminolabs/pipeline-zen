@@ -8,7 +8,7 @@ env="local"
 SUBSCRIPTION_ID="local"
 if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "local" ]]; then
   env=$PZ_ENV
-  SUBSCRIPTION_ID="$(uname -n | sed 's/-[0-9]*-[0-9]*-[0-9]*$//')"
+  SUBSCRIPTION_ID="$(uname -n | sed 's/-[^-]*$//')"
 fi
 
 # Set variables

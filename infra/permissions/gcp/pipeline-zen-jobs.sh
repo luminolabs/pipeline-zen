@@ -97,6 +97,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role=projects/$PROJECT_ID/roles/compute_instance_deleter \
   --condition=expression="resource.name.startsWith('projects/$PROJECT_ID/zones/us-central1-a/instances/ubuntu-1xv100-pipeline-zen-jobs-')",title='ml-pipeline-job-vms',description="ML Pipeline Job VMs"
+
 #Updated IAM policy for project [neat-airport-407301].
 #bindings:
 #- condition:
@@ -189,3 +190,34 @@ gcloud beta projects add-iam-policy-binding $PROJECT_ID \
 #  role: roles/secretmanager.viewer
 #etag: BwYbCCnmQhk=
 #version: 3
+
+# 5. Allow access to receiving from Pub/Sub
+ gcloud iam roles delete pubsub_topic_listener \
+   --project=$PROJECT_ID \
+   --title="Jobs Pub/Sub subscriber" \
+   --description="Grants access to consume from subscriptions of pipeline-zen-jobs topic" \
+   --permissions=pubsub.subscriptions.consume,pubsub.subscriptions.get
+#Created role [pubsub_topic_listener].
+#description: Grants access to consume from subscriptions of pipeline-zen-jobs topic
+#etag: BwYbHFQtP-g=
+#includedPermissions:
+#- pubsub.subscriptions.consume
+#- pubsub.subscriptions.get
+#name: projects/neat-airport-407301/roles/pubsub_topic_listener
+#stage: ALPHA
+#title: Jobs Pub/Sub subscriber
+
+# 6. Assign Jobs Pub/Sub subscriber
+gcloud projects remove-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=projects/$PROJECT_ID/roles/pubsub_topic_listener \
+  --condition=expression="resource.name.startsWith('projects/$PROJECT_ID/subscriptions/pipeline-zen-jobs-')",title="pipeline-zen-jobs-subscriptions",description="ML Pipeline Pub/Sub subscriptions"
+#Updated IAM policy for project [neat-airport-407301].
+#bindings:
+#- condition:
+#    description: ML Pipeline Pub/Sub subscriptions
+#    expression: resource.name.startsWith('projects/neat-airport-407301/subscriptions/pipeline-zen-jobs-')
+#    title: pipeline-zen-jobs-subscriptions
+#  members:
+#  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
+#  role: projects/neat-airport-407301/roles/pubsub_topic_listener
