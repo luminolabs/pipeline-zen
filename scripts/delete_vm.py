@@ -10,10 +10,18 @@ PROJECT_ID = 'neat-airport-407301'
 
 
 def get_vm_name_from_uname():
+    """
+    Get the VM name from the `uname -n` command
+    :return: The VM name
+    """
     return subprocess.check_output('uname -n', shell=True).decode().strip()
 
 
 def get_zone():
+    """
+    Get the zone of the VM from the metadata server
+    :return: The zone of the VM
+    """
     response = requests.get(
         "http://metadata.google.internal/computeMetadata/v1/instance/zone",
         headers={"Metadata-Flavor": "Google"}
@@ -47,18 +55,17 @@ def main():
     parser.add_argument('--vm_zone', type=str, help='The zone of the VM to delete')
     args = parser.parse_args()
 
+    # Get the VM name and zone
     if args.vm_name:
         vm_name = args.vm_name
     else:
         vm_name = get_vm_name_from_uname()
-
     if args.vm_name:
         vm_zone = args.vm_zone
     else:
         vm_zone = get_zone()
 
     # Delete the VM
-
     instance_client = compute_v1.InstancesClient()
     delete_vm(instance_client, vm_zone, vm_name)
 
