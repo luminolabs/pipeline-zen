@@ -94,6 +94,7 @@ for CONFIG in "${CONFIGS[@]}"; do
     --machine-type=$MACHINE_TYPE \
     --accelerator=$ACCELERATOR \
     --service-account=$SERVICE_ACCOUNT \
+    --metadata=startup-script=/pipeline-zen-jobs/scripts/startup-script-mig.sh \
     --create-disk=auto-delete=yes,boot=yes,device-name=$NEW_TEMPLATE_NAME,image=projects/$PROJECT_ID/global/images/$NEW_IMAGE_NAME,mode=rw,size=2000,type=pd-balanced \
     --maintenance-policy=TERMINATE \
     --provisioning-model=STANDARD \

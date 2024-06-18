@@ -91,7 +91,7 @@ def main(version: str, job_config_name: str, job_id: str, *args):
     except Exception as ex:
         # Delete VM if we couldn't start the job
         print('We failed to start the job or something else went wrong!!!')
-        delete_vm(instance_client, vm_name)
+        delete_vm(instance_client, vm_name, ZONE)
         raise ex
 
     # The job itself will stop and delete the VM when done,

@@ -9,6 +9,7 @@ image_use=$image_local
 if [[ "$PZ_ENV" != "local" && "$PZ_ENV" != "" ]]; then
   env=$PZ_ENV
   image_use=$image_remote
+  cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 fi
 
 if [[ "$image_use" == "$image_local" ]]; then
@@ -49,6 +50,6 @@ if [[ "$env" != "local" ]]; then
   # disowns process from shell
   # We disown this process so that when the client
   # disconnects, the process can continue to run
-  cmd="python ./scripts/delete_vm.py --job_id $(cat ./.results/.started)"
+  cmd="python ./scripts/delete_vm.py"
   eval "${cmd}" &>/dev/null & disown;
 fi

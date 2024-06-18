@@ -4,11 +4,17 @@
 # This script is used to pull jobs from a Pub/Sub subscription and process them.
 ###########################
 
+if [[ "$(uname -n)" == "gha-jobs-vm-image-creator" ]]; then
+  echo "This script is not meant to run on the VM image creator, exiting."
+  exit 1
+fi
+
 env="local"
 SUBSCRIPTION_ID="local"
 if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "local" ]]; then
   env=$PZ_ENV
   SUBSCRIPTION_ID="$(uname -n | sed 's/-[^-]*$//')"
+  cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 fi
 
 # Set variables
@@ -83,3 +89,10 @@ else
 fi
 
 echo "$(date): Script completed."
+
+# Delete VM when done
+if [[ "$env" != "local" ]]; then
+  echo "Deleting VM..."
+  cmd="python ./scripts/delete_vm.py"
+  eval "${cmd}" &>/dev/null & disown;
+fi
