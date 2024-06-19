@@ -1,91 +1,63 @@
+#!python
+
+import logging
 import argparse
-import subprocess
-from time import sleep
+import os
 
-import requests
 from google.cloud import compute_v1
-from google.cloud.compute_v1 import InstancesClient
 
-PROJECT_ID = 'neat-airport-407301'
+from utils import PROJECT_ID, get_mig_name_from_vm_name, get_vm_name_from_metadata, get_zone_from_metadata, \
+    get_region_from_zone
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
 
-def get_vm_name_from_uname():
+def delete_instance_from_mig(project_id: str, vm_zone: str, mig_name: str, vm_name: str) -> None:
     """
-    Get the VM name from the `uname -n` command
-    :return: The VM name
+    Delete an instance from a regional MIG
     """
-    print("Executing `uname -n` to get the VM name...")
-    vm_name = subprocess.check_output('uname -n', shell=True).decode().strip()
-    print(f"VM name obtained: {vm_name}")
-    return vm_name
+    # Get the region from the zone
+    vm_region = get_region_from_zone(vm_zone)
 
+    # Initialize the regional MIG VM service
+    instance_group_managers_client = compute_v1.RegionInstanceGroupManagersClient()
 
-def resize_mig(mig_name):
-    client = compute_v1.RegionInstanceGroupManagersClient()
-
-    print(f"Fetching the current size of the MIG: {mig_name}...")
-    mig = client.get(project=PROJECT_ID, region='us-central1', instance_group_manager=mig_name)
-    current_size = mig.target_size
-    print(f"Current size of MIG {mig_name}: {current_size}")
-
-    new_size = max(current_size - 1, 0)
-    print(f"Resizing MIG {mig_name} to new size: {new_size}...")
-
-    operation = client.resize(project=PROJECT_ID, region='us-central1', instance_group_manager=mig_name, size=new_size)
-
-    print("Waiting for resize operation to complete...")
-    operation.result()
-    print(f"MIG {mig_name} resized from {current_size} to {new_size}")
-
-
-def get_zone():
-    """
-    Get the zone of the VM from the metadata server
-    :return: The zone of the VM
-    """
-    print("Fetching the zone from the metadata server...")
-    response = requests.get(
-        "http://metadata.google.internal/computeMetadata/v1/instance/zone",
-        headers={"Metadata-Flavor": "Google"}
+    # Create the VM delete request
+    request = compute_v1.DeleteInstancesRegionInstanceGroupManagerRequest(
+        instance_group_manager=mig_name,
+        region_instance_group_managers_delete_instances_request_resource=
+            compute_v1.RegionInstanceGroupManagersDeleteInstancesRequest(
+                instances=[f'zones/{vm_zone}/instances/{vm_name}']
+            ),
+        project=project_id,
+        region=vm_region,
     )
-    zone = response.text.strip()
-    print(f"Zone obtained: {zone}")
-    return zone.split('/')[-1]
 
-
-def delete_vm(instance_client: InstancesClient, vm_name: str, vm_zone: str) -> None:
-    """
-    Delete the VM
-
-    :param instance_client: The instance client to use
-    :param vm_name: Name of the VM to delete
-    :param vm_zone: Zone of the VM
-    :return:
-    """
-    print('Flushing logs to GCP...')
-    sleep(10)
-
-    print(f"Deleting VM: {vm_name} in zone: {vm_zone} for project: {PROJECT_ID}...")
-    operation = instance_client.delete(project=PROJECT_ID, zone=vm_zone, instance=vm_name)
-
-    print("Waiting for delete operation to complete...")
+    # Delete VM from MIG
+    operation = instance_group_managers_client.delete_instances(request=request)
+    # Wait for the operation to complete
     operation.result()
-    print(f"VM {vm_name} deleted successfully.")
 
 
-def main():
-    vm_name = get_vm_name_from_uname()
-    vm_zone = get_zone()
+if __name__ == '__main__':
+    # Require all args is PZ_ENV is `local`
+    # On other environments, the args are optional, because we can get the values from the metadata server
+    args_required = os.environ.get('PZ_ENV', 'local') == 'local'
 
-    print(f"VM name - {vm_name}, VM zone - {vm_zone}")
+    # Parse the command-line arguments
+    parser = argparse.ArgumentParser(description='Delete a VM instance from a Managed Instance Group.')
+    parser.add_argument('--vm_name', type=str, help='Name of the VM instance', required=args_required)
+    parser.add_argument('--vm_zone', type=str, help='Zone of the VM instance', required=args_required)
+    parser.add_argument('--mig_name', type=str, help='MIG of the VM instance', required=args_required)
+    args = parser.parse_args()
 
-    instance_client = compute_v1.InstancesClient()
-    delete_vm(instance_client, vm_name, vm_zone)
+    # Get the values from the metadata server if not provided as arguments
+    vm_name = args.vm_name if args.vm_name else get_vm_name_from_metadata()
+    vm_zone = args.vm_zone if args.vm_zone else get_zone_from_metadata()
+    mig_name = args.mig_name if args.mig_name else get_mig_name_from_vm_name()
 
-    mig_name = '-'.join(vm_name.split('-')[:-1])
-    print(f"Resizing MIG: {mig_name}")
-    resize_mig(mig_name)
-
-
-if __name__ == "__main__":
-    main()
+    logging.info(f'Deleting VM {vm_name} from MIG {mig_name} in zone {vm_zone}...')
+    # Delete the VM from the MIG
+    delete_instance_from_mig(PROJECT_ID, vm_zone, mig_name, vm_name)
+    logging.info('...VM deleted')
