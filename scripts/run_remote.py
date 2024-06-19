@@ -69,7 +69,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Run the model training workflow remotely')
     parser.add_argument('-wf', '--workflow', type=str, required=True,
                         help='The workflow to run; ex. `torchtunewrapper`, `train_evaluate`')
-    parser.add_argument('-tm', '--target_mig', type=str, required=True,
+    parser.add_argument('-tm', '--mig_name', type=str, required=True,
                         help='The target MIG to use for training')
     parser.add_argument('-jc', '--job_config_name', type=str, required=True,
                         help='The name of the job config file, without the `.py` extension')
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     # Store the rest of the arguments as unknown arguments
     known_args, unknown_args = parser.parse_known_args()
     workflow, mig_name, job_config_name, job_id = (
-        known_args.workflow, known_args.target_mig, known_args.job_config_name, known_args.job_id)
+        known_args.workflow, known_args.mig_name, known_args.job_config_name, known_args.job_id)
 
     # Create auto-generated job ID if one is not given
     job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))

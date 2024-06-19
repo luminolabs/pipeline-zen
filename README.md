@@ -32,7 +32,9 @@ are authenticated. Try this: `gcloud auth list`;
 you should see your email in that list, with a `*` next to it
 
 ```
-python ./scripts/run_remote_new.py torchtunewrapper \
+python ./scripts/run_remote.py \
+  --workflow torchtunewrapper \
+  --mig_name pipeline-zen-jobs-1xv100-us-central1 \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id yahma/alpaca-cleaned \

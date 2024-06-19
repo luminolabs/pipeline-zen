@@ -18,6 +18,10 @@
 
 set -e  # Exit immediately if a command fails
 
+# New version Information (pulled from VERSION file locally)
+VERSION=$(cat VERSION)
+VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
+
 # --- Variables ---
 
 PROJECT_ID="neat-airport-407301"
@@ -34,10 +38,6 @@ DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/celery-wor
 # Name of the VM that we will use to create the new image
 IMAGE_CREATOR_VM_NAME="gha-jobs-vm-image-creator"
 IMAGE_CREATOR_VM_ZONE="us-central1-a"
-
-# New version Information (pulled from VERSION file locally)
-VERSION=$(cat VERSION)
-VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
 
 # GPU / CPU configurations, along with the template name to use for each
 CONFIGS=(
@@ -113,5 +113,8 @@ for CONFIG in "${CONFIGS[@]}"; do
     --network-interface=network=default,network-tier=PREMIUM \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 done
+
+# TODO: Add a step to delete the old image and templates
+# TODO: Add a step to update migs with new templates
 
 echo "New VM image and templates created. Deployment process complete!"
