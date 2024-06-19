@@ -101,7 +101,7 @@ for CONFIG in "${CONFIGS[@]}"; do
     --no-shielded-secure-boot \
     --no-shielded-vtpm \
     --no-shielded-integrity-monitoring \
-    --reservation-affinity=any \
+    --reservation-affinity=none \
     --network-interface=network=default,network-tier=PREMIUM \
     --scopes=https://www.googleapis.com/auth/cloud-platform
 done

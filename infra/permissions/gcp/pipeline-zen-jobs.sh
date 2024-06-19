@@ -82,7 +82,7 @@ gcloud iam roles create compute_instance_deleter \
   --project=$PROJECT_ID \
   --title="Compute Instance Deleter" \
   --description="Grants permission to delete Compute Engine instances." \
-  --permissions=compute.instances.delete
+  --permissions=compute.instances.delete,compute.instanceGroupManagers.update
 #Created role [compute_instance_deleter].
 #description: Grants permission to delete Compute Engine instances.
 #etag: BwYYcclc9s0=
@@ -197,3 +197,15 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role=roles/pubsub.subscriber \
   # TODO: Need to narrow down to specific subscriptions
+
+
+gcloud iam roles create mig_resizer \
+  --project=$PROJECT_ID \
+  --title="MIG Resizer" \
+  --description="Grants permission to resize MIGs." \
+  --permissions=compute.instanceGroupManagers.update
+
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=projects/$PROJECT_ID/roles/mig_resizer

@@ -1,7 +1,7 @@
 import argparse
 import uuid
 
-from google.cloud import pubsub_v1
+from google.cloud import pubsub_v1, compute_v1
 import json
 
 """
@@ -15,6 +15,23 @@ publisher = pubsub_v1.PublisherClient()
 project_id = 'neat-airport-407301'
 topic_id = 'pipeline-zen-jobs'
 topic_path = publisher.topic_path(project_id, topic_id)
+
+
+def resize_mig(mig_name):
+    client = compute_v1.RegionInstanceGroupManagersClient()
+
+    # Get the current size of the MIG
+    mig = client.get(project=project_id, region='us-central1', instance_group_manager=mig_name)
+    current_size = mig.target_size
+    new_size = current_size + 1
+
+    # Resize the MIG
+    operation = client.resize(project=project_id, region='us-central1', instance_group_manager=mig_name, size=new_size)
+
+    # Wait for operation to complete
+    operation.result()
+
+    print(f'MIG {mig_name} resized from {current_size} to {new_size}')
 
 
 def publish_message(message: dict, target_mig: str):
@@ -64,4 +81,5 @@ if __name__ == '__main__':
         }
     }
     # Publish the message
-    publish_message(message, target_mig)
+    resize_mig(target_mig)
+    publish_message(message, '-'.join(target_mig.split('-')[:-2]))
