@@ -10,11 +10,12 @@
 
 set -e  # Exit immediately if a command fails
 
-source ./utils.sh
+source ./scripts/utils.sh
 
 # Constants
 PROJECT_ID="neat-airport-407301"
 LOCAL_ENV="local"
+VM_NAME=$(uname -n)
 
 echo "Pub/Sub job listener started."
 
@@ -23,7 +24,7 @@ env="$LOCAL_ENV"
 SUBSCRIPTION_ID="$LOCAL_ENV"  # running locally will listen to the `local` subscription ID
 if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   env=$PZ_ENV
-  SUBSCRIPTION_ID=$(get_subscription_id_from_vm_name "VM_NAME")
+  SUBSCRIPTION_ID=$(get_subscription_id_from_vm_name "$VM_NAME")
   echo "Environment set to $env, Subscription ID set to $SUBSCRIPTION_ID."
   cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 fi

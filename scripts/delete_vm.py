@@ -55,7 +55,7 @@ if __name__ == '__main__':
     # Get the values from the metadata server if not provided as arguments
     vm_name = args.vm_name if args.vm_name else get_vm_name_from_metadata()
     vm_zone = args.vm_zone if args.vm_zone else get_zone_from_metadata()
-    mig_name = args.mig_name if args.mig_name else get_mig_name_from_vm_name()
+    mig_name = args.mig_name if args.mig_name else get_mig_name_from_vm_name(vm_name)
 
     logging.info(f'Deleting VM {vm_name} from MIG {mig_name} in zone {vm_zone}...')
     # Delete the VM from the MIG
