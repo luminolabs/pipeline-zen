@@ -25,9 +25,9 @@ VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscore
 # --- Variables ---
 
 PROJECT_ID="neat-airport-407301"
-# Service account to use for the Job VMs, this is loaded in the VM templates
+# Service account to load to the Job VMs
 JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
-# Prefix for the resources created by this script, also used for application folder name
+# Prefix for most resources created by this script, also used for some folder names
 RESOURCES_PREFIX="pipeline-zen-jobs"
 # Name of the base image to use for the new image
 NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
