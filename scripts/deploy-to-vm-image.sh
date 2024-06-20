@@ -73,7 +73,7 @@ gcloud compute scp --recurse ./scripts VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCE
 
 # Install python dependencies
 echo "Installing python dependencies..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install -Ur /$RESOURCES_PREFIX/scripts/requirements.txt"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/scripts/requirements.txt"
 
 # Delete older Docker Image
 echo "Deleting older VM image..."

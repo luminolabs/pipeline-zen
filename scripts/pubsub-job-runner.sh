@@ -26,10 +26,7 @@ if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   env=$PZ_ENV
   SUBSCRIPTION_ID=$(get_subscription_id_from_vm_name "$VM_NAME")
   echo "Environment set to $env, Subscription ID set to $SUBSCRIPTION_ID."
-  cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 fi
-
-echo "Project ID set to $PROJECT_ID."
 
 # Function to process message, i.e., run workflow
 run_workflow() {

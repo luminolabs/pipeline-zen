@@ -1,26 +1,26 @@
 import requests
 
 PROJECT_ID = 'neat-airport-407301'
-METADATA_ZONE_URL = "http://metadata.google.internal/computeMetadata/v1/instance/zone"
-METADATA_NAME_URL = "http://metadata.google.internal/computeMetadata/v1/instance/name"
-METADATA_HEADERS = {"Metadata-Flavor": "Google"}
+METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
+METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
+METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
 
 
 # Function to get the VM name using the metadata server
 def get_vm_name_from_metadata():
-    print("Fetching the VM name from the metadata server...")
+    print('Fetching the VM name from the metadata server...')
     response = requests.get(METADATA_NAME_URL, headers=METADATA_HEADERS)
     vm_name = response.text
-    print(f"VM name obtained: {vm_name}")
+    print(f'VM name obtained: {vm_name}')
     return vm_name
 
 
 # Function to get the zone of the VM from the metadata server
 def get_zone_from_metadata():
-    print("Fetching the zone from the metadata server...")
+    print('Fetching the zone from the metadata server...')
     response = requests.get(METADATA_ZONE_URL, headers=METADATA_HEADERS)
     zone = response.text.split('/')[-1]
-    print(f"Zone obtained: {zone}")
+    print(f'Zone obtained: {zone}')
     return zone
 
 
