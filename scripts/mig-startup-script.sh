@@ -7,8 +7,8 @@ set -e  # Exit immediately if a command fails
 # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
 cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 
-# Source .env to load environment variables
-source ./.env
+# Export .env environment variables
+export $(grep -v '^#' ./.env | xargs)
 
 # Define the log file path
 LOG_FILE="./output.log"
