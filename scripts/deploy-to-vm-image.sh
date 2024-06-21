@@ -66,10 +66,14 @@ sleep 60
 echo "Copying files to VM..."
 # Make sure we have access permissions to the files and folders
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
-# Remove old files
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION || true"
+# Remove old files and create scripts folder
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
+  --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION && mkdir -p /$RESOURCES_PREFIX/scripts"
 # Copy files to VM
-gcloud compute scp --recurse ./scripts VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp ./scripts/*.py ./scripts/*.sh ./scripts/*.txt $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/scripts --zone $IMAGE_CREATOR_VM_ZONE
+# TODO: Choose the right .env file based on the environment
+gcloud compute scp ./deploy-artifacts/.env-dev $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
 # Install python dependencies
 echo "Installing python dependencies..."
