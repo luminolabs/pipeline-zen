@@ -99,8 +99,13 @@ if __name__ == '__main__':
         }
     }
 
-    # Resize the target MIG and publish the message
-    logging.info(f'Running workflow `{workflow}` on MIG `{mig_name}` with job ID `{job_id}`...')
-    resize_mig(mig_name, get_region_from_mig_name(mig_name), PROJECT_ID)
-    publish_message(message, get_subscription_id_from_mig_name(mig_name))
+    if mig_name == 'local':
+        logging.info('Skipping MIG resize and publishing message on local subscription ID for local consumption...')
+    else:
+        logging.info(f'Running workflow `{workflow}` on MIG `{mig_name}` with job ID `{job_id}`...')
+        # Resize the target MIG to allow for the new job to run
+        resize_mig(mig_name, get_region_from_mig_name(mig_name), PROJECT_ID)
+
+    # Publish the message to the Pub/Sub topic
+    publish_message(message, 'local')
     logging.info('Workflow scheduled successfully!')
