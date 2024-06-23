@@ -85,6 +85,9 @@ if __name__ == '__main__':
     # Create auto-generated job ID if one is not given
     job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
 
+    # Get the subscription ID from the MIG name
+    subscription_id = get_subscription_id_from_mig_name(mig_name)
+
     # Create the message to be sent
     message = {
         'workflow': workflow,
@@ -107,5 +110,5 @@ if __name__ == '__main__':
         resize_mig(mig_name, get_region_from_mig_name(mig_name), PROJECT_ID)
 
     # Publish the message to the Pub/Sub topic
-    publish_message(message, 'local')
+    publish_message(message, subscription_id)
     logging.info('Workflow scheduled successfully!')
