@@ -12,9 +12,10 @@
 ENV="dev"
 PROJECT_ID="neat-airport-407301"
 
-SERVICE_ACCOUNT="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen"
+# Workload identity Pool info
 WORKLOAD_IDENTITY_POOL="github"
-
+SERVICE_ACCOUNT="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/$WORKLOAD_IDENTITY_POOL/subject/luminolabs/pipeline-zen"
+# Docker image repo info
 DOCKER_IMAGE_REGION="us-central1"
 DOCKER_IMAGE_REPO="lum-docker-images"
 
