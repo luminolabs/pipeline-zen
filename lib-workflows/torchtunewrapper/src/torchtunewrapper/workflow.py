@@ -56,10 +56,12 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         # Run the recipe on a single device
         tt_recipe_fn()
     else:
-        # Set the name of the recipe function to the original function name
+        # Run the recipe on multiple devices
+        logger.info(f'Number of GPUs: {job_config["num_gpus"]}')
+        # Set the name of the recipe function to the original function name;
+        # because `partial` doesn't preserve the original function name
         tt_recipe_fn.__name__ = tt_recipe_fn.__qualname__ = tt_recipe_fn_orig.__name__
         # Instantiate the recipe on multiple devices
-        logger.info(f'Number of GPUs: {job_config["num_gpus"]}')
         tt_recipe_fn_multi = elastic_launch(
             config=LaunchConfig(
                 min_nodes=1,
