@@ -11,11 +11,6 @@ DOCKER_IMAGE_REPO="lum-docker-images"
 # Results bucket for storing pipeline results
 RESULTS_BUCKET="lum-pipeline-zen"
 
-# Allows downloading docker image from `lum-docker-images` repo only
-gcloud artifacts repositories add-iam-policy-binding --location $DOCKER_IMAGE_REGION $DOCKER_IMAGE_REPO \
-  --member=$SERVICE_ACCOUNT \
-  --role=roles/artifactregistry.reader
-
 # Allow storing results to `lum-pipeline-zen` bucket only
 # 1. Assign Storage Admin
 gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET \
@@ -58,3 +53,21 @@ gcloud beta projects add-iam-policy-binding $PROJECT_ID \
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role=roles/pubsub.subscriber \
+
+# 1a. Create new role for deleting VMs from MIGs
+gcloud iam roles create mig_instance_deleter \
+  --project=$PROJECT_ID \
+  --title="MIG Instance Deleter" \
+  --description="Grants permission to delete MIG instances." \
+  --permissions=compute.instanceGroupManagers.update,compute.instances.delete
+
+# 1b. Assign MIG Instance Deleter
+# TODO: Need to narrow down to specific MIGs, and VMs, and include all regions
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=projects/$PROJECT_ID/roles/mig_instance_deleter
+
+# 2. Assign Compute Viewer, needed by the gcloud library
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/compute.viewer
