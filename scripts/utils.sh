@@ -1,3 +1,6 @@
+LOCAL_ENV="local"
+PROJECT_ID="neat-airport-407301"
+
 # Function to extract subscription ID from VM name
 function get_subscription_id_from_vm_name() {
     # Extract subscription ID from VM name;

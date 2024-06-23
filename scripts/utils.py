@@ -4,6 +4,7 @@ PROJECT_ID = 'neat-airport-407301'
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
 METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
+LOCAL_SUBSCRIPTION_ID = 'local'
 
 
 # Function to get the VM name using the metadata server
@@ -71,4 +72,4 @@ def get_subscription_id_from_mig_name(mig_name: str) -> str:
     :param mig_name: The name of the MIG
     :return: The subscription ID
     """
-    return '-'.join(mig_name.split('-')[:-2])
+    return LOCAL_SUBSCRIPTION_ID if mig_name == LOCAL_SUBSCRIPTION_ID else '-'.join(mig_name.split('-')[:-2])

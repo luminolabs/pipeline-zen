@@ -4,8 +4,7 @@
 
 set -e  # Exit immediately if a command fails
 
-# Set the project ID
-PROJECT_ID="neat-airport-407301"
+source ./scripts/utils.sh
 
 # List all secrets in the specified project and get their names
 SECRET_NAMES=$(gcloud secrets list --project="$PROJECT_ID" --format="value(name)")

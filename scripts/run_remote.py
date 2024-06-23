@@ -17,7 +17,7 @@ import logging
 
 from google.cloud import pubsub_v1, compute_v1
 
-from utils import PROJECT_ID, get_region_from_mig_name, get_subscription_id_from_mig_name
+from utils import PROJECT_ID, get_region_from_mig_name, get_subscription_id_from_mig_name, LOCAL_SUBSCRIPTION_ID
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(message)s')
@@ -53,15 +53,15 @@ def resize_mig(mig_name: str, region: str, project_id: str):
     logging.info(f'MIG {mig_name} resized from {current_size} to {new_size}')
 
 
-def publish_message(message: dict, subscription_name: str):
+def publish_message(message: dict, subscription_id: str):
     """
     Publish a message to the Pub/Sub topic.
 
     :param message: The message to publish
-    :param subscription_name: The target GPU configuration to use for training; used as the subscription name
+    :param subscription_id: The target GPU configuration to use for training; used as the subscription name
     """
-    future = publisher.publish(topic_path, json.dumps(message).encode('utf-8'), **{'mig': subscription_name})
-    logging.info(f'Published message ID: {future.result()}')
+    future = publisher.publish(topic_path, json.dumps(message).encode('utf-8'), **{'mig': subscription_id})
+    logging.info(f'Published message ID: {future.result()} on subscription: `{subscription_id}`')
 
 
 if __name__ == '__main__':
@@ -102,8 +102,9 @@ if __name__ == '__main__':
         }
     }
 
-    if mig_name == 'local':
-        logging.info('Skipping MIG resize and publishing message on local subscription ID for local consumption...')
+    if subscription_id == LOCAL_SUBSCRIPTION_ID:
+        logging.info(f'Skipping MIG resize and publishing message on {LOCAL_SUBSCRIPTION_ID} '
+                     f'subscription ID for local consumption...')
     else:
         logging.info(f'Running workflow `{workflow}` on MIG `{mig_name}` with job ID `{job_id}`...')
         # Resize the target MIG to allow for the new job to run

@@ -11,11 +11,12 @@
 # 7. Run the Docker container with appropriate volumes and environment variables
 # 8. Log after the Docker container finishes
 
+source ./scripts/utils.sh
+
 # Constants
 IMAGE_NAME="celery-workflow"
 IMAGE_REMOTE_PREFIX="us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/$IMAGE_NAME"
-IMAGE_LOCAL="$IMAGE_NAME:local"
-ENV_LOCAL="local"
+IMAGE_LOCAL="$IMAGE_NAME:$LOCAL_ENV"
 
 # Log start of the script
 echo "Begin running the Celery workflow at $(date)"
@@ -28,9 +29,9 @@ echo "Read version $VERSION"
 IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
 
 # Set the environment and image to use
-ENV=$ENV_LOCAL
+ENV=$LOCAL_ENV
 IMAGE_USE=$IMAGE_LOCAL
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$ENV_LOCAL" ]]; then
+if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   ENV=$PZ_ENV
   IMAGE_USE=$IMAGE_REMOTE
 fi

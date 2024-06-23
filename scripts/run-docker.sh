@@ -4,12 +4,14 @@
 
 set -e  # Exit immediately if a command fails
 
+source ./scripts/utils.sh
+
 # Build the Docker image for the workflow
-docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:local .
+docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:$LOCAL_ENV .
 
 # Set the environment name to use
-env="local"
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "local" ]]; then
+env=$LOCAL_ENV
+if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   env=$PZ_ENV
 fi
 

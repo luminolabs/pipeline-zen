@@ -18,13 +18,14 @@
 
 set -e  # Exit immediately if a command fails
 
+source ./scripts/utils.sh
+
 # New version Information (pulled from VERSION file locally)
 VERSION=$(cat VERSION)
 VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
 
 # --- Variables ---
 
-PROJECT_ID="neat-airport-407301"
 # Service account to load to the Job VMs
 JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 # Prefix for most resources created by this script, also used for some folder names
