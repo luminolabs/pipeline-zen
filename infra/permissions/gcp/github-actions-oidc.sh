@@ -12,136 +12,53 @@
 ENV="dev"
 PROJECT_ID="neat-airport-407301"
 
-# Note: The results of commands are stored as comments
+SERVICE_ACCOUNT="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen"
+WORKLOAD_IDENTITY_POOL="github"
+
+DOCKER_IMAGE_REGION="us-central1"
+DOCKER_IMAGE_REPO="lum-docker-images"
 
 # 1. Setup Workload Identity Pool
-gcloud iam workload-identity-pools create "github" \
+gcloud iam workload-identity-pools create "$WORKLOAD_IDENTITY_POOL" \
   --project=$PROJECT_ID \
   --location="global" \
   --display-name="GitHub Actions Pool"
-#Created workload identity pool [github].
-
-gcloud iam workload-identity-pools describe "github" \
-  --project=$PROJECT_ID \
-  --location="global" \
-  --format="value(name)"
-#projects/482988686822/locations/global/workloadIdentityPools/github
 
 gcloud iam workload-identity-pools providers create-oidc "pipeline-zen" \
   --project=$PROJECT_ID \
   --location="global" \
-  --workload-identity-pool="github" \
+  --workload-identity-pool="$WORKLOAD_IDENTITY_POOL" \
   --display-name="GitHub Repo Provider" \
   --attribute-mapping="google.subject=assertion.repository,attribute.actor=assertion.actor,attribute.repository=assertion.repository,attribute.repository_owner=assertion.repository_owner" \
   --attribute-condition="assertion.repository_owner == 'luminolabs'" \
   --issuer-uri="https://token.actions.githubusercontent.com"
-#Created workload identity pool provider [pipeline-zen].
-
-gcloud iam workload-identity-pools providers describe "pipeline-zen" \
-  --project=$PROJECT_ID \
-  --location="global" \
-  --workload-identity-pool="github" \
-  --format="value(name)"
-#projects/482988686822/locations/global/workloadIdentityPools/github/providers/pipeline-zen
-
-# Add this step to the GitHub Actions workflow
-#  - name: Set up Google Cloud SDK Authentication
-#    uses: google-github-actions/auth@v2
-#    with:
-#      project_id: 'neat-airport-407301'
-#      workload_identity_provider: 'projects/482988686822/locations/global/workloadIdentityPools/github/providers/pipeline-zen'
 
 # 2. Allows writing docker image to `lum-docker-images` repo only
-gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
-  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
+gcloud artifacts repositories add-iam-policy-binding --location $DOCKER_IMAGE_REGION $DOCKER_IMAGE_REPO \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/artifactregistry.writer
-#Updated IAM policy for repository [lum-docker-images].
-#bindings:
-#...
-#...
-#- members:
-#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
-#  role: roles/artifactregistry.writer
-#etag: BwYYc2Z8Shg=
-#version: 1
 
-# 3. New role to allow GHA to create a new Jobs VM image upon creating a new release
+# 3a. New role to allow GHA to create a new Jobs VM image upon creating a new release
 gcloud iam roles update jobs_image_creator --project $PROJECT_ID \
   --title "VM Manager for gha-jobs-vm-image-creator" \
   --description "Manage VM gha-jobs-vm-image-creator for automated creating of new Jobs VM Image" \
   --permissions compute.projects.get,compute.instances.start,compute.instances.stop,compute.instances.get,compute.instances.getGuestAttributes,compute.instances.setMetadata,compute.disks.useReadOnly,compute.disks.use,compute.disks.get,compute.images.create,compute.images.get,compute.globalOperations.get
-#Created role [jobs_image_creator].
-#description: Manage VM gha-jobs-vm-image-creator for automated creating of new Jobs VM
-#  Image
-#etag: BwYYl7w29bs=
-#includedPermissions:
-#- compute.disks.get
-#- compute.disks.use
-#- compute.disks.useReadOnly
-#- compute.globalOperations.get
-#- compute.images.create
-#- compute.images.get
-#- compute.instances.get
-#- compute.instances.getGuestAttributes
-#- compute.instances.setMetadata
-#- compute.instances.start
-#- compute.instances.stop
-#- compute.projects.get
-#name: projects/neat-airport-407301/roles/jobs_image_creator
-#stage: ALPHA
-#title: VM Manager for gha-jobs-vm-image-creator
 
-# 4. Assign jobs_image_creator
+# 3b. Assign jobs_image_creator
 gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
+  --member=$SERVICE_ACCOUNT \
   --role "projects/$PROJECT_ID/roles/jobs_image_creator" \
   --condition=expression="(resource.name=='projects/$PROJECT_ID/zones/us-central1-a/instances/gha-jobs-vm-image-creator' && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'",title="limit_to_jobs_vm_instance_template",description="Limit compute perms to gha-jobs-vm-image-creator VM"
-#Updated IAM policy for project [neat-airport-407301].
-#bindings:
-#...
-#...
-#- condition:
-#    description: Limit compute perms to gha-jobs-vm-image-creator VM
-#    expression: (resource.name=='projects/neat-airport-407301/zones/us-central1-a/instances/gha-jobs-vm-image-creator'
-#      && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'
-#    title: limit_to_jobs_vm_instance_template
-#  members:
-#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
-#  role: projects/neat-airport-407301/roles/jobs_image_creator
-#etag: BwYYlp1yW3Q=
-#version: 3
 
-# 5. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
+# 4. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
 # docker image when building a new Jobs VM image
 gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
   --member=serviceAccount:gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/artifactregistry.reader
-#Updated IAM policy for repository [lum-docker-images].
-#bindings:
-#- members:
-#  - serviceAccount:gha-jobs-vm-image-creator-dev@neat-airport-407301.iam.gserviceaccount.com
-#  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
-#  role: roles/artifactregistry.reader
-#- members:
-#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
-#  role: roles/artifactregistry.writer
-#etag: BwYaESUR5aE=
-#version: 1
 
-# 6. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
+# 5. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
 # when logging into `gha-jobs-vm-image-creator` VM
 gcloud iam service-accounts add-iam-policy-binding \
   gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
-  --member="principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen" \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/iam.serviceAccountUser
-#Updated IAM policy for repository [lum-docker-images].
-#bindings:
-#- members:
-#  - serviceAccount:gha-jobs-vm-image-creator-dev@neat-airport-407301.iam.gserviceaccount.com
-#  - serviceAccount:pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com
-#  role: roles/artifactregistry.reader
-#- members:
-#  - principal://iam.googleapis.com/projects/482988686822/locations/global/workloadIdentityPools/github/subject/luminolabs/pipeline-zen
-#  role: roles/artifactregistry.writer
-#etag: BwYaESUR5aE=
-#version: 1

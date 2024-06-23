@@ -69,25 +69,28 @@ echo "Copying files to VM..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
 # Remove old files and create scripts folder
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
-  --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION && mkdir -p /$RESOURCES_PREFIX/scripts"
+  --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/scripts"
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 gcloud compute scp ./scripts/*.py ./scripts/*.sh ./scripts/*.txt $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/scripts --zone $IMAGE_CREATOR_VM_ZONE
 # TODO: Choose the right .env file based on the environment
-gcloud compute scp ./deploy-artifacts/.env-dev $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
 # Install python dependencies
 echo "Installing python dependencies..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/scripts/requirements.txt"
 
-# Delete older Docker Image
-echo "Deleting older VM image..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm \$(docker image ls -q) || true"
+# Grab older Docker Image ID
+OLD_IMAGE_ID=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "gcloud auth configure-docker $DOCKER_IMAGE_HOST --quiet"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
+
+# Remove older Docker Image
+echo "Deleting older VM image..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $OLD_IMAGE_ID || true"
 
 # Stop VM
 echo "Stopping VM..."
