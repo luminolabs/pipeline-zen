@@ -30,5 +30,6 @@ docker run $gpus \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV=$env \
+-e PZ_ENV=$ENV \
+-e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 $1-workflow:local python $1/cli.py "${@:2}"

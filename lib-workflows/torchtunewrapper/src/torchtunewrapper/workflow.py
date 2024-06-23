@@ -56,19 +56,22 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         # Run the recipe on a single device
         tt_recipe_fn()
     else:
-        # Run the recipe on multiple devices
-        e = elastic_launch(
+        # Set the name of the recipe function to the original function name
+        tt_recipe_fn.__name__ = tt_recipe_fn.__qualname__ = tt_recipe_fn_orig.__name__
+        # Instantiate the recipe on multiple devices
+        logger.info(f'Number of GPUs: {job_config["num_gpus"]}')
+        tt_recipe_fn_multi = elastic_launch(
             config=LaunchConfig(
                 min_nodes=1,
                 max_nodes=1,
-                nproc_per_node=1,
+                nproc_per_node=job_config['num_gpus'],
                 rdzv_backend='c10d',
                 rdzv_endpoint='localhost:0',
             ),
             entrypoint=tt_recipe_fn,
         )
-        tt_recipe_fn.__name__ = tt_recipe_fn.__qualname__ = tt_recipe_fn_orig.__name__
-        e()
+        # Run the recipe
+        tt_recipe_fn_multi()
 
     # Save and return the results
     results = {'see logs': 'see logs for results'}
@@ -79,8 +82,9 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
 def main(job_config_name: str, job_id: Optional[str] = None,
          dataset_id: str = Optional[None], dataset_template: Optional[str] = None,
-         batch_size: int = 1, shuffle: bool = True,
-         num_epochs: int = 1, use_lora: bool = True, use_single_device: bool = True):
+         batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
+         use_lora: bool = True,
+         use_single_device: bool = True, num_gpus: int = 1):
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
@@ -93,6 +97,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
     :param use_single_device: Whether to train on a single or multiple GPU devices
+    :param num_gpus: The number of GPUs to use for training
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
     # Load job configuration
@@ -107,6 +112,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
     job_config.setdefault('use_single_device', use_single_device)
+    job_config.setdefault('num_gpus', num_gpus)
 
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
