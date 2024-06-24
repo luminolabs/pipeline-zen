@@ -1,0 +1,64 @@
+# Use with full_finetune_single_device.py
+
+# These are set by the job launcher, don't set them manually
+base_model_path:
+logs_path:
+output_dir:
+shuffle:
+batch_size:
+epochs:
+
+# Tokenizer
+tokenizer:
+  _component_: torchtune.models.mistral.mistral_tokenizer
+  path: ${base_model_path}/tokenizer.model
+
+# Dataset
+dataset:
+  _component_:  # leave empty, this is injected by the job launcher
+seed: null
+
+# Model Arguments
+model:
+  _component_: torchtune.models.mistral.mistral_7b
+
+checkpointer:
+  _component_: torchtune.utils.FullModelHFCheckpointer
+  checkpoint_dir: ${base_model_path}
+  checkpoint_files: [
+    pytorch_model-00001-of-00002.bin,
+    pytorch_model-00002-of-00002.bin
+  ]
+  recipe_checkpoint: null
+  output_dir: ${output_dir}
+  model_type: MISTRAL
+resume_from_checkpoint: False
+
+optimizer:
+  _component_: bitsandbytes.optim.PagedAdamW
+  lr: 5e-6
+
+loss:
+  _component_: torch.nn.CrossEntropyLoss
+max_steps_per_epoch: null
+gradient_accumulation_steps: 1
+optimizer_in_bwd: True
+
+# Training env
+device: cuda
+
+# Memory management
+enable_activation_checkpointing: True
+
+# Reduced precision
+dtype: bf16
+
+# Model compilation
+compile: False
+
+# Logging
+metric_logger:
+  _component_: torchtune.utils.metric_logging.DiskLogger
+  log_dir: ${logs_path}
+log_every_n_steps: 1
+log_peak_memory_stats: True
