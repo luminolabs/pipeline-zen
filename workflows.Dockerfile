@@ -1,4 +1,6 @@
-FROM python
+# Using older python for torch compatibility,
+# especially for multi-GPU training
+FROM python:3.10-bullseye
 
 # Install essentials
 RUN apt update \

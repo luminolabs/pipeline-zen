@@ -11,4 +11,4 @@ paths=$paths:$(pwd)/lib-workflows/torchtunewrapper/src
 paths=$paths:$(pwd)/lib-celery/src
 
 # Run the Celery pipeline for the specified workflow
-PYTHONPATH=$paths python lib-celery/src/pipeline/$1.py "${@:2}"
+PYTHONPATH=$paths python lib-celery/src/pipeline/$1_wf.py "${@:2}"
