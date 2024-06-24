@@ -3,7 +3,6 @@ from typing import Optional
 
 from transformers import PreTrainedModel
 
-from common.config_manager import config
 from common.model import image, nlp, llm
 
 
@@ -31,7 +30,7 @@ def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **
 
     # For torchtune configurations
     if model_kind == 'llm':
-        if any(x in model_base for x in ('llama',)):
+        if any(x in model_base for x in ('llama3', 'mistral',)):
             return llm.auto(model_base, **kwargs)
 
     if model_kind == '...':
