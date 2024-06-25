@@ -74,6 +74,11 @@ create_or_resize_mig() {
         current_target_size=$(echo $current_target_size | xargs)
 
         # Determine the new target size based on the number of running instances and the desired size
+        # Note: Never reduce the target size below the number of running instances
+        # ie:
+        # - if the new target size is 0 and 3 instances are running, the new target size should be 3
+        # - if the new target size is 0 and 0 instances are running, the new target size should be 0
+        # - if the new target size is 2 and 0 instances are running, the new target size should be 2
         if [ $running_instances -gt $size ]; then
             target_size=$running_instances
         else
