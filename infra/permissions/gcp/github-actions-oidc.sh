@@ -57,7 +57,13 @@ gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-
   --member=serviceAccount:gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/artifactregistry.reader
 
-# 5. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
+# 5. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
+# docker image when building a new Jobs VM image
+gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
+  --member=serviceAccount:gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
+  --role=roles/artifactregistry.reader
+
+# 6. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
 # when logging into `gha-jobs-vm-image-creator` VM
 gcloud iam service-accounts add-iam-policy-binding \
   gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
