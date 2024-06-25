@@ -3,4 +3,4 @@
 job_id: llm_mistral_7b
 category: LLM
 type: INSTRUCTION
-model_base: mistralai/Mistral-7B-v0.3
+model_base: mistralai/Mistral-7B-v0.1
