@@ -16,7 +16,7 @@ from omegaconf import DictConfig, ListConfig
 
 from torch import nn
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader, DistributedSampler, Dataset
 
 from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
@@ -94,7 +94,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         RuntimeError: If ``gradient_accumulation_steps > 1`` and ``optimizer_in_bwd`` is `True`.
     """
 
-    def __init__(self, cfg: DictConfig) -> None:
+    def __init__(self, cfg: DictConfig, dataset: Dataset) -> None:
+        self._dataset = dataset
+
         self._device = utils.get_device(device=cfg.device)
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
         # Disable for fp16, as we haven't validated "full" fp16 with this recipe, nor
@@ -336,8 +338,8 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         DistributedSamplers with Map-style Datasets which fit into memory. Other samplers,
         iterable datasets and streaming datasets are not supported.
         """
-        if cfg_dataset.instance:
-            ds = cfg_dataset.instance
+        if self._dataset:
+            ds = self._dataset
             ds._tokenizer = self._tokenizer
             packed = cfg_dataset.get("packed", False)
         else:
@@ -402,7 +404,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             intermediate_checkpoint=(epoch + 1 < self.total_epochs),
         )
 
-    def train(self) -> float:
+    def train(self) -> None:
         """
         The core training loop. Supports training on subsets of the dataset using the
         ``max_steps_per_epoch``.
@@ -419,7 +421,6 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         t0 = time.perf_counter()
         running_loss = 0
         num_tokens = 0
-        loss_to_log = None
 
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
@@ -505,13 +506,12 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
-        return loss_to_log
 
     def cleanup(self) -> None:
         self._metric_logger.close()
 
 
-def recipe_main(cfg: DictConfig) -> float:
+def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
     """
     Entry point for the recipe.
 
@@ -520,8 +520,7 @@ def recipe_main(cfg: DictConfig) -> float:
         - Overwritten by arguments from the command-line
     """
     config.log_config(recipe_name="FullFinetuneRecipeSingleDevice", cfg=cfg)
-    recipe = FullFinetuneRecipeSingleDevice(cfg=cfg)
+    recipe = FullFinetuneRecipeSingleDevice(cfg=cfg, dataset=dataset)
     recipe.setup(cfg=cfg)
-    loss = recipe.train()
+    recipe.train()
     recipe.cleanup()
-    return loss

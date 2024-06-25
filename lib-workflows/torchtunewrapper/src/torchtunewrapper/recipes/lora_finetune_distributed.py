@@ -24,7 +24,7 @@ from torch.distributed.fsdp import (
     StateDictType,
 )
 from torch.optim import Optimizer
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader, DistributedSampler, Dataset
 from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.modules.peft.peft_utils import (
@@ -104,7 +104,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         RuntimeError: If ``dtype`` is set to bf16 and the hardware does not support bf16.
     """
 
-    def __init__(self, cfg: DictConfig) -> None:
+    def __init__(self, cfg: DictConfig, dataset: Optional[Dataset] = None) -> None:
+        self._dataset = dataset
+
         self._device = utils.get_device(device=cfg.device)
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
 
@@ -429,8 +431,8 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         """
         world_size, rank = utils.get_world_size_and_rank()
 
-        if cfg_dataset.instance:
-            ds = cfg_dataset.instance
+        if self._dataset:
+            ds = self._dataset
             ds._tokenizer = self._tokenizer
             packed = cfg_dataset.get("packed", False)
         else:
@@ -551,7 +553,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                 intermediate_checkpoint=intermediate_checkpoint,
             )
 
-    def train(self) -> float:
+    def train(self) -> None:
         """
         The core training loop.
         """
@@ -567,7 +569,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         t0 = time.perf_counter()
         running_loss = 0
         num_tokens = 0
-        loss_to_log = None
 
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
@@ -654,7 +655,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
-        return loss_to_log
 
     def cleanup(self) -> None:
         if self._is_rank_zero:
@@ -662,7 +662,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig) -> float:
+def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
     """
     Entry point for the recipe.
 
@@ -680,8 +680,7 @@ def recipe_main(cfg: DictConfig) -> float:
 
     config.log_config(recipe_name="LoRAFinetuneRecipeDistributed", cfg=cfg)
 
-    recipe = LoRAFinetuneRecipeDistributed(cfg=cfg)
+    recipe = LoRAFinetuneRecipeDistributed(cfg=cfg, dataset=dataset)
     recipe.setup(cfg=cfg)
-    loss = recipe.train()
+    recipe.train()
     recipe.cleanup()
-    return loss

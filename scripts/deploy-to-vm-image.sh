@@ -123,6 +123,6 @@ for CONFIG in "${CONFIGS[@]}"; do
 done
 
 # TODO: Add a step to delete the old image and templates
-# TODO: Add a step to update migs with new templates
+# TODO: Add a step to update MIGs with new templates
 
 echo "New VM image and templates created. Deployment process complete!"

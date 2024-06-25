@@ -3,6 +3,7 @@ from logging import Logger
 from typing import Optional
 
 from omegaconf import DictConfig, OmegaConf
+from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torchtune.datasets._instruct import instruct_dataset
 
 from common.dataset.provider.huggingface import HuggingFace
@@ -41,19 +42,41 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         cache_dir=HuggingFace.get_dataset_cache_dir(),
     )
 
-    # Get the torchtune recipe function
-    tt_recipe_fn = import_torchtune_recipe_fn(job_config['use_lora'], job_config['use_single_device'])
-    tt_recipe_fn = partial(tt_recipe_fn, dataset=dataset)
-
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
+
+    # Get the torchtune recipe function
+    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], job_config['use_single_device'])
+    tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset)
+
     # Run the torchtune recipe, which will fine-tune the model
-    loss = tt_recipe_fn(tt_config)
+    if job_config['use_single_device']:
+        # Run the recipe on a single device
+        tt_recipe_fn()
+    else:
+        # Run the recipe on multiple devices
+        logger.info(f'Number of GPUs: {job_config["num_gpus"]}')
+        # Set the name of the recipe function to the original function name;
+        # because `partial` doesn't preserve the original function name
+        tt_recipe_fn.__name__ = tt_recipe_fn.__qualname__ = tt_recipe_fn_orig.__name__
+        # Instantiate the recipe on multiple devices
+        tt_recipe_fn_multi = elastic_launch(
+            config=LaunchConfig(
+                min_nodes=1,
+                max_nodes=1,
+                nproc_per_node=job_config['num_gpus'],
+                rdzv_backend='c10d',
+                rdzv_endpoint='localhost:0',
+            ),
+            entrypoint=tt_recipe_fn,
+        )
+        # Run the recipe
+        tt_recipe_fn_multi()
 
     # Save and return the results
-    results = {'loss': loss}
+    results = {'see logs': 'see logs for results'}
     save_job_results(job_id, results, 'torchtune')
     logger.info('The job id was: ' + job_id)
     return results
@@ -61,8 +84,9 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
 def main(job_config_name: str, job_id: Optional[str] = None,
          dataset_id: str = Optional[None], dataset_template: Optional[str] = None,
-         batch_size: int = 1, shuffle: bool = True,
-         num_epochs: int = 1, use_lora: bool = True, use_single_device: bool = True):
+         batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
+         use_lora: bool = True,
+         use_single_device: bool = True, num_gpus: int = 1):
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
@@ -75,6 +99,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
     :param use_single_device: Whether to train on a single or multiple GPU devices
+    :param num_gpus: The number of GPUs to use for training
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
     # Load job configuration
@@ -89,6 +114,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
     job_config.setdefault('use_single_device', use_single_device)
+    job_config.setdefault('num_gpus', num_gpus)
 
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(

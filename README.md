@@ -24,7 +24,8 @@ Install python dependencies:
   --dataset_id yahma/alpaca-cleaned \
   --dataset_template instruct \
   --batch_size 2 --shuffle true --num_epochs 1 \
-  --use_lora true --use_single_device true
+  --use_lora true \
+  --use_single_device true --num_gpus 1
 ```
 
 ## Running remotely on a VM (aka on `dev`)
@@ -42,7 +43,8 @@ python ./scripts/run_remote.py \
   --dataset_id yahma/alpaca-cleaned \
   --dataset_template instruct \
   --batch_size 2 --shuffle true --num_epochs 1 \
-  --use_lora true --use_single_device true
+  --use_lora true \
+  --use_single_device true --num_gpus 1
 ```
 
 # Training other types of models
