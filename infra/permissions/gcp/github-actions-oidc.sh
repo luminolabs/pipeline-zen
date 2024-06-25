@@ -39,7 +39,7 @@ gcloud artifacts repositories add-iam-policy-binding --location $DOCKER_IMAGE_RE
   --member=$SERVICE_ACCOUNT \
   --role=roles/artifactregistry.writer
 
-# 3a. New role to allow GHA to create a new Jobs VM image upon creating a new release
+# 3a. New role to allow GHA to manage the VM for creating new Jobs VM image
 gcloud iam roles update jobs_image_creator --project $PROJECT_ID \
   --title "VM Manager for gha-jobs-vm-image-creator" \
   --description "Manage VM gha-jobs-vm-image-creator for automated creating of new Jobs VM Image" \
@@ -51,11 +51,16 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --role "projects/$PROJECT_ID/roles/jobs_image_creator" \
   --condition=expression="(resource.name=='projects/$PROJECT_ID/zones/us-central1-a/instances/gha-jobs-vm-image-creator' && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'",title="limit_to_jobs_vm_instance_template",description="Limit compute perms to gha-jobs-vm-image-creator VM"
 
-# 4. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
-# docker image when building a new Jobs VM image
-gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
-  --member=serviceAccount:gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
-  --role=roles/artifactregistry.reader
+# 4a. New role to allow GHA to create VM templates
+gcloud iam roles create vm_template_creator --project $PROJECT_ID \
+  --title "Creates VM templates" \
+  --description "Allows creation of VM templates" \
+  --permissions compute.instanceTemplates.create,compute.instanceTemplates.get
+
+# 4b. Assign vm_template_creator
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role "projects/$PROJECT_ID/roles/vm_template_creator"
 
 # 5. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
 # when logging into `gha-jobs-vm-image-creator` VM
