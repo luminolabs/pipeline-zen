@@ -6,7 +6,7 @@ from celery import Celery, chain
 
 from common.config_manager import config
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs
+    upload_local_directory_to_gcs, get_logs_path
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -42,11 +42,14 @@ def torchtunewrapper(_, job_config_name: str, job_id: Optional[str] = None,
 @app.task
 def upload_results(_, job_id: str):
     """
-    Upload results to Google Cloud Storage.
+    Upload results and logs to Google Cloud Storage.
     :param job_id: The job id to associate with the results
     :return:
     """
+    # Upload results
     upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
+    # Upload logs
+    upload_local_directory_to_gcs(get_logs_path(job_id), 'lum-pipeline-zen')
 
 
 @app.task

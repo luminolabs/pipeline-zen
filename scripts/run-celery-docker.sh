@@ -1,54 +1,68 @@
 #!/bin/bash
 
+# Run a Celery workflow with the specified arguments using Docker
+# Steps:
+# 1. Log the start of the script
+# 2. Read the version from the VERSION file
+# 3. Define remote and local image names
+# 4. Set the environment and image to use
+# 5. Build or pull the Docker image based on the environment
+# 6. Set GPU options based on OS type
+# 7. Run the Docker container with appropriate volumes and environment variables
+# 8. Log after the Docker container finishes
+
+source ./scripts/utils.sh
+
+# Constants
+IMAGE_NAME="celery-workflow"
+IMAGE_REMOTE_PREFIX="us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/$IMAGE_NAME"
+IMAGE_LOCAL="$IMAGE_NAME:$LOCAL_ENV"
+
+# Log start of the script
+echo "Begin running the Celery workflow at $(date)"
+
+# Read the version from the VERSION file
 VERSION=$(cat VERSION)
-image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/celery-workflow:$VERSION
-image_local=celery-workflow:local
+echo "Read version $VERSION"
 
-env="local"
-image_use=$image_local
-if [[ "$PZ_ENV" != "local" && "$PZ_ENV" != "" ]]; then
-  env=$PZ_ENV
-  image_use=$image_remote
+# Define remote and local image names
+IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
+
+# Set the environment and image to use
+ENV=$LOCAL_ENV
+IMAGE_USE=$IMAGE_LOCAL
+if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+  ENV=$PZ_ENV
+  IMAGE_USE=$IMAGE_REMOTE
 fi
 
-if [[ "$image_use" == "$image_local" ]]; then
-  docker build -f celery.Dockerfile -t $image_use .
-else
-  docker pull $image_use
+echo "Using image: $IMAGE_USE"
+
+# Build or pull the Docker image
+if [[ "$IMAGE_USE" == "$IMAGE_LOCAL" ]]; then
+  echo "Building local Docker image"
+  docker build -f celery.Dockerfile -t $IMAGE_USE .
 fi
 
-gpus="--gpus all"
+# Set GPU options based on OS type
+GPUS_OPTION="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  # There's no implementation on OSX to allow using the GPU with Docker;
-  # this means that MPS will not be used
-  # when running ML workflows on Docker under OSX (ie. the Mac GPU won't be used)
-  gpus=""
+  echo "Detected macOS. Disabling GPU support for Docker"
+  GPUS_OPTION=""
 fi
 
-docker run $gpus \
+# Log before running Docker container
+echo "Running Docker container with image: $IMAGE_USE"
+
+# Run the Docker container
+docker run $GPUS_OPTION \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV=$env \
+-e PZ_ENV=$ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
-$image_use python pipeline/$1_wf.py "${@:2}"
+$IMAGE_USE python pipeline/$1_wf.py "${@:2}"
 
-echo "Celery workflow finished!"
-
-# If we're not on a local env, let's delete the VM that run this job
-# TODO: Make this optional
-# see: https://linear.app/luminoai/issue/LUM-180/add-options-to-run-remotepy
-if [[ "$env" != "local" ]]; then
-  echo "Deleting VM..."
-  # Run `delete_vm.py` in the background to
-  # allow client to disconnect gracefully while
-  # the VM is shutting down
-  # The following snippet sends script output
-  # to `/dev/null`, puts process in background, and
-  # disowns process from shell
-  # We disown this process so that when the client
-  # disconnects, the process can continue to run
-  cmd="python ./scripts/delete_vm.py --job_id $(cat ./.results/.started)"
-  eval "${cmd}" &>/dev/null & disown;
-fi
+# Log after Docker container finishes
+echo "Celery workflow finished at $(date)"

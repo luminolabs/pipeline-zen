@@ -1,6 +1,8 @@
 # Fine-tuning LLMs with Torchtune
 
-## Running locally (recommended)
+## Running locally
+
+Depending on your machine type and specs, you probably want to run this workflow remotely, not locally.
 
 ### First time setup
 
@@ -13,10 +15,10 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
-### Run the torchtune-wrapper workflow
+### Run the torchtunewrapper workflow
 
 ```
-./scripts/run-celery.sh torchtunewrapper \
+./scripts/run-local.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id yahma/alpaca-cleaned \
@@ -32,7 +34,9 @@ are authenticated. Try this: `gcloud auth list`;
 you should see your email in that list, with a `*` next to it
 
 ```
-python ./scripts/run_remote_new.py torchtunewrapper \
+python ./scripts/run_remote.py \
+  --workflow torchtunewrapper \
+  --mig_name pipeline-zen-jobs-1xv100-us-central1 \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id yahma/alpaca-cleaned \

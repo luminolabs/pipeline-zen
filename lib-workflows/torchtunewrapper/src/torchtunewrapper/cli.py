@@ -1,5 +1,6 @@
 import argparse
 
+from common.config_manager import is_truthy
 from torchtunewrapper.workflow import main
 
 
@@ -37,15 +38,14 @@ def add_parser_args(parser: argparse.ArgumentParser):
                         help="The dataset template to use for training; e.g. `instruct`, or `summarization`")
     parser.add_argument('-bs', '--batch_size', type=int, required=False, default=1,
                         help="The batch size to use for training; default is 1")
-    parser.add_argument('-s', '--shuffle', type=bool, required=False, default=True,
+    parser.add_argument('-s', '--shuffle', type=is_truthy, required=False, default=True,
                         help="Whether to shuffle the training data; default is True")
-
 
     parser.add_argument('-ne', '--num_epochs', type=int, required=False, default=1,
                         help="The number of epochs to train for; default is 1")
-    parser.add_argument('-l', '--use_lora', type=bool, required=False, default=True,
+    parser.add_argument('-l', '--use_lora', type=is_truthy, required=False, default=True,
                         help="Whether to use the LoRA; default is True")
-    parser.add_argument('-sd', '--use_single_device', type=bool, required=False, default=True,
+    parser.add_argument('-sd', '--use_single_device', type=is_truthy, required=False, default=True,
                         help="Whether to use a single GPU device; default is True")
 
 

@@ -1,12 +1,21 @@
 #!/bin/bash
 
-docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:local .
+# Run a workflow with the specified arguments using Docker
 
-env=""
-if [[ "$PZ_ENV" != "" ]]; then
+set -e  # Exit immediately if a command fails
+
+source ./scripts/utils.sh
+
+# Build the Docker image for the workflow
+docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:$LOCAL_ENV .
+
+# Set the environment name to use
+env=$LOCAL_ENV
+if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   env=$PZ_ENV
 fi
 
+# Set GPU options based on OS type
 gpus="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   # There's no implementation on OSX to allow using the GPU with Docker;
@@ -15,6 +24,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   gpus=""
 fi
 
+# Run the Docker container for the workflow
 docker run $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \

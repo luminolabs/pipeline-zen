@@ -1,120 +1,115 @@
 #!python
 
+"""
+This script is used to run a workflow using DWS MIGs (Managed Instance Groups).
+
+It performs the following steps:
+1. Parse command line arguments to get the workflow, target MIG, job configuration name, and job ID.
+2. Generate a unique job ID if one is not provided.
+3. Resize the target MIG by increasing its size by one instance.
+4. Publish a message to a Pub/Sub topic with the workflow details and arguments, for the VMs in the MIG to consume.
+"""
+
 import argparse
-import sys
-import subprocess
-import time
 import uuid
+import json
+import logging
 
-from google.cloud import compute_v1
+from google.cloud import pubsub_v1, compute_v1
 
-from delete_vm import delete_vm
+from utils import PROJECT_ID, get_region_from_mig_name, get_subscription_id_from_mig_name, LOCAL_SUBSCRIPTION_ID
 
-# This script is used to run the workflow using on-demand compute instances.
-# Because bigger GPUs can only be used within a DWS MIG, this script is limited
-# to only use 1xV100 GPUs. For bigger GPUs, like the A100, use the `run_remote_mig.py` script.
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(message)s')
 
-# Configuration (adjust as needed)
-PROJECT_ID = 'neat-airport-407301'
-REGION = 'us-central1'
-ZONE = f'{REGION}-a'
-BASE_TEMPLATE_NAME = 'pipeline-zen-jobs-1xv100'
-JOB_DIRECTORY = '/pipeline-zen-jobs'
+# Initialize a Publisher client
+publisher = pubsub_v1.PublisherClient()
+
+# Define the Pub/Sub topic
+topic_id = 'pipeline-zen-jobs'
+topic_path = publisher.topic_path(PROJECT_ID, topic_id)
 
 
-def main(version: str, job_config_name: str, job_id: str, *args):
+def resize_mig(mig_name: str, region: str, project_id: str):
     """
-    Run the model training workflow remotely on a compute instance.
+    Resize the Managed Instance Group (MIG) by increasing its size by one.
 
-    :param version: The version of the template to use
-    :param job_config_name: The name of the job config file, without the `.py` extension
-    :param job_id: The job_id to use for training; logs and other job results and artifacts will be named after this.
-    :param args: Arguments to pass from the CLI to the job
-    :return:
+    :param mig_name: The name of the MIG to resize
+    :param region: The region of the MIG
+    :param project_id: The project ID of the MIG
     """
+    client = compute_v1.RegionInstanceGroupManagersClient()
 
-    # Create auto-generated job id if one is not given
-    job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
+    # Get the current size of the MIG
+    mig = client.get(project=project_id, region=region, instance_group_manager=mig_name)
+    current_size = mig.target_size
+    new_size = current_size + 1
 
-    vm_name = f'{BASE_TEMPLATE_NAME}-{job_id}'.replace('_', '-')
-    print(f'Creating VM from template: {vm_name}')
+    # Resize the MIG
+    operation = client.resize(project=project_id, region=region, instance_group_manager=mig_name, size=new_size)
 
-    # Create VM instance from template
-    instance_client = compute_v1.InstancesClient()
-    instance_insert_request = compute_v1.InsertInstanceRequest()
-    instance_insert_request.project = PROJECT_ID
-    instance_insert_request.zone = ZONE
-    instance_insert_request.source_instance_template = \
-        f'global/instanceTemplates/{BASE_TEMPLATE_NAME}-{version}'
-    instance_insert_request.instance_resource.name = vm_name
+    # Wait for operation to complete
+    operation.result()
+    logging.info(f'MIG {mig_name} resized from {current_size} to {new_size}')
 
-    try:
-        # Insert the compute instance using the template
-        operation = instance_client.insert(instance_insert_request)
-        # Wait for operation to complete
-        operation.result()
-        print(f'...VM created')
-    except Exception as e:
-        print(f'Failed to create VM: {e}')
-        return
 
-    # Wait for VM to start
-    print('Starting VM...')
-    while True:
-        instance_resource = instance_client.get(project=PROJECT_ID, zone=ZONE, instance=vm_name)
-        if instance_resource.status == 'RUNNING':
-            print('...VM is running')
-            # Wait for sshd to start
-            print('...Wait for sshd to start (60s)')
-            time.sleep(60)
-            break
-        time.sleep(5)
-        print('...still waiting for VM to start')
+def publish_message(message: dict, subscription_id: str):
+    """
+    Publish a message to the Pub/Sub topic.
 
-    # Set up VM CLI command prefix, to be used in ssh commands below
-    cmd_prefix = ['gcloud', 'compute', 'ssh', '--zone', ZONE, vm_name, '--command']
-
-    # Execute job directly (change directory and run command)
-    job_command = (f'cd {JOB_DIRECTORY} && source ./scripts/export-secrets.sh && '
-                   f'PZ_ENV=dev ./scripts/run-celery-docker.sh {" ".join(args)}')
-    try:
-        # This will monitor and echo job output
-        print(f'Running job: {job_id}')
-        print('...this might take a while!')
-        print('...note: the job will continue to run, even if we disconnect')
-        print('...note: the job will stop the VM when done, even if we disconnect')
-        print('!!! If you\'re asked for a password here, that\'s your Google password;')
-        print('!!! the `gcloud` command is asking for your password, not this script;')
-        print('!!! this script runs the `gcloud` command to start the job on the remote VM')
-        time.sleep(5)  # pause for user to ack message
-        subprocess.run([*cmd_prefix, job_command], check=True)
-    except Exception as ex:
-        # Delete VM if we couldn't start the job
-        print('We failed to start the job or something else went wrong!!!')
-        delete_vm(instance_client, vm_name)
-        raise ex
-
-    # The job itself will stop and delete the VM when done,
-    # so if we're here, the VM is deleted.
-    print('Done.')
+    :param message: The message to publish
+    :param subscription_id: The target GPU configuration to use for training; used as the subscription name
+    """
+    future = publisher.publish(topic_path, json.dumps(message).encode('utf-8'), **{'mig': subscription_id})
+    logging.info(f'Published message ID: {future.result()} on subscription: `{subscription_id}`')
 
 
 if __name__ == '__main__':
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description="Run the model training workflow remotely")
+    parser = argparse.ArgumentParser(description='Run the model training workflow remotely')
+    parser.add_argument('-wf', '--workflow', type=str, required=True,
+                        help='The workflow to run; ex. `torchtunewrapper`, `train_evaluate`')
+    parser.add_argument('-tm', '--mig_name', type=str, required=True,
+                        help='The target MIG to use for training')
     parser.add_argument('-jc', '--job_config_name', type=str, required=True,
-                        help="The name of the job config file, without the `.py` extension")
+                        help='The name of the job config file, without the `.py` extension')
     parser.add_argument('-jid', '--job_id', type=str, required=False,
-                        help="The job_id to use for training; "
-                             "logs and other job results and artifacts will be named after this.")
-    known_args, _ = parser.parse_known_args()
-    job_config_name, job_id = known_args.job_config_name, known_args.job_id
+                        help='The job ID to use for training; logs and other job results and '
+                             'artifacts will be named after this.')
 
-    # Get version from VERSION file
-    with open('VERSION', 'r') as f:
-        version = f.read().strip().replace('.', '-')
+    # Store the rest of the arguments as unknown arguments
+    known_args, unknown_args = parser.parse_known_args()
+    workflow, mig_name, job_config_name, job_id = (
+        known_args.workflow, known_args.mig_name, known_args.job_config_name, known_args.job_id)
 
-    # Get all arguments
-    all_args = sys.argv[1:]  # Skip the first element which is the script name
-    # Run the workflow remotely
-    main(version, job_config_name, job_id, *all_args)
+    # Create auto-generated job ID if one is not given
+    job_id = job_id or (job_config_name + '-' + str(uuid.uuid4()))
+
+    # Get the subscription ID from the MIG name
+    subscription_id = get_subscription_id_from_mig_name(mig_name)
+
+    # Create the message to be sent
+    message = {
+        'workflow': workflow,
+        'args': {
+            **{
+                'job_config_name': job_config_name,
+                'job_id': job_id,
+            }, **{
+                # Add all other unknown CLI args to the message
+                k.replace('--', ''): v for k, v in zip(unknown_args[::2], unknown_args[1::2])
+            }
+        }
+    }
+
+    if subscription_id == LOCAL_SUBSCRIPTION_ID:
+        logging.info(f'Skipping MIG resize and publishing message on {LOCAL_SUBSCRIPTION_ID} '
+                     f'subscription ID for local consumption...')
+    else:
+        logging.info(f'Running workflow `{workflow}` on MIG `{mig_name}` with job ID `{job_id}`...')
+        # Resize the target MIG to allow for the new job to run
+        resize_mig(mig_name, get_region_from_mig_name(mig_name), PROJECT_ID)
+
+    # Publish the message to the Pub/Sub topic
+    publish_message(message, subscription_id)
+    logging.info('Workflow scheduled successfully!')
