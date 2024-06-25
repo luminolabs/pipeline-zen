@@ -21,4 +21,4 @@ docker run $gpus \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
-$1-workflow:local "${@:2}"
+$1-workflow:local python $1/cli.py "${@:2}"

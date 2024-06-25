@@ -1,8 +1,8 @@
 #!/bin/bash
 
 VERSION=$(cat VERSION)
-image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow:$VERSION
-image_local=train_evaluate-workflow:local
+image_remote=us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/celery-workflow:$VERSION
+image_local=celery-workflow:local
 
 env="local"
 image_use=$image_local
@@ -31,7 +31,8 @@ docker run $gpus \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$env \
-$image_use "${@}"
+-e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
+$image_use python pipeline/$1_wf.py "${@:2}"
 
 echo "Celery workflow finished!"
 

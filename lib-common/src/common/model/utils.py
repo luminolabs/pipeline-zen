@@ -1,32 +1,30 @@
-from logging import Logger
+import os
 
-from transformers import PreTrainedModel
-
-from common.model import image, nlp
+from common.config_manager import config
 
 
-def model_factory(model_kind: str, model_base: str, logger: Logger, **kwargs) -> PreTrainedModel:
+def get_model_cache_dir(model_provider: str, model_name: str):
     """
-    Factory method for instantiating a pre-trained model.
+    Where to store the base model locally
+    ex: `.cache/models/huggingface/llama3-8b`
 
-    :param model_kind: Kind of model to instantiate
-    :param model_base: Base model name
-    :param logger: Logger instance
+    :param model_provider: The model provider
+    :param model_name: The model name
+    :return: The path to the base model cache directory
+    """
+    return os.path.join(config.root_path, config.cache_path, 'models', model_provider, model_name.lower())
+
+
+def add_hf_params(model_base: str, **kwargs) -> dict:
+    """
+    Add Hugging Face parameters to the model configuration.
+
+    :param model_base: The base model name
     :param kwargs: Keyword arguments to pass to the model
-    :return: Pretrained model instance
+    :return: Updated keyword arguments
     """
-    logger.info(f'Using `{model_kind}.{model_base}` model')
-    if model_kind == 'single_label':
-        if 'resnet' in model_base:
-            return image.resnet(model_base, **kwargs)
-        elif any(x in model_base for x in ('bert', 't5')):
-            return nlp.auto(model_base, **kwargs)
-        elif 'unet' == model_base:
-            return image.unet(model_base, **kwargs)
-        else:
-            raise TypeError(f'model_base: {model_base} is not a valid option '
-                            f'for model_kind: {model_kind}')
-    if model_kind == '...':
-        pass
-    else:
-        raise TypeError(f'model_kind: {model_kind} is not a valid option')
+    if 'token' not in kwargs:
+        kwargs['token'] = config.huggingface_token
+    if 'cache_dir' not in kwargs:
+        kwargs['cache_dir'] = get_model_cache_dir('huggingface', model_base)
+    return kwargs

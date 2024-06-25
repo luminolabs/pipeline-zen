@@ -1,0 +1,13 @@
+# Don't change this file, instead use the CLI interface to set options for the job
+
+job_id: llm_llama3_8b
+category: LLM
+type: INSTRUCTION
+model_base: meta-llama/Meta-Llama-3-8B
+# dataset_id:
+# dataset_template:
+# batch_size:
+# shuffle:
+# num_epochs:
+# use_lora:
+# use_single_device:

@@ -10,9 +10,9 @@ from os.path import basename
 from typing import Optional, Union
 from datetime import datetime
 
-import yaml
 from google.cloud import storage
 from google.cloud.storage import Bucket
+from omegaconf import OmegaConf, DictConfig
 
 from common.config_manager import config
 
@@ -44,7 +44,7 @@ class JobCategory(JsonEnumBase):
 class JobType(JsonEnumBase):
     CLASSIFICATION = 'classification'
     SEGMENTATION = 'segmentation'
-    TEXT_GENERATION = 'text_generation'
+    INSTRUCTION = 'instruction'
 
 
 class AutoJSONEncoder(JSONEncoder):
@@ -197,6 +197,9 @@ def load_job_config(job_config_name: str) -> dict:
     # Pull the requested configuration file
     job_config = read_job_config_from_file(job_config_name)
 
+    if job_config['category'] == JobCategory.LLM:
+        return {**job_config}
+
     # Construct the template configuration file; ex. `image_segmentation_base.yml`
     template_config_name = (job_config['category'].value +
                             '_' + job_config['type'].value +
@@ -210,11 +213,14 @@ def load_job_config(job_config_name: str) -> dict:
     return {**base_config, **template_config, **job_config}
 
 
-def read_job_config_from_file(job_config_name: str) -> dict:
+def read_job_config_from_file(job_config_name: str,
+                              overrides: Optional[dict] = None, is_torchtune: bool = False) -> DictConfig:
     """
     Reads the job config from a YAML file
 
     :param job_config_name: Name of the job configuration
+    :param overrides: Overrides to apply to the job config
+    :param is_torchtune: Whether the job config is a torchtune config file or not
     :return: The job config dictionary
     """
     # Normalize filename
@@ -222,18 +228,21 @@ def read_job_config_from_file(job_config_name: str) -> dict:
         job_config_name += '.yml'
 
     # Open and read YAML into dictionary
-    path = os.path.join(config.root_path, config.job_configs_path, job_config_name)
+    path = os.path.join(
+        config.root_path, config.job_configs_path,
+        'torchtune' if is_torchtune else '',
+        job_config_name)
     try:
-        with open(path, 'r') as f:
-            job_config = yaml.safe_load(f)
+        job_config = OmegaConf.merge(OmegaConf.load(path), overrides or {})
     except FileNotFoundError:
         # User friendly error
         raise FileNotFoundError(f'job_config_name: {job_config_name} not found under {path}')
 
-    # Resolve these two into the Enum class; ex. `IMAGE` -> `JobCategory.IMAGE`
-    if job_config.get('type'):
-        job_config['type'] = getattr(JobType, job_config['type'])
-    if job_config.get('category'):
-        job_config['category'] = getattr(JobCategory, job_config['category'])
+    if not is_torchtune:
+        # Resolve these two into the Enum class; ex. `IMAGE` -> `JobCategory.IMAGE`
+        if job_config.get('type'):
+            job_config['type'] = getattr(JobType, job_config['type'])
+        if job_config.get('category'):
+            job_config['category'] = getattr(JobCategory, job_config['category'])
 
     return job_config

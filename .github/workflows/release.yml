@@ -22,10 +22,10 @@ permissions:
   id-token: write
 
 env:
-  IMAGE_NAME: train_evaluate-workflow
-  IMAGE_TAG: us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/train_evaluate-workflow
+  IMAGE_NAME: celery-workflow
+  IMAGE_TAG: us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/celery-workflow
   WORKFLOW_URL: "${{github.SERVER_URL}}/${{github.REPOSITORY}}/actions/runs/${{github.RUN_ID}}"
-  ARTIFACT_REPO_URL: "https://console.cloud.google.com/artifacts/docker/neat-airport-407301/us-central1/lum-docker-images/train_evaluate-workflow?project=neat-airport-407301"
+  ARTIFACT_REPO_URL: "https://console.cloud.google.com/artifacts/docker/neat-airport-407301/us-central1/lum-docker-images/celery-workflow?project=neat-airport-407301"
 
 jobs:
   unit-tests:
@@ -80,7 +80,7 @@ jobs:
             --tag ${{env.IMAGE_TAG}}:${{ github.sha }} \
             --push .
       - name: Build Jobs VM image
-        run: ./scripts/deploy-release.sh
+        run: ./scripts/deploy-to-vm-image.sh
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:

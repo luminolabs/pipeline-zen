@@ -35,7 +35,7 @@ class BaseDatasetProvider(BaseDataset):
         pass
 
     @classmethod
-    def get_cache_dir(cls):
+    def get_dataset_cache_dir(cls):
         """
         Where to store the dataset locally
         ex: `.cache/huggingface/datasets`
