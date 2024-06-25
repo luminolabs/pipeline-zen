@@ -1,4 +1,16 @@
 #!/bin/bash
+# Description:
+# This script automates the creation or resizing of Google Cloud Managed Instance Groups (MIGs) based on provided inputs.
+# It accepts three arguments: machine type, size, and template version.
+# The script checks if a MIG already exists in specified regions and zones, and either creates or resizes it accordingly.
+#
+# Steps:
+# 1. Verify that the required arguments (machine type, size, template version) are provided.
+# 2. Define the array of regions and their corresponding zones.
+# 3. Define a function to create or resize a MIG.
+# 4. Export the function and variables for parallel execution.
+# 5. Iterate over each region and its corresponding zones in parallel.
+# 6. Wait for all parallel jobs to finish.
 
 # Check if the required arguments are provided
 if [ $# -lt 3 ]; then
@@ -6,6 +18,7 @@ if [ $# -lt 3 ]; then
     exit 1
 fi
 
+# Assign input arguments to variables
 machine_type=$1
 size=$2
 template_version=$3
@@ -27,6 +40,7 @@ regions_to_zones=(
 
 echo "Starting Managed Instance Group creation/resizing process..."
 
+# Function to create or resize a Managed Instance Group (MIG)
 create_or_resize_mig() {
     region=$1
     zones=$2
@@ -55,21 +69,20 @@ create_or_resize_mig() {
         running_instances=$(gcloud beta compute instance-groups managed list-instances $mig_name --region=$region 2>/dev/null | grep RUNNING | wc -l)
         current_target_size=$(gcloud beta compute instance-groups managed describe $mig_name --region=$region --format="value(targetSize)" 2>/dev/null)
 
-        # Trim whitespace
+        # Trim whitespace from the retrieved values
         running_instances=$(echo $running_instances | xargs)
         current_target_size=$(echo $current_target_size | xargs)
 
-        # Determine the new target size
+        # Determine the new target size based on the number of running instances and the desired size
         if [ $running_instances -gt $size ]; then
             target_size=$running_instances
-        elif [ $running_instances -eq 0 ]; then
-            target_size=$size
         else
             target_size=$size
         fi
 
         echo "Managed Instance Group $mig_name already exists with current target size $current_target_size and $running_instances running instances. New target size: $target_size"
 
+        # Resize the existing Managed Instance Group to the new target size
         gcloud beta compute instance-groups managed resize $mig_name \
             --project=neat-airport-407301 \
             --region=$region \
