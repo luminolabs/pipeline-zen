@@ -52,7 +52,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
   --condition=expression="(resource.name=='projects/$PROJECT_ID/zones/us-central1-a/instances/gha-jobs-vm-image-creator' && resource.type=='compute.googleapis.com/Instance') || resource.type!='compute.googleapis.com/Instance'",title="limit_to_jobs_vm_instance_template",description="Limit compute perms to gha-jobs-vm-image-creator VM"
 
 # 4a. New role to allow GHA to create VM templates
-gcloud iam roles update vm_template_creator --project $PROJECT_ID \
+gcloud iam roles create vm_template_creator --project $PROJECT_ID \
   --title "Creates VM templates" \
   --description "Allows creation of VM templates" \
   --permissions compute.instanceTemplates.create,compute.instanceTemplates.get,compute.networks.use,compute.disks.use
