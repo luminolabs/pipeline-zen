@@ -14,7 +14,8 @@
 # 8. Stop the VM after preparations are complete.
 # 9. Create a new VM image from the VM disk.
 # 10. Generate new compute instance templates for each specified GPU/CPU configuration.
-# 11. Indicate completion of the deployment process.
+# 11. Update the MIGs with the new templates.
+# 12. Indicate completion of the deployment process.
 
 set -e  # Exit immediately if a command fails
 
@@ -105,6 +106,7 @@ echo "Creating new compute instance templates..."
 for CONFIG in "${CONFIGS[@]}"; do
   IFS=' ' read -r ACCELERATOR MACHINE_TYPE TEMPLATE_SUFFIX <<< "$CONFIG"
   NEW_TEMPLATE_NAME="${TEMPLATE_SUFFIX}-${VERSION_FOR_IMAGE}"
+  echo "Creating template: $NEW_TEMPLATE_NAME"
   gcloud compute instance-templates create $NEW_TEMPLATE_NAME \
     --project=$PROJECT_ID \
     --machine-type=$MACHINE_TYPE \
@@ -119,10 +121,34 @@ for CONFIG in "${CONFIGS[@]}"; do
     --no-shielded-integrity-monitoring \
     --reservation-affinity=none \
     --network-interface=network=default,network-tier=PREMIUM \
-    --scopes=https://www.googleapis.com/auth/cloud-platform
+    --scopes=https://www.googleapis.com/auth/cloud-platform > /dev/null 2>&1 &
 done
+# Wait for all background commands to finish
+wait
+
+# Update MIGs with new templates
+echo "Updating MIGs with new templates..."
+# Get the list of MIGs
+MIGS=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
+# Loop through each MIG and update it with the new template
+while IFS=',' read -r MIG_NAME; do
+  (
+    # Extract the region from the MIG name
+    MIG_REGION=$(get_region_from_mig_name $MIG_NAME)
+    # Extract the template prefix from the MIG name
+    TEMPLATE_PREFIX=$(echo $MIG_NAME | sed 's/-[a-z]*-[a-z]*[0-9]*$//')
+    # Construct the new template name
+    NEW_TEMPLATE_NAME="${TEMPLATE_PREFIX}-${VERSION_FOR_IMAGE}"
+    echo "Updating MIG: $MIG_NAME to use template: $NEW_TEMPLATE_NAME"
+    # Update the MIG with the new template
+    gcloud compute instance-groups managed set-instance-template $MIG_NAME \
+      --region=$MIG_REGION \
+      --template=$NEW_TEMPLATE_NAME > /dev/null 2>&1
+  ) &
+done <<< "$MIGS"
+# Wait for all background commands to finish
+wait
 
 # TODO: Add a step to delete the old image and templates
-# TODO: Add a step to update MIGs with new templates
 
-echo "New VM image and templates created. Deployment process complete!"
+echo "New VM image and templates created, MIGs updated. Deployment process complete!"

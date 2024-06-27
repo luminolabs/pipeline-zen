@@ -8,3 +8,10 @@ function get_subscription_id_from_vm_name() {
     local vm_name=$1
     echo $vm_name | sed "s/-[^-]*-[^-]*-[^-]*$//"
 }
+
+# Function to extract region from MIG name
+get_region_from_mig_name() {
+  MIG_NAME=$1
+  REGION=$(echo "$MIG_NAME" | rev | cut -d'-' -f1,2 | rev )
+  echo "$REGION"
+}
