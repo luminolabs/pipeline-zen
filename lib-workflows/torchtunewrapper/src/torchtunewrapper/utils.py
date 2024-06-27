@@ -27,7 +27,7 @@ def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_de
         'meta-llama/Meta-Llama-3-70B-Instruct': 'llama3/70B',
         'mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
         'mistralai/Mistral-7B-Instruct-v0.3': 'mistral/7B',
-        'mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistral/8x7B',
+        'mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistral/8x7B',  # yes, `Mixtral` is intentional
         'meta-llama/Meta-Llama-3-8B': 'llama3/8B',
         'meta-llama/Meta-Llama-3-70B': 'llama3/70B',
         'mistralai/Mistral-7B-v0.1': 'mistral/7B',
