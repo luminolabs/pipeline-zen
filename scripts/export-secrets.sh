@@ -24,4 +24,8 @@ for secret_name in $SECRET_NAMES; do
   export $env_var_name=$secret_value
   echo "...exported $env_var_name"
 done
+
+export PZ_KEEP_ALIVE="${PZ_KEEP_ALIVE:-1}"  # You can set a default value if needed
+echo "exported PZ_KEEP_ALIVE"
+
 echo "Secrets exported successfully."

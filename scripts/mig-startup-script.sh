@@ -5,7 +5,7 @@
 set -e  # Exit immediately if a command fails
 
 # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
-cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
+# cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
 
 # Export .env environment variables
 export $(grep -v '^#' ./.env | xargs)
@@ -23,6 +23,7 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 if [ "$PZ_KEEP_ALIVE" != "yes" ] && [ "$PZ_KEEP_ALIVE" != "1" ] && [ "$PZ_KEEP_ALIVE" != "true" ]; then
   # Delete the VM after the script finishes; also removes the VM from the MIG
   python ./scripts/delete_vm.py
+  # echo "test delete"
 else
   echo "PZ_KEEP_ALIVE is set to $PZ_KEEP_ALIVE. Skipping VM deletion."
 fi

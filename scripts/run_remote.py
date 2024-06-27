@@ -64,7 +64,7 @@ if __name__ == '__main__':
     parser.add_argument('-jid', '--job_id', type=str, required=False,
                         help='The job ID to use for training; logs and other job results and '
                              'artifacts will be named after this.')
-    parser.add_argument('-kl, --keep_alive', required=False, action='store_true', 
+    parser.add_argument('-kl', '--keep_alive', type=str, required=False, 
                         help='Flag to keep the VM alive after job completion')
 
 
@@ -84,12 +84,12 @@ if __name__ == '__main__':
             **{
                 'job_config_name': job_config_name,
                 'job_id': job_id,
+                'keep_alive': keep_alive,
             }, **{
                 # Add all other unknown CLI args to the message
                 k.replace('--', ''): v for k, v in zip(unknown_args[::2], unknown_args[1::2])
             }
         },
-        'keep_alive': keep_alive
     }
 
     if subscription_id == LOCAL_SUBSCRIPTION_ID:

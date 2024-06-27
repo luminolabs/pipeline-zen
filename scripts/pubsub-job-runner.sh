@@ -34,16 +34,16 @@ run_workflow() {
   job=$(echo "$message_data" | jq -r '.')
   workflow=$(echo "$job" | jq -r '.workflow')
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
-  keep_alive=$(echo "$job" | jq -r '.keep_alive')
-
-  echo "Workflow: $workflow, Args: $args, Keep Alive: $keep_alive"
+  keep_alive=$(echo "$job" | jq -r '.args.keep_alive')
 
   # Set PZ_KEEP_ALIVE environment variable
   export PZ_KEEP_ALIVE=$keep_alive
 
+  echo "PZ_KEEP_ALIVE set to: $PZ_KEEP_ALIVE"
   # Run the workflow script
   echo "Running workflow script..."
-  source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
+  # source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
+  source ./scripts/export-secrets.sh 
 }
 
 echo "Pulling one message from subscription $SUBSCRIPTION_ID..."
