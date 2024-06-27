@@ -9,6 +9,14 @@ function get_subscription_id_from_vm_name() {
     echo $vm_name | sed "s/-[^-]*-[^-]*-[^-]*$//"
 }
 
+is_truthy() {
+  var=$1
+  if [[ "$var" == "yes" ]] || [[ "$var" == "1" ]] || [[ "$var" == "true" ]]; then
+    return 0
+  fi
+  return 1
+}
+
 # Function to extract region from MIG name
 get_region_from_mig_name() {
   MIG_NAME=$1

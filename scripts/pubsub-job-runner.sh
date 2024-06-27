@@ -36,7 +36,7 @@ run_workflow() {
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
   keep_alive=$(echo "$job" | jq -r '.args.keep_alive')
 
-  echo "$keep_alive" >> .keep_alive
+  echo "$keep_alive" > .keep_alive
 
   # Run the workflow script
   echo "Running workflow script..."
