@@ -1,3 +1,14 @@
+#!python
+
+"""
+This script is used to run a workflow using DWS MIGs (Managed Instance Groups).
+It performs the following steps:
+1. Parse command line arguments to get the workflow, target MIG, job configuration name, and job ID.
+2. Generate a unique job ID if one is not provided.
+3. Resize the target MIG by increasing its size by one instance.
+4. Publish a message to a Pub/Sub topic with the workflow details and arguments, for the VMs in the MIG to consume.
+"""
+
 import argparse
 import uuid
 import json
