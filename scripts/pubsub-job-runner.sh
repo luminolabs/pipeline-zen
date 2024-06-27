@@ -35,7 +35,7 @@ run_workflow() {
   workflow=$(echo "$job" | jq -r '.workflow')
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
   # keep_alive flag keeps the vm running after job
-  keep_alive=$(echo "$job" | jq -r '.args.keep_alive')
+  keep_alive=$(echo "$job" | jq -r '.keep_alive')
 
   echo "$keep_alive" > .keep_alive
 

@@ -95,12 +95,12 @@ if __name__ == '__main__':
             **{
                 'job_config_name': job_config_name,
                 'job_id': job_id,
-                'keep_alive': keep_alive,
             }, **{
                 # Add all other unknown CLI args to the message
                 k.replace('--', ''): v for k, v in zip(unknown_args[::2], unknown_args[1::2])
             }
         },
+        'keep_alive': keep_alive,
     }
 
     if subscription_id == LOCAL_SUBSCRIPTION_ID:
