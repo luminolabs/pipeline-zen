@@ -5,8 +5,9 @@
 set -e  # Exit immediately if a command fails
 
 # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
-# cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
-
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then 
+  cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
+fi
 # Export .env environment variables
 export $(grep -v '^#' ./.env | xargs)
 
