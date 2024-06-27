@@ -10,6 +10,8 @@ set -e  # Exit immediately if a command fails
 # Export .env environment variables
 export $(grep -v '^#' ./.env | xargs)
 
+source ./scripts/utils.sh
+
 # Define the log file path
 LOG_FILE="./output.log"
 
@@ -19,15 +21,15 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # Call the pubsub-job-runner.sh script
 ./scripts/pubsub-job-runner.sh
 
-./scripts/utils.sh
-
 PZ_KEEP_ALIVE=$(cat .keep_alive)
 
 # Check PZ_KEEP_ALIVE before deleting the VM
-if $(is_truthy $PZ_KEEP_ALIVE); then
-  # Delete the VM after the script finishes; also removes the VM from the MIG
-  python ./scripts/delete_vm.py
-fi
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+  if is_truthy $PZ_KEEP_ALIVE; then
+    # Delete the VM after the script finishes; also removes the VM from the MIG
+    python ./scripts/delete_vm.py
+  fi
+fi 
 
 echo "PZ_KEEP_ALIVE is set to $PZ_KEEP_ALIVE. Skipping VM deletion."
 
