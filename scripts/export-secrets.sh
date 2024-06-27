@@ -24,6 +24,4 @@ for secret_name in $SECRET_NAMES; do
   export $env_var_name=$secret_value
   echo "...exported $env_var_name"
 done
-
-
 echo "Secrets exported successfully."

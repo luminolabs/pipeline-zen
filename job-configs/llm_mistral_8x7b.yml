@@ -3,4 +3,4 @@
 job_id: llm_mistral_8x7b
 category: LLM
 type: INSTRUCTION
-model_base: mistralai/Mixtral-8x7B-Instruct-v0.1
+model_base: mistralai/Mixtral-8x7B-Instruct-v0.1  # Yes, `Mixtral` is intentional
