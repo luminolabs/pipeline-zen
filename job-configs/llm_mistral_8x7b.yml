@@ -1,0 +1,6 @@
+# Don't change this file, instead use the CLI interface to set options for the job
+
+job_id: llm_mistral_8x7b
+category: LLM
+type: INSTRUCTION
+model_base: mistralai/Mixtral-8x7B-Instruct-v0.1
