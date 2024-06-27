@@ -5,7 +5,6 @@
 # LICENSE file in the root directory of this source tree.
 
 import os
-import sys
 import time
 
 from functools import partial
@@ -28,7 +27,7 @@ from torchtune.modules.peft.peft_utils import (
     validate_missing_and_unexpected_for_lora,
 )
 from torchtune.recipe_interfaces import FTRecipeInterface
-from tqdm import tqdm
+
 
 log = utils.get_logger("DEBUG")
 
@@ -485,7 +484,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
 
             # Optionally profile the training loop
             with self._profiler:
-                pbar = tqdm(total=self._steps_per_epoch)
                 for idx, batch in enumerate(self._dataloader):
                     if (
                         self.max_steps_per_epoch is not None
@@ -532,10 +530,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                         self.global_step += 1
 
                         loss_to_log = running_loss.item()
-                        pbar.update(1)
-                        pbar.set_description(
-                            f"{curr_epoch+1}|{self.global_step}|Loss: {loss_to_log}"
-                        )
+                        log.info(f"Epoch: {curr_epoch+1}, Step: {self.global_step}/{self._steps_per_epoch}, Loss: {loss_to_log}")
 
                         # Log per-step metrics
                         if self.global_step % self._log_every_n_steps == 0:

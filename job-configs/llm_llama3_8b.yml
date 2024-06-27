@@ -3,4 +3,4 @@
 job_id: llm_llama3_8b
 category: LLM
 type: INSTRUCTION
-model_base: meta-llama/Meta-Llama-3-8B
+model_base: meta-llama/Meta-Llama-3-8B-Instruct
