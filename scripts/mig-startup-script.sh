@@ -19,11 +19,14 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # Call the pubsub-job-runner.sh script
 ./scripts/pubsub-job-runner.sh
 
+PZ_KEEP_ALIVE=$(cat .keep_alive)
+
 # Check PZ_KEEP_ALIVE before deleting the VM
 if [ "$PZ_KEEP_ALIVE" != "yes" ] && [ "$PZ_KEEP_ALIVE" != "1" ] && [ "$PZ_KEEP_ALIVE" != "true" ]; then
   # Delete the VM after the script finishes; also removes the VM from the MIG
   python ./scripts/delete_vm.py
-  # echo "test delete"
-else
-  echo "PZ_KEEP_ALIVE is set to $PZ_KEEP_ALIVE. Skipping VM deletion."
 fi
+
+echo "PZ_KEEP_ALIVE is set to $PZ_KEEP_ALIVE. Skipping VM deletion."
+
+rm -rf .keep_alive
