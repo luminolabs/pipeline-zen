@@ -29,7 +29,7 @@ def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **
                             f'for model_kind: {model_kind}')
     # For torchtune configurations
     elif model_kind == 'llm':
-        if any(x in model_base for x in ('llama3', 'mistral',)):
+        if any(x in model_base for x in ('llama', 'mistral',)):
             return llm.auto(model_base, **kwargs)
     else:
         raise TypeError(f'model_kind: {model_kind} is not a valid option')
