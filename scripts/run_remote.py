@@ -78,7 +78,6 @@ if __name__ == '__main__':
     parser.add_argument('-kl', '--keep_alive', type=str, required=False, 
                         help='Flag to keep the VM alive after job completion')
 
-
     # Store the rest of the arguments as unknown arguments
     known_args, unknown_args = parser.parse_known_args()
     workflow, mig_name, job_config_name, job_id, keep_alive = (

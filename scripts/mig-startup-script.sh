@@ -23,17 +23,19 @@ exec > >(tee -a "$LOG_FILE") 2>&1
 # Call the pubsub-job-runner.sh script
 ./scripts/pubsub-job-runner.sh
 
-# to keep running VM after job completion
+# Whether to allow the VM to continue to run after job completion
+# This flag is read and set by the pubsub-job-runner.sh script
 KEEP_ALIVE=$(cat .keep_alive)
 
-# Check KEEP_ALIVE before deleting the VM
+# Check KEEP_ALIVE before attempting to delete the VM;
+# and don't try to delete the VM if running locally
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   if is_truthy $KEEP_ALIVE; then
     # Delete the VM after the script finishes; also removes the VM from the MIG
     python ./scripts/delete_vm.py
   fi
-fi 
-
+fi
 echo "KEEP_ALIVE flag is set to $KEEP_ALIVE. Skipping VM deletion."
 
+# Cleanup the .keep_alive flag file
 rm -rf .keep_alive

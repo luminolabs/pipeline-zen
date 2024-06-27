@@ -34,9 +34,11 @@ run_workflow() {
   job=$(echo "$message_data" | jq -r '.')
   workflow=$(echo "$job" | jq -r '.workflow')
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
-  # keep_alive flag keeps the vm running after job
-  keep_alive=$(echo "$job" | jq -r '.keep_alive')
 
+  # Extract the keep_alive flag as a file
+  # This file will be used by the mig-startup-script.sh script to determine whether to delete the VM
+  # after the job is completed
+  keep_alive=$(echo "$job" | jq -r '.keep_alive')
   echo "$keep_alive" > .keep_alive
 
   # Run the workflow script
