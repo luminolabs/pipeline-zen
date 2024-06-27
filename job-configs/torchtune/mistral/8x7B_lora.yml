@@ -32,8 +32,25 @@ checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
   checkpoint_dir: ${base_model_path}
   checkpoint_files: [
-    model-00001-of-00002.safetensors,
-    model-00002-of-00002.safetensors,
+    model-00001-of-00019.safetensors,
+    model-00002-of-00019.safetensors,
+    model-00003-of-00019.safetensors,
+    model-00004-of-00019.safetensors,
+    model-00005-of-00019.safetensors,
+    model-00006-of-00019.safetensors,
+    model-00007-of-00019.safetensors,
+    model-00008-of-00019.safetensors,
+    model-00009-of-00019.safetensors,
+    model-00010-of-00019.safetensors,
+    model-00011-of-00019.safetensors,
+    model-00012-of-00019.safetensors,
+    model-00013-of-00019.safetensors,
+    model-00014-of-00019.safetensors,
+    model-00015-of-00019.safetensors,
+    model-00016-of-00019.safetensors,
+    model-00017-of-00019.safetensors,
+    model-00018-of-00019.safetensors,
+    model-00019-of-00019.safetensors,
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
@@ -43,7 +60,7 @@ resume_from_checkpoint: False
 optimizer:
   _component_: torch.optim.AdamW
   lr: 2e-5
-
+  weight_decay: 0.01
 lr_scheduler:
   _component_: torchtune.modules.get_cosine_schedule_with_warmup
   num_warmup_steps: 100
