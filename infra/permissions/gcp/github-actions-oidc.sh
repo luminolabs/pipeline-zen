@@ -55,7 +55,7 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud iam roles create vm_template_creator --project $PROJECT_ID \
   --title "Creates VM templates" \
   --description "Allows creation of VM templates" \
-  --permissions compute.instanceTemplates.create,compute.instanceTemplates.get,compute.networks.use,compute.disks.use
+  --permissions compute.instanceTemplates.create,compute.instanceTemplates.get,compute.networks.use,compute.disks.use,compute.zoneOperations.get
 
 # 4b. Assign vm_template_creator
 gcloud projects add-iam-policy-binding $PROJECT_ID \
