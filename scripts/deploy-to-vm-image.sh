@@ -48,9 +48,9 @@ CONFIGS=(
   "count=4,type=nvidia-tesla-a100 a2-highgpu-4g $RESOURCES_PREFIX-4xa100-40gb"
   "count=8,type=nvidia-tesla-a100 a2-highgpu-8g $RESOURCES_PREFIX-8xa100-40gb"
   "count=16,type=nvidia-tesla-a100 a2-megagpu-16g $RESOURCES_PREFIX-16xa100-40gb"
-  "count=1,type=nvidia-a100-80gb a2-highgpu-1g $RESOURCES_PREFIX-1xa100-80gb"
-  "count=4,type=nvidia-a100-80gb a2-highgpu-4g $RESOURCES_PREFIX-4xa100-80gb"
-  "count=8,type=nvidia-a100-80gb a2-highgpu-8g $RESOURCES_PREFIX-8xa100-80gb"
+  "count=1,type=nvidia-a100-80gb a2-ultragpu-1g $RESOURCES_PREFIX-1xa100-80gb"
+  "count=4,type=nvidia-a100-80gb a2-ultragpu-4g $RESOURCES_PREFIX-4xa100-80gb"
+  "count=8,type=nvidia-a100-80gb a2-ultragpu-8g $RESOURCES_PREFIX-8xa100-80gb"
 )
 
 # --- Main Script ---
