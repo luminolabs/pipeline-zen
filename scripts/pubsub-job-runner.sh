@@ -10,18 +10,17 @@
 
 set -e  # Exit immediately if a command fails
 
+# Import utility functions
 source ./scripts/utils.sh
 
 echo "Pub/Sub job listener started."
 
 # Set environment name and subscription ID
-env="$LOCAL_ENV"
 SUBSCRIPTION_ID="$LOCAL_ENV"  # running locally will listen to the `local` subscription ID
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  env=$PZ_ENV
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   VM_NAME=$(uname -n)
   SUBSCRIPTION_ID=$(get_subscription_id_from_vm_name "$VM_NAME")
-  echo "Environment set to $env, Subscription ID set to $SUBSCRIPTION_ID."
+  echo "Environment set to $PZ_ENV, Subscription ID set to $SUBSCRIPTION_ID."
 fi
 
 # Function to process message, i.e., run workflow

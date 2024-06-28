@@ -11,6 +11,7 @@
 # 7. Run the Docker container with appropriate volumes and environment variables
 # 8. Log after the Docker container finishes
 
+# Import utility functions
 source ./scripts/utils.sh
 
 # Constants
@@ -29,10 +30,8 @@ echo "Read version $VERSION"
 IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
 
 # Set the environment and image to use
-ENV=$LOCAL_ENV
 IMAGE_USE=$IMAGE_LOCAL
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  ENV=$PZ_ENV
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   IMAGE_USE=$IMAGE_REMOTE
 fi
 
@@ -60,7 +59,7 @@ docker run $GPUS_OPTION \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV=$ENV \
+-e PZ_ENV=$PZ_ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 $IMAGE_USE python pipeline/$1_wf.py "${@:2}"
 

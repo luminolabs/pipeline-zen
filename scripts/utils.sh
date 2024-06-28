@@ -1,6 +1,10 @@
 LOCAL_ENV="local"
 PROJECT_ID="neat-airport-407301"
 
+if [[ "$PZ_ENV" == "" ]]; then
+  PZ_ENV="$LOCAL_ENV"
+fi
+
 is_truthy() {
   VAR=$1
   if [[ "$VAR" == "yes" ]] || [[ "$VAR" == "1" ]] || [[ "$VAR" == "true" ]]; then

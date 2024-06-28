@@ -12,31 +12,29 @@ cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs 
 # so we can't cd to /pipeline-zen-jobs conditionally above
 export $(grep -v '^#' ./.env | xargs)
 
-# Import shared utility functions
+# Import shared utility functions; it has to be imported after reading the .env file
 source ./scripts/utils.sh
 
 # Define the log file path
 LOG_FILE="./output.log"
 
-# Redirect both stdout and stderr to the log file and to stdout/stderr using tee
+# Redirect both stdout and stderr to the log file and to stdout/stderr
 exec > >(tee -a "$LOG_FILE") 2>&1
 
 # Call the pubsub-job-runner.sh script
 ./scripts/pubsub-job-runner.sh
 
-# Whether to allow the VM to continue to run after job completion
-# This flag is read and set by the pubsub-job-runner.sh script
-KEEP_ALIVE=$(cat .keep_alive)
-
-# Check KEEP_ALIVE before attempting to delete the VM;
-# and don't try to delete the VM if running locally
+# Don't try to delete a VM if running locally, because there is no VM to delete
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  if is_truthy $KEEP_ALIVE; then
-    # Delete the VM after the script finishes; also removes the VM from the MIG
+  # Whether to allow the VM to continue to run after job completion
+  # This flag is set by the pubsub-job-runner.sh script
+  KEEP_ALIVE=$(cat .keep_alive) || false
+  if is_truthy "$KEEP_ALIVE"; then
+    echo "KEEP_ALIVE flag is truthy. Skipping VM deletion."
+  else
     python ./scripts/delete_vm.py
   fi
 fi
-echo "KEEP_ALIVE flag is set to $KEEP_ALIVE. Skipping VM deletion."
 
 # Cleanup the .keep_alive flag file
-rm -rf .keep_alive
+rm -rf .keep_alive || true

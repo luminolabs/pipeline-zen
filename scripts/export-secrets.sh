@@ -4,6 +4,7 @@
 
 set -e  # Exit immediately if a command fails
 
+# Load utility functions
 source ./scripts/utils.sh
 
 # List all secrets in the specified project and get their names
