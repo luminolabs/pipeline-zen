@@ -42,7 +42,7 @@ run_workflow() {
 
   # Run the workflow script
   echo "Running workflow script..."
-#  source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
+  source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
 }
 
 echo "Pulling one message from subscription $subscription_id..."
