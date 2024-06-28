@@ -5,13 +5,14 @@
 set -e  # Exit immediately if a command fails
 
 # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
-if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then 
-  cd /pipeline-zen-jobs || { echo "Failed to change directory to /pipeline-zen-jobs"; exit 1; }
-fi
-# Export .env environment variables
+cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
+
+# Export .env environment variables; note, we aren't aware of which environment
+# we're running on before importing PZ_ENV from .env,
+# so we can't cd to /pipeline-zen-jobs conditionally above
 export $(grep -v '^#' ./.env | xargs)
 
-# for is_truthy and localenv
+# Import shared utility functions
 source ./scripts/utils.sh
 
 # Define the log file path
