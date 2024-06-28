@@ -44,10 +44,10 @@ regions_to_zones_a100_40gb=(
 # Define the array of regions and their corresponding zones for a100-80gb
 regions_to_zones_a100_80gb=(
     "us-central1:us-central1-a,us-central1-c"
-#    "us-east4:us-east4-c"
-#    "us-east5:us-east5-b"
-#    "europe-west4:europe-west4-a,europe-west4-b,europe-west4-c"
-#    "asia-southeast1:asia-southeast1-c"
+    "us-east4:us-east4-c"
+    "us-east5:us-east5-b"
+    "europe-west4:europe-west4-a,europe-west4-b,europe-west4-c"
+    "asia-southeast1:asia-southeast1-c"
 )
 
 echo "Starting Managed Instance Group creation/resizing process..."
