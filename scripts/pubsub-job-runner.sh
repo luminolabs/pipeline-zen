@@ -16,12 +16,12 @@ source ./scripts/utils.sh
 echo "Pub/Sub job listener started."
 
 # Set environment name and subscription ID
-SUBSCRIPTION_ID="$LOCAL_ENV"  # running locally will listen to the `local` subscription ID
+subscription_id="$LOCAL_ENV"  # running locally will listen to the `local` subscription ID
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  VM_NAME=$(uname -n)
-  SUBSCRIPTION_ID=$(get_subscription_id_from_vm_name "$VM_NAME")
-  echo "Environment set to $PZ_ENV, Subscription ID set to $SUBSCRIPTION_ID."
+  vm_name=$(uname -n)
+  subscription_id=$(get_subscription_id_from_vm_name "$vm_name")
 fi
+echo "Subscription ID set to $subscription_id"
 
 # Function to process message, i.e., run workflow
 run_workflow() {
@@ -42,22 +42,22 @@ run_workflow() {
 
   # Run the workflow script
   echo "Running workflow script..."
-  source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
+#  source ./scripts/export-secrets.sh && ./scripts/run-celery-docker.sh $workflow $args
 }
 
-echo "Pulling one message from subscription $SUBSCRIPTION_ID..."
-RESPONSE=$(gcloud pubsub subscriptions pull --project="$PROJECT_ID" "$SUBSCRIPTION_ID" --format="json" --limit=1 --auto-ack)
+echo "Pulling one message from subscription $subscription_id..."
+response=$(gcloud pubsub subscriptions pull --project="$PROJECT_ID" "$subscription_id" --format="json" --limit=1 --auto-ack)
 
 # Check if we received any message
-if [[ "$RESPONSE" != "[]" ]]; then
+if [[ "$response" != "[]" ]]; then
   echo "Message received. Extracting data..."
   # Extract the message data and ack_id
-  MESSAGE_DATA=$(echo "$RESPONSE" | jq -r '.[0].message.data' | base64 --decode)
+  message_data=$(echo "$response" | jq -r '.[0].message.data' | base64 --decode)
 
   # Process the message
-  run_workflow "$MESSAGE_DATA"
+  run_workflow "$message_data"
 else
   echo "No messages to process."
 fi
 
-echo "Script completed."
+echo "Pub/Sub job listener finished."

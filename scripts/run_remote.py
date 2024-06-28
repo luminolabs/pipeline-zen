@@ -75,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('-jid', '--job_id', type=str, required=False,
                         help='The job ID to use for training; logs and other job results and '
                              'artifacts will be named after this.')
-    parser.add_argument('-kl', '--keep_alive', type=str, required=False, 
+    parser.add_argument('-kl', '--keep_alive', type=str, required=False, default='false',
                         help='Flag to keep the VM alive after job completion')
 
     # Store the rest of the arguments as unknown arguments

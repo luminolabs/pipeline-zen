@@ -82,10 +82,10 @@ echo "Installing python dependencies..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/scripts/requirements.txt"
 
 # Grab older Docker Image ID
-OLD_IMAGE_ID=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
+old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
 # Remove older Docker Image
 echo "Deleting older VM image..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $OLD_IMAGE_ID || true"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
@@ -102,17 +102,17 @@ gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAM
 
 # Create new compute instance templates for each configuration
 echo "Creating new compute instance templates..."
-for CONFIG in "${CONFIGS[@]}"; do
-  IFS=' ' read -r ACCELERATOR MACHINE_TYPE TEMPLATE_SUFFIX <<< "$CONFIG"
-  NEW_TEMPLATE_NAME="${TEMPLATE_SUFFIX}-${VERSION_FOR_IMAGE}"
-  echo "Creating template: $NEW_TEMPLATE_NAME"
-  gcloud compute instance-templates create $NEW_TEMPLATE_NAME \
+for config in "${CONFIGS[@]}"; do
+  IFS=' ' read -r accelerator machine_type template_suffix <<< "$config"
+  new_template_name="${template_suffix}-${VERSION_FOR_IMAGE}"
+  echo "Creating template: $new_template_name"
+  gcloud compute instance-templates create $new_template_name \
     --project=$PROJECT_ID \
-    --machine-type=$MACHINE_TYPE \
-    --accelerator=$ACCELERATOR \
+    --machine-type=$machine_type \
+    --accelerator=$accelerator \
     --service-account=$JOBS_VM_SERVICE_ACCOUNT \
     --metadata=startup-script=/$RESOURCES_PREFIX/scripts/mig-startup-script.sh \
-    --create-disk=auto-delete=yes,boot=yes,device-name=$NEW_TEMPLATE_NAME,image=projects/$PROJECT_ID/global/images/$NEW_IMAGE_NAME,mode=rw,size=2000,type=pd-balanced \
+    --create-disk=auto-delete=yes,boot=yes,device-name=$new_template_name,image=projects/$PROJECT_ID/global/images/$NEW_IMAGE_NAME,mode=rw,size=2000,type=pd-balanced \
     --maintenance-policy=TERMINATE \
     --provisioning-model=STANDARD \
     --no-shielded-secure-boot \
@@ -128,23 +128,23 @@ wait
 # Update MIGs with new templates
 echo "Updating MIGs with new templates..."
 # Get the list of MIGs
-MIGS=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
+migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
 # Loop through each MIG and update it with the new template
-while IFS=',' read -r MIG_NAME; do
+while IFS=',' read -r mig_name; do
   (
     # Extract the region from the MIG name
-    MIG_REGION=$(get_region_from_mig_name $MIG_NAME)
+    mig_region=$(get_region_from_mig_name $mig_name)
     # Extract the template prefix from the MIG name
-    TEMPLATE_PREFIX=$(echo $MIG_NAME | sed 's/-[a-z]*-[a-z]*[0-9]*$//')
+    template_prefix=$(echo $mig_name | sed 's/-[a-z]*-[a-z]*[0-9]*$//')
     # Construct the new template name
-    NEW_TEMPLATE_NAME="${TEMPLATE_PREFIX}-${VERSION_FOR_IMAGE}"
-    echo "Updating MIG: $MIG_NAME to use template: $NEW_TEMPLATE_NAME"
+    new_template_name="${template_prefix}-${VERSION_FOR_IMAGE}"
+    echo "Updating MIG: $mig_name to use template: $new_template_name"
     # Update the MIG with the new template
-    gcloud compute instance-groups managed set-instance-template $MIG_NAME \
-      --region=$MIG_REGION \
-      --template=$NEW_TEMPLATE_NAME > /dev/null 2>&1
+    gcloud compute instance-groups managed set-instance-template $mig_name \
+      --region=$mig_region \
+      --template=$new_template_name > /dev/null 2>&1
   ) &
-done <<< "$MIGS"
+done <<< "$migs"
 # Wait for all background commands to finish
 wait
 
