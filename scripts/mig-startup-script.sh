@@ -25,7 +25,7 @@ source ./scripts/pubsub-job-runner.sh
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   # Whether to allow the VM to continue to run after job completion
   # This flag is set by the pubsub-job-runner.sh script
-  keep_alive=$(cat .keep_alive) || false
+  keep_alive=$(cat .keep_alive || echo "false")
   if [[ $(is_truthy "$keep_alive") == "1" ]]; then
     echo "keep_alive flag is truthy. Skipping VM deletion."
   else
