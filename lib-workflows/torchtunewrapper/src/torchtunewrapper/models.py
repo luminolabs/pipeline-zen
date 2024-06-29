@@ -14,7 +14,7 @@ def lora_mistral_8x7b(
         quantize_base: bool = False,
 ) -> TransformerDecoder:
     """
-    Builder for creating a Mistral 7B model with LoRA enabled.
+    Builder for creating a Mistral 8x7B model with LoRA enabled.
 
     Args:
         lora_attn_modules (List[LORA_ATTN_MODULES]): list of which linear layers
