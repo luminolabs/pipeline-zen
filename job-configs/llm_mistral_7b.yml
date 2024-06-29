@@ -1,6 +1,6 @@
 # Don't change this file, instead use the CLI interface to set options for the job
 
-job_id: llm_llama3_8b
+job_id: llm_mistral_7b
 category: LLM
 type: INSTRUCTION
-model_base: meta-llama/Meta-Llama-3-8B-Instruct
+model_base: mistralai/Mistral-7B-Instruct-v0.1

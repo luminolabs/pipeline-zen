@@ -24,8 +24,11 @@ size=$2
 template_version=$3
 template_version_dash=${template_version//./-}
 
-# Define the array of regions and their corresponding zones
-regions_to_zones=(
+# Extract gpu_type from machine_type
+gpu_type=$(echo $machine_type | cut -d'x' -f2)
+
+# Define the array of regions and their corresponding zones for a100-40gb
+regions_to_zones_a100_40gb=(
     "asia-northeast1:asia-northeast1-a,asia-northeast1-c"
     "asia-northeast3:asia-northeast3-a,asia-northeast3-b"
     "asia-southeast1:asia-southeast1-b,asia-southeast1-c"
@@ -36,6 +39,15 @@ regions_to_zones=(
     "us-west1:us-west1-b"
     "us-west3:us-west3-b"
     "us-west4:us-west4-b"
+)
+
+# Define the array of regions and their corresponding zones for a100-80gb
+regions_to_zones_a100_80gb=(
+    "us-central1:us-central1-a,us-central1-c"
+    "us-east4:us-east4-c"
+    "us-east5:us-east5-b"
+    "europe-west4:europe-west4-a,europe-west4-b,europe-west4-c"
+    "asia-southeast1:asia-southeast1-c"
 )
 
 echo "Starting Managed Instance Group creation/resizing process..."
@@ -95,11 +107,15 @@ create_or_resize_mig() {
     fi
 }
 
-# Export function and variables for parallel execution
-export -f create_or_resize_mig
-export machine_type
-export size
-export template_version_dash
+# Choose the correct array of regions and zones based on the gpu type
+if [[ $gpu_type == "a100-40gb" ]]; then
+    regions_to_zones=("${regions_to_zones_a100_40gb[@]}")
+elif [[ $gpu_type == "a100-80gb" ]]; then
+    regions_to_zones=("${regions_to_zones_a100_80gb[@]}")
+else
+    echo "Unsupported GPU type: $gpu_type"
+    exit 1
+fi
 
 # Iterate over each region and its corresponding zones in parallel
 for region_zone in "${regions_to_zones[@]}"; do

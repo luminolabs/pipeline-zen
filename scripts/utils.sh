@@ -1,8 +1,29 @@
+#!/bin/bash
+
 LOCAL_ENV="local"
 PROJECT_ID="neat-airport-407301"
 
+if [[ "$PZ_ENV" == "" ]]; then
+  PZ_ENV="$LOCAL_ENV"
+fi
+
+# Export .env environment variables; note, we aren't aware of which environment
+# we're running on before importing PZ_ENV from .env,
+# so we can't cd to /pipeline-zen-jobs conditionally above
+eval $(cat ./.env | grep -v '^#' | tr -d '\r')
+echo "PZ_ENV set to $PZ_ENV"
+
+is_truthy() {
+  local value=$1
+  if [[ "$value" == "yes" ]] || [[ "$value" == "1" ]] || [[ "$value" == "true" ]]; then
+    echo "1"
+    return
+  fi
+  echo "0"
+}
+
 # Function to extract subscription ID from VM name
-function get_subscription_id_from_vm_name() {
+get_subscription_id_from_vm_name() {
     # Extract subscription ID from VM name;
     # ex. vm name: pipeline-zen-jobs-1xv100-us-central1-ushf -> subscription ID: pipeline-zen-jobs-1xv100
     local vm_name=$1

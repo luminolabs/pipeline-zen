@@ -11,15 +11,16 @@
 # 7. Run the Docker container with appropriate volumes and environment variables
 # 8. Log after the Docker container finishes
 
+# Log start of the script
+echo "Begin running the Celery workflow at $(date)"
+
+# Import utility functions
 source ./scripts/utils.sh
 
-# Constants
+# Docker image
 IMAGE_NAME="celery-workflow"
 IMAGE_REMOTE_PREFIX="us-central1-docker.pkg.dev/neat-airport-407301/lum-docker-images/$IMAGE_NAME"
 IMAGE_LOCAL="$IMAGE_NAME:$LOCAL_ENV"
-
-# Log start of the script
-echo "Begin running the Celery workflow at $(date)"
 
 # Read the version from the VERSION file
 VERSION=$(cat VERSION)
@@ -29,40 +30,38 @@ echo "Read version $VERSION"
 IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
 
 # Set the environment and image to use
-ENV=$LOCAL_ENV
-IMAGE_USE=$IMAGE_LOCAL
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  ENV=$PZ_ENV
-  IMAGE_USE=$IMAGE_REMOTE
+image_use=$IMAGE_LOCAL
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+  image_use=$IMAGE_REMOTE
 fi
 
-echo "Using image: $IMAGE_USE"
+echo "Using image: $image_use"
 
 # Build or pull the Docker image
-if [[ "$IMAGE_USE" == "$IMAGE_LOCAL" ]]; then
+if [[ "$image_use" == "$IMAGE_LOCAL" ]]; then
   echo "Building local Docker image"
-  docker build -f celery.Dockerfile -t $IMAGE_USE .
+  docker build -f celery.Dockerfile -t $image_use .
 fi
 
 # Set GPU options based on OS type
-GPUS_OPTION="--gpus all"
+gpus="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
   echo "Detected macOS. Disabling GPU support for Docker"
-  GPUS_OPTION=""
+  gpus=""
 fi
 
 # Log before running Docker container
-echo "Running Docker container with image: $IMAGE_USE"
+echo "Running Docker container with image: $image_use"
 
 # Run the Docker container
-docker run $GPUS_OPTION \
+docker run $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV=$ENV \
+-e PZ_ENV=$PZ_ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
-$IMAGE_USE python pipeline/$1_wf.py "${@:2}"
+$image_use python pipeline/$1_wf.py "${@:2}"
 
 # Log after Docker container finishes
 echo "Celery workflow finished at $(date)"

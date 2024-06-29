@@ -3,7 +3,6 @@ from typing import Optional
 
 from transformers import PreTrainedModel
 
-from common.config_manager import config
 from common.model import image, nlp, llm
 
 
@@ -28,13 +27,9 @@ def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **
         else:
             raise TypeError(f'model_base: {model_base} is not a valid option '
                             f'for model_kind: {model_kind}')
-
     # For torchtune configurations
-    if model_kind == 'llm':
-        if any(x in model_base for x in ('llama',)):
+    elif model_kind == 'llm':
+        if any(x in model_base for x in ('llama', 'mistral',)):
             return llm.auto(model_base, **kwargs)
-
-    if model_kind == '...':
-        pass
     else:
         raise TypeError(f'model_kind: {model_kind} is not a valid option')

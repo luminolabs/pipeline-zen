@@ -4,7 +4,6 @@
 # This source code is licensed under the BSD-style license found in the
 # LICENSE file in the root directory of this source tree.
 
-import sys
 import time
 
 from functools import partial
@@ -30,8 +29,6 @@ from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.recipe_interfaces import FTRecipeInterface
 from torchtune.utils.activations import apply_selective_activation_checkpointing
-
-from tqdm import tqdm
 
 
 log = utils.get_logger("DEBUG")
@@ -498,7 +495,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             # in case shuffle is True
             self._sampler.set_epoch(curr_epoch)
 
-            pbar = tqdm(total=self._steps_per_epoch, disable=not (rank == 0))
             for idx, batch in enumerate(self._dataloader):
                 if (
                     self.max_steps_per_epoch is not None
@@ -543,10 +539,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                     self.global_step += 1
 
                     loss_to_log = running_loss.item()
-                    pbar.update(1)
-                    pbar.set_description(
-                        f"{curr_epoch+1}|{self.global_step}|Loss: {loss_to_log}"
-                    )
+                    log.info(f"Epoch: {curr_epoch+1}, Step: {self.global_step}/{self._steps_per_epoch}, Loss: {loss_to_log}")
 
                     # Log per-step metrics
                     if (

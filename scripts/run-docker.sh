@@ -4,16 +4,11 @@
 
 set -e  # Exit immediately if a command fails
 
+# Import utility functions
 source ./scripts/utils.sh
 
 # Build the Docker image for the workflow
 docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:$LOCAL_ENV .
-
-# Set the environment name to use
-env=$LOCAL_ENV
-if [[ "$PZ_ENV" != "" && "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  env=$PZ_ENV
-fi
 
 # Set GPU options based on OS type
 gpus="--gpus all"
@@ -30,6 +25,6 @@ docker run $gpus \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
--e PZ_ENV=$ENV \
+-e PZ_ENV=$PZ_ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 $1-workflow:local python $1/cli.py "${@:2}"
