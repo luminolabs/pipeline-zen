@@ -12,6 +12,11 @@ from common.utils import load_job_config, get_or_generate_job_id, setup_logger, 
     get_logs_path, get_results_path, save_job_results
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename, \
     get_torchtune_dataset_template
+from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
+
+
+# Update the convert weights function to support the Mixtral-8x7B model
+update_convert_weights_from_hf()
 
 
 def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
