@@ -5,7 +5,6 @@ from typing import Optional
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torchtune.datasets._instruct import instruct_dataset
-from torchtune.models import convert_weights
 
 from common.dataset.provider.huggingface import HuggingFace
 from common.model.factory import model_factory
@@ -13,16 +12,11 @@ from common.utils import load_job_config, get_or_generate_job_id, setup_logger, 
     get_logs_path, get_results_path, save_job_results
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename, \
     get_torchtune_dataset_template
+from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
 
 
-# mistralai/Mixtral-8x7B-Instruct-v0.1 specific change:
-# Allows loading model weights for this model. This is a temporary fix (hack!)
-# - till torchtune adds proper support for this.
-convert_weights._FROM_HF.update({
-    'model.layers.{}.block_sparse_moe.experts.{}.w1.weight': 'foo.{}.bar',
-    'model.layers.{}.block_sparse_moe.experts.{}.w2.weight': 'foo.{}.bar',
-    'model.layers.{}.block_sparse_moe.experts.{}.w3.weight': 'foo.{}.bar',
-})
+# Update the convert weights function to support the Mixtral-8x7B model
+update_convert_weights_from_hf()
 
 
 def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
