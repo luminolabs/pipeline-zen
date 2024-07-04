@@ -24,7 +24,7 @@ IMAGE_LOCAL="$IMAGE_NAME:$LOCAL_ENV"
 
 # Read the version from the VERSION file
 VERSION=$(cat VERSION)
-echo "Read version $VERSION"
+echo "Read version $VERSION token: $PZ_HUGGINGFACE_TOKEN"
 
 # Define remote and local image names
 IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
@@ -40,7 +40,7 @@ echo "Using image: $image_use"
 # Build or pull the Docker image
 if [[ "$image_use" == "$IMAGE_LOCAL" ]]; then
   echo "Building local Docker image"
-  docker build -f celery.Dockerfile -t $image_use .
+  docker build -f celery.Dockerfile -t $image_use . > /dev/null 2>&1
 fi
 
 # Set GPU options based on OS type

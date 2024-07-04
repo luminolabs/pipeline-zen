@@ -14,8 +14,7 @@
 # 8. Stop the VM after preparations are complete.
 # 9. Create a new VM image from the VM disk.
 # 10. Generate new compute instance templates for each specified GPU/CPU configuration.
-# 11. Update the MIGs with the new templates.
-# 12. Indicate completion of the deployment process.
+# 11. Indicate completion of the deployment process.
 
 set -e  # Exit immediately if a command fails
 
@@ -73,7 +72,7 @@ gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
   --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/scripts"
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-gcloud compute scp ./scripts/*.py ./scripts/*.sh ./scripts/*.txt $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/scripts --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp -r ./scropts $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 # TODO: Choose the right .env file based on the environment
 gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
@@ -100,7 +99,7 @@ gcloud compute instances stop $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZO
 echo "Creating new VM image..."
 gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAME --source-disk-zone $IMAGE_CREATOR_VM_ZONE
 
-# Create new compute instance templates for each configuration
+ Create new compute instance templates for each configuration
 echo "Creating new compute instance templates..."
 for config in "${CONFIGS[@]}"; do
   IFS=' ' read -r accelerator machine_type template_suffix <<< "$config"
@@ -111,7 +110,7 @@ for config in "${CONFIGS[@]}"; do
     --machine-type=$machine_type \
     --accelerator=$accelerator \
     --service-account=$JOBS_VM_SERVICE_ACCOUNT \
-    --metadata=startup-script=/$RESOURCES_PREFIX/scripts/mig-startup-script.sh \
+    --metadata=startup-script=/$RESOURCES_PREFIX/scripts/mig-runtime/startup-script.sh \
     --create-disk=auto-delete=yes,boot=yes,device-name=$new_template_name,image=projects/$PROJECT_ID/global/images/$NEW_IMAGE_NAME,mode=rw,size=2000,type=pd-balanced \
     --maintenance-policy=TERMINATE \
     --provisioning-model=STANDARD \
@@ -125,29 +124,6 @@ done
 # Wait for all background commands to finish
 wait
 
-# Update MIGs with new templates
-echo "Updating MIGs with new templates..."
-# Get the list of MIGs
-migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
-# Loop through each MIG and update it with the new template
-while IFS=',' read -r mig_name; do
-  (
-    # Extract the region from the MIG name
-    mig_region=$(get_region_from_mig_name $mig_name)
-    # Extract the template prefix from the MIG name
-    template_prefix=$(echo $mig_name | sed 's/-[a-z]*-[a-z]*[0-9]*$//')
-    # Construct the new template name
-    new_template_name="${template_prefix}-${VERSION_FOR_IMAGE}"
-    echo "Updating MIG: $mig_name to use template: $new_template_name"
-    # Update the MIG with the new template
-    gcloud compute instance-groups managed set-instance-template $mig_name \
-      --region=$mig_region \
-      --template=$new_template_name > /dev/null 2>&1
-  ) &
-done <<< "$migs"
-# Wait for all background commands to finish
-wait
-
 # TODO: Add a step to delete the old image and templates
 
-echo "New VM image and templates created, MIGs updated. Deployment process complete!"
+echo "New VM image and templates created. Deployment process complete!"
