@@ -80,7 +80,7 @@ jobs:
             --tag ${{env.IMAGE_TAG}}:${{ github.sha }} \
             --push .
       - name: Build Jobs VM image
-        run: ./scripts/deploy-to-vm-image.sh
+        run: ./scripts/release-deploy/make-deployment.sh
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
