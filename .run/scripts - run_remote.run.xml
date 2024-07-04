@@ -24,7 +24,7 @@
         <ENTRY IS_ENABLED="true" PARSER="runconfig" IS_EXECUTABLE="false" />
       </ENTRIES>
     </EXTENSION>
-    <option name="SCRIPT_NAME" value="\\wsl.localhost\Ubuntu\home\vasilis\devel\luminoai\pipeline-zen\scripts\runners\remote.py" />
+    <option name="SCRIPT_NAME" value="$PROJECT_DIR$/scripts/runners/remote.py" />
     <option name="PARAMETERS" value="--job_config_name imdb_nlp_classification --job_id vasilis-experiment11 --batch_size 8 --num_epochs 2 --num_batches 3" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
