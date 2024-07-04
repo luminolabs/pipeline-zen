@@ -5,10 +5,10 @@ PROJECT_ID = 'neat-airport-407301'
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
 METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
-
 LOCAL_ENV = 'local'
 LOCAL_SUBSCRIPTION_ID = LOCAL_ENV
 
+# Load environment variables from the .env file
 load_dotenv()
 
 # Function to get the VM name using the metadata server
