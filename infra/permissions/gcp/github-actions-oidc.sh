@@ -55,31 +55,20 @@ gcloud projects add-iam-policy-binding $PROJECT_ID \
 gcloud iam roles create vm_template_creator --project $PROJECT_ID \
   --title "Creates VM templates" \
   --description "Allows creation of VM templates" \
-  --permissions compute.instanceTemplates.create,compute.instanceTemplates.get,compute.networks.use,compute.disks.use,compute.zoneOperations.get
+  --permissions compute.images.get,compute.instanceTemplates.create,compute.instanceTemplates.get,compute.networks.get,compute.networks.use,compute.disks.use,compute.zoneOperations.get
 
 # 4b. Assign vm_template_creator
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role "projects/$PROJECT_ID/roles/vm_template_creator"
 
-# 5a. Allow updating MIGs with new VM templates
-gcloud iam roles create mig_updater --project $PROJECT_ID \
-  --title "Updates MIGs" \
-  --description "Allows MIG updates" \
-  --permissions compute.instanceTemplates.useReadOnly,compute.instanceGroupManagers.list,compute.instanceGroupManagers.get,compute.instanceGroupManagers.update
-
-# 5b. Assign mig_updater
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member=$SERVICE_ACCOUNT \
-  --role "projects/$PROJECT_ID/roles/mig_updater"
-
-# 6. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
+# 5. Allows downloading docker image from `lum-docker-images` repo only - used to allow downloading
 # docker image when building a new Jobs VM image
 gcloud artifacts repositories add-iam-policy-binding --location us-central1 lum-docker-images \
   --member=serviceAccount:gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \
   --role=roles/artifactregistry.reader
 
-# 7. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
+# 6. Allow GHA principal to access `gha-jobs-vm-image-creator` service account
 # when logging into `gha-jobs-vm-image-creator` VM
 gcloud iam service-accounts add-iam-policy-binding \
   gha-jobs-vm-image-creator-$ENV@$PROJECT_ID.iam.gserviceaccount.com \

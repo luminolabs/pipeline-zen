@@ -18,7 +18,7 @@ Install python dependencies:
 ### Run the torchtunewrapper workflow
 
 ```
-./scripts/run-local.sh torchtunewrapper \
+./scripts/runners/single-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id yahma/alpaca-cleaned \
@@ -35,7 +35,7 @@ are authenticated. Try this: `gcloud auth list`;
 you should see your email in that list, with a `*` next to it
 
 ```
-python ./scripts/run_remote.py \
+python ./scripts/runners/remote.py \
   --workflow torchtunewrapper \
   --mig_name pipeline-zen-jobs-1xv100-us-central1 \
   --job_config_name llm_llama3_8b \
@@ -65,7 +65,7 @@ Install python dependencies:
 ### Run train and evaluate workflows in one go
 
 ```
-./scripts/run-celery.sh train_evaluate \
+./scripts/runners/celery-wf.sh train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \
@@ -80,7 +80,7 @@ are authenticated. Try this: `gcloud auth list`;
 you should see your email in that list, with a `*` next to it
 
 ```
-python ./scripts/run_remote.py train_evaluate \
+python ./scripts/runners/remote.py train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \
@@ -93,7 +93,7 @@ python ./scripts/run_remote.py train_evaluate \
 ### Running the train workflow
 
 ```
-./scripts/run-local.sh train \
+./scripts/runners/single-wf.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \
@@ -103,7 +103,7 @@ python ./scripts/run_remote.py train_evaluate \
 ### Running the evaluate workflow
 
 ```
-./scripts/run-local.sh evaluate \
+./scripts/runners/single-wf.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --job_id <use same job id as in the train workflow> \
   --batch_size 8 \
@@ -115,7 +115,7 @@ python ./scripts/run_remote.py train_evaluate \
 ### Running the train workflow
 
 ```
-./scripts/run-docker.sh train \
+./scripts/runners/single-wf-docker.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \
@@ -125,7 +125,7 @@ python ./scripts/run_remote.py train_evaluate \
 ### Running the evaluate workflow
 
 ```
-./scripts/run-docker.sh evaluate \
+./scripts/runners/single-wf-docker.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --job_id <use same job id as in the train workflow> \
   --batch_size 8 \
@@ -145,7 +145,7 @@ Examples of workflow outputs
 ### Train Workflow
 
 ```
-$ ./scripts/run-local.sh train \
+$ ./scripts/runners/single-wf.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
   --num_epochs 2 \
@@ -189,7 +189,7 @@ train_workflow :: INFO :: Trained model saved! at: ../../.results/model_weights/
 ### Evaluate Workflow
 
 ```
-$ ./scripts/run-local.sh evaluate \
+$ ./scripts/runners/single-wf.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \
   --batch_size 8 \

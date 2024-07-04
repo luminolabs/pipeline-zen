@@ -40,7 +40,7 @@ echo "Using image: $image_use"
 # Build or pull the Docker image
 if [[ "$image_use" == "$IMAGE_LOCAL" ]]; then
   echo "Building local Docker image"
-  docker build -f celery.Dockerfile -t $image_use .
+  docker build -f celery.Dockerfile -t $image_use . > /dev/null 2>&1
 fi
 
 # Set GPU options based on OS type

@@ -18,11 +18,12 @@ if [ $# -lt 3 ]; then
     exit 1
 fi
 
+# Load utility functions
+source ./scripts/utils.sh
+
 # Assign input arguments to variables
 machine_type=$1
 size=$2
-template_version=$3
-template_version_dash=${template_version//./-}
 
 # Extract gpu_type from machine_type
 gpu_type=$(echo $machine_type | cut -d'x' -f2)
@@ -52,6 +53,10 @@ regions_to_zones_a100_80gb=(
 
 echo "Starting Managed Instance Group creation/resizing process..."
 
+# Grab the current version from the VERSION file and replace dots with dashes
+version=$(cat VERSION)
+template_version_dash=$(echo $version | tr '.' '-')
+
 # Function to create or resize a Managed Instance Group (MIG)
 create_or_resize_mig() {
     region=$1
@@ -65,9 +70,9 @@ create_or_resize_mig() {
         # If the MIG does not exist, create it with the input target size
         echo "Creating Managed Instance Group: $mig_name with target size $size"
         gcloud beta compute instance-groups managed create $mig_name \
-            --project=neat-airport-407301 \
+            --project=$PROJECT_ID \
             --base-instance-name=$mig_name \
-            --template=projects/neat-airport-407301/global/instanceTemplates/pipeline-zen-jobs-${machine_type}-${template_version_dash} \
+            --template=projects/$PROJECT_ID/global/instanceTemplates/pipeline-zen-jobs-${machine_type}-${template_version_dash} \
             --size=$size \
             --zones=$zones \
             --target-distribution-shape=EVEN \
@@ -101,7 +106,7 @@ create_or_resize_mig() {
 
         # Resize the existing Managed Instance Group to the new target size
         gcloud beta compute instance-groups managed resize $mig_name \
-            --project=neat-airport-407301 \
+            --project=$PROJECT_ID \
             --region=$region \
             --size=$target_size > /dev/null 2>&1
     fi
