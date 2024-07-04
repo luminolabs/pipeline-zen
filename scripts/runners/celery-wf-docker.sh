@@ -24,7 +24,7 @@ IMAGE_LOCAL="$IMAGE_NAME:$LOCAL_ENV"
 
 # Read the version from the VERSION file
 VERSION=$(cat VERSION)
-echo "Read version $VERSION token: $PZ_HUGGINGFACE_TOKEN"
+echo "Read version $VERSION"
 
 # Define remote and local image names
 IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
