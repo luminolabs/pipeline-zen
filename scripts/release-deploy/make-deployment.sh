@@ -30,6 +30,8 @@ VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscore
 JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 # Prefix for most resources created by this script, also used for some folder names
 RESOURCES_PREFIX="pipeline-zen-jobs"
+# Folder in VM where scripts are stored
+SCRIPTS_FOLDER="scripts"
 # Name of the base image to use for the new image
 NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
 # Path to the Docker image containing the ML pipeline, to pull on the VM
@@ -69,16 +71,16 @@ echo "Copying files to VM..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
 # Remove old files and create scripts folder
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
-  --command "rm -rf /$RESOURCES_PREFIX/scripts /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/scripts"
+  --command "rm -rf /$RESOURCES_PREFIX/$SCRIPTS_FOLDER /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/$SCRIPTS_FOLDER"
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-gcloud compute scp -r ./scropts $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp -r ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 # TODO: Choose the right .env file based on the environment
 gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
 # Install python dependencies
 echo "Installing python dependencies..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/scripts/requirements.txt"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/$SCRIPTS_FOLDER/requirements.txt"
 
 # Grab older Docker Image ID
 old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
@@ -110,7 +112,7 @@ for config in "${CONFIGS[@]}"; do
     --machine-type=$machine_type \
     --accelerator=$accelerator \
     --service-account=$JOBS_VM_SERVICE_ACCOUNT \
-    --metadata=startup-script=/$RESOURCES_PREFIX/scripts/mig-runtime/startup-script.sh \
+    --metadata=startup-script=/$RESOURCES_PREFIX/$SCRIPTS_FOLDER/mig-runtime/startup-script.sh \
     --create-disk=auto-delete=yes,boot=yes,device-name=$new_template_name,image=projects/$PROJECT_ID/global/images/$NEW_IMAGE_NAME,mode=rw,size=2000,type=pd-balanced \
     --maintenance-policy=TERMINATE \
     --provisioning-model=STANDARD \
