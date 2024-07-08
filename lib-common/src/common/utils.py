@@ -76,7 +76,7 @@ def get_results_path(job_id: str) -> str:
     :return: Returns the path to the results directory
     """
     path = os.path.join(config.root_path, config.results_path, job_id)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    os.makedirs(path, exist_ok=True)
     return path
 
 
