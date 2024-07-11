@@ -70,8 +70,7 @@ run_workflow() {
   echo "Running workflow script..."
   echo "Workflow: $workflow"
   echo "Arguments: $args"
-#  ./scripts/runners/celery-wf-docker.sh $workflow $args &
-  sleep 240 &
+  ./scripts/runners/celery-wf-docker.sh $workflow $args &
 
   workflow_pid=$!
 
