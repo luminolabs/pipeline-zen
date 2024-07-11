@@ -22,12 +22,12 @@ is_truthy() {
   echo "0"
 }
 
-# Function to extract subscription ID from VM name
-get_subscription_id_from_vm_name() {
-    # Extract subscription ID from VM name;
-    # ex. vm name: pipeline-zen-jobs-1xv100-us-central1-ushf -> subscription ID: pipeline-zen-jobs-1xv100
+# Function to extract GPU config name from VM name
+get_cluster_name_from_vm_name() {
+    # Extract GPU config name from VM name;
+    # ex. vm name: pipeline-zen-jobs-1xv100-us-central1-ushf -> GPU config name: 1xv100
     local vm_name=$1
-    echo $vm_name | sed "s/-[^-]*-[^-]*-[^-]*$//"
+    echo $vm_name | sed -E 's/pipeline-zen-jobs-([^ -]+)-[^-]+-.*/\1/'
 }
 
 # Function to extract region from MIG name

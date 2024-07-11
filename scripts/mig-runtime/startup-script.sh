@@ -18,24 +18,29 @@ log_file="./output.log"
 # Redirect both stdout and stderr to the log file and to stdout/stderr
 exec > >(tee -a "$log_file") 2>&1
 
+# Export secrets
+source ./scripts/mig-runtime/export-secrets.sh
+
 # Call the pubsub-listener.sh script
-source ./scripts/mig-runtime/export-secrets.sh && ./scripts/mig-runtime/pubsub-listener.sh
+echo "Starting Pub/Sub listener..."
+./scripts/mig-runtime/pubsub-listener.sh
 
 # Don't try to delete a VM if running locally, because there is no VM to delete
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   # Whether to allow the VM to continue to run after job completion
-  # This flag is set by the pubsub-job-runner.sh script
-  keep_alive=$(cat .keep_alive || echo "false")
+  # This flag is set by the pubsub-listener.sh script
+  keep_alive=$(cat .results/.keep_alive || echo "false")
   if [[ $(is_truthy "$keep_alive") == "1" ]]; then
     echo "keep_alive flag is truthy. Skipping VM deletion."
   else
+    echo "Initiating VM deletion..."
     PYTHONPATH=$PYTHONPATH python ./scripts/mig-runtime/delete_vm.py
   fi
 else
   echo "Running locally. Skipping VM deletion."
 fi
 
-# Cleanup the .keep_alive flag file
-rm -rf .keep_alive || true
+# Cleanup the temporary files
+rm -f .results/.keep_alive .results/.job_id
 
 echo "MIG startup script ended."
