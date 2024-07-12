@@ -34,6 +34,8 @@ def get_mig_name_from_vm_name(vm_name: str) -> str:
     """
     Get the MIG name from the VM name
 
+    ex. 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3' -> 'pipeline-zen-jobs-8xa100-40gb-us-central1'
+
     :param vm_name: The name of the VM
     :return: The name of the MIG
     """
@@ -43,6 +45,8 @@ def get_mig_name_from_vm_name(vm_name: str) -> str:
 def get_region_from_zone(zone: str) -> str:
     """
     Get the region from the zone
+
+    ex. 'us-central1-a' -> 'us-central1'
 
     :param zone: The zone
     :return: The region
