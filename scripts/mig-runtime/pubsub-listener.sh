@@ -22,7 +22,7 @@ send_heartbeat() {
   local job_id=$(cat .results/.job_id)
   local message="{\"job_id\":\"$job_id\",\"status\":\"$status\"}"
   echo "Sending heartbeat: $message"
-  gcloud pubsub topics publish pipeline-zen-jobs-heartbeats --message="$message" --project="$PROJECT_ID"
+  gcloud pubsub topics publish pipeline-zen-jobs-heartbeats --message="$message" --project="$PROJECT_ID" > /dev/null 2>&1
 }
 
 # Function to check for stop signal
@@ -34,11 +34,12 @@ check_stop_signal() {
     local stop_job_id=$(echo "$response" | jq -r '.[0].message.data' | base64 --decode | jq -r '.job_id')
     if [[ "$stop_job_id" == "$job_id" ]]; then
       echo "Stop signal received for this job."
-      gcloud pubsub subscriptions ack --project="$PROJECT_ID" --ack-ids="$ack_id" pipeline-zen-jobs-stop-main
+      gcloud pubsub subscriptions ack --project="$PROJECT_ID" --ack-ids="$ack_id" pipeline-zen-jobs-stop-main > /dev/null 2>&1
       return 0
     else
       # Negative acknowledgement to return the message to the queue
-      gcloud pubsub subscriptions nack --project="$PROJECT_ID" --ack-ids="$ack_id" pipeline-zen-jobs-stop-main
+      echo "Stop signal received for another job - ignoring."
+      gcloud beta pubsub subscriptions modify-message-ack-deadline --project="$PROJECT_ID" --ack-ids="$ack_id" --ack-deadline=0 pipeline-zen-jobs-stop-main > /dev/null 2>&1
     fi
   fi
   return 1
@@ -98,7 +99,7 @@ run_workflow() {
 
     send_heartbeat "RUNNING"
 
-    sleep 60  # Send heartbeat every minute
+    sleep 10  # Send heartbeat 10 seconds
   done
 
   # Check for .failed file
