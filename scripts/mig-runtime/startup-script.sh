@@ -9,6 +9,10 @@ echo "MIG startup script started."
 # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
 cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
 
+# Create directories for logs and results
+mkdir -p .results
+mkdir -p .logs
+
 # Import shared utility functions
 source ./scripts/utils.sh
 

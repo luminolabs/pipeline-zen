@@ -9,8 +9,8 @@ echo "Pub/Sub job listener started."
 
 # Set environment name and subscription ID
 subscription_id_suffix="$LOCAL_ENV"  # running locally will listen to a local subscription ID
+vm_name=$(uname -n)
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  vm_name=$(uname -n)
   subscription_id_suffix=$(get_cluster_name_from_vm_name "$vm_name")
 fi
 subscription_id="pipeline-zen-jobs-start-$subscription_id_suffix"
@@ -20,7 +20,7 @@ echo "Subscription ID set to $subscription_id"
 send_heartbeat() {
   local status="$1"
   local job_id=$(cat .results/.job_id)
-  local message="{\"job_id\":\"$job_id\",\"status\":\"$status\"}"
+  local message="{\"job_id\":\"$job_id\",\"status\":\"$status\",\"vm_name\":\"$vm_name\"}"
   echo "Sending heartbeat: $message"
   gcloud pubsub topics publish pipeline-zen-jobs-heartbeats --message="$message" --project="$PROJECT_ID" > /dev/null 2>&1
 }
