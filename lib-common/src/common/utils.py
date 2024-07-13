@@ -54,10 +54,17 @@ class AutoJSONEncoder(JSONEncoder):
     """
 
     def default(self, obj):
+        # Convert OmegaConf objects to dictionaries
+        # before serializing them to JSON strings to avoid errors
+        if isinstance(obj, DictConfig):
+            obj = dict(obj)
         try:
+            # If the object has a `_json()` method, use it;
+            # it means it's an object (ex. Enum) that implements the `_json()` method
             return obj._json()
         except AttributeError:
-            return JSONEncoder.default(self, obj)
+            # Otherwise, return the JSON serialized object
+            return json.dumps(obj)
 
 
 #--- METHODS ---#
