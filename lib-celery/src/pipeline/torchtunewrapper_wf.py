@@ -29,13 +29,13 @@ app = Celery('torchwrapper', broker=config.celery_broker_url)
 
 @app.task
 def torchtunewrapper(_, job_config_name: str, job_id: Optional[str] = None,
-                     dataset_id: str = Optional[None], dataset_template: Optional[str] = None,
+                     dataset_id: str = Optional[None], train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
                      use_lora: bool = True,
                      use_single_device: bool = True, num_gpus: int = 1):
     return _torchtunewrapper(
         job_config_name, job_id,
-        dataset_id, dataset_template,
+        dataset_id, train_file_path,
         batch_size, shuffle, num_epochs,
         use_lora,
         use_single_device, num_gpus)

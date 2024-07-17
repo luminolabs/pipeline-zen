@@ -21,8 +21,8 @@ Install python dependencies:
 ./scripts/runners/single-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
-  --dataset_id yahma/alpaca-cleaned \
-  --dataset_template instruct \
+  --dataset_id scaraveos/protoml1 \
+  --train_file_path text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true \
   --use_single_device true --num_gpus 1
@@ -30,21 +30,27 @@ Install python dependencies:
 
 ## Running remotely on a VM (aka on `dev`)
 
-Make sure you have `gcloud` installed and that you
-are authenticated. Try this: `gcloud auth list`;
-you should see your email in that list, with a `*` next to it
+Send a new job request to the Scheduler with the following command:
 
 ```
-python ./scripts/runners/remote.py \
-  --workflow torchtunewrapper \
-  --mig_name pipeline-zen-jobs-1xv100-us-central1 \
-  --job_config_name llm_llama3_8b \
-  --job_id llm_llama3_8b-experiment1 \
-  --dataset_id yahma/alpaca-cleaned \
-  --dataset_template instruct \
-  --batch_size 2 --shuffle true --num_epochs 1 \
-  --use_lora true \
-  --use_single_device true --num_gpus 1
+curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '{
+  "job_id": "vasilis-protoml1-run4",
+  "workflow": "torchtunewrapper",
+  "args": {
+    "job_id": "vasilis-protoml1-run4",
+    "job_config_name": "llm_llama3_8b",
+    "dataset_id": "scaraveos/protoml1",
+    "train_file_path": "text2sql.jsonl",
+    "batch_size": 2,
+    "shuffle": true,
+    "num_epochs": 1,
+    "use_lora": true,
+    "use_single_device": false,
+    "num_gpus": 4
+  },
+  "keep_alive": false,
+  "cluster": "1xa100-40gb"
+}'
 ```
 
 # Training other types of models
