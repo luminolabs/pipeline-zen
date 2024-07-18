@@ -5,6 +5,7 @@ from typing import Optional
 from celery import Celery, chain
 
 from common.config_manager import config
+from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, get_logs_path
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
@@ -48,10 +49,11 @@ def upload_results(_, job_id: str):
     :param job_id: The job id to associate with the results
     :return:
     """
+    results_bucket_name = get_results_bucket_name(config.env_name)
     # Upload results
-    upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
+    upload_local_directory_to_gcs(get_results_path(job_id), results_bucket_name)
     # Upload logs
-    upload_local_directory_to_gcs(get_logs_path(job_id), 'lum-pipeline-zen')
+    upload_local_directory_to_gcs(get_logs_path(job_id), results_bucket_name)
 
 
 @app.task

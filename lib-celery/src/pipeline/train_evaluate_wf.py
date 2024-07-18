@@ -1,10 +1,10 @@
 import os
 import platform
-import subprocess
 
 from celery import Celery, chain
 
 from common.config_manager import config
+from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs
 from train.cli import parse_args as train_parse_args
@@ -45,7 +45,8 @@ def upload_results(_, job_id: str):
     :param job_id: The job id to associate with the results
     :return:
     """
-    upload_local_directory_to_gcs(get_results_path(job_id), 'lum-pipeline-zen')
+    results_bucket_name = get_results_bucket_name(config.env_name)
+    upload_local_directory_to_gcs(get_results_path(job_id), results_bucket_name)
 
 
 @app.task
