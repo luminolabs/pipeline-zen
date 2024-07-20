@@ -6,9 +6,21 @@ PROJECT_ID="neat-airport-407301"
 # Service account for local development
 SERVICE_ACCOUNT="serviceAccount:pipeline-zen-local-$ENV@$PROJECT_ID.iam.gserviceaccount.com"
 
-# Allow storing results to `lum-pipeline-zen` bucket only
+# Results bucket for storing pipeline results
+RESULTS_BUCKET="lum-pipeline-zen"
+
+# Allow storing results to `lum-pipeline-zen-*` buckets only
 # 1. Assign Storage Admin
-gcloud storage buckets add-iam-policy-binding gs://lum-pipeline-zen \
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-us \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-asia \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-europe \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-west1 \
   --member=$SERVICE_ACCOUNT \
   --role=roles/storage.objectAdmin
 

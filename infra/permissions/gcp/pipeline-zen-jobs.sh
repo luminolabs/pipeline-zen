@@ -11,10 +11,19 @@ DOCKER_IMAGE_REPO="lum-docker-images"
 # Results bucket for storing pipeline results
 RESULTS_BUCKET="lum-pipeline-zen"
 
-# Allow storing results to `lum-pipeline-zen` bucket only
+# Allow storing results to `lum-pipeline-zen-*` buckets only
 # 1. Assign Storage Admin
-gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET \
-  --member=SERVICE_ACCOUNT \
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-us \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-asia \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-europe \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/storage.objectAdmin
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-west1 \
+  --member=$SERVICE_ACCOUNT \
   --role=roles/storage.objectAdmin
 
 # 2a. Create new role for listing buckets

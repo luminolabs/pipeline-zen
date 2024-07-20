@@ -6,8 +6,9 @@ import os
 
 from google.cloud import compute_v1
 
-from utils import PROJECT_ID, get_mig_name_from_vm_name, get_vm_name_from_metadata, get_zone_from_metadata, \
+from common.gcp import get_mig_name_from_vm_name, get_vm_name_from_metadata, get_zone_from_metadata, \
     get_region_from_zone
+from utils import PROJECT_ID
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
