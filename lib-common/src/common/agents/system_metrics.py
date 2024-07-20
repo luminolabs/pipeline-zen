@@ -63,7 +63,11 @@ class SystemSpecs:
         j = json.loads(r.stdout.decode('utf-8'))
         o = {clean_key(x['field']): x for x in j.get('lscpu')}
         l = ('architecture', 'cpus', 'model_name', 'threads_per_core')
-        return {x: o[x]['data'] for x in l}
+        try:
+            return {x: o[x]['data'] for x in l}
+        except KeyError:
+            self.logger.error('`lscpu -J` return value is not as expected`')
+            return None
 
     def get_mem_spec(self) -> Optional[str]:
         """

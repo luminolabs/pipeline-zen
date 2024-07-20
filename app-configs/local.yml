@@ -1,4 +1,5 @@
 log_level: DEBUG
 
 # GCP SA key location
-GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json
+# Temporarily disabled because the local development service account is out of date with required permissions
+# GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json

@@ -6,10 +6,11 @@ METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
 METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
 LOCAL_ENV = 'local'
-LOCAL_SUBSCRIPTION_ID = LOCAL_ENV
+LOCAL_CLUSTER = LOCAL_ENV
 
 # Load environment variables from the .env file
 load_dotenv()
+
 
 # Function to get the VM name using the metadata server
 def get_vm_name_from_metadata():
@@ -33,47 +34,21 @@ def get_mig_name_from_vm_name(vm_name: str) -> str:
     """
     Get the MIG name from the VM name
 
+    ex. 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3' -> 'pipeline-zen-jobs-8xa100-40gb-us-central1'
+
     :param vm_name: The name of the VM
     :return: The name of the MIG
     """
     return '-'.join(vm_name.split('-')[:-1])
 
 
-def get_sub_name_from_vm_name(vm_name: str) -> str:
-    """
-    Get the subscription name from the VM name
-
-    :param vm_name: The name of the VM
-    :return: The name of the subscription
-    """
-    return '-'.join(vm_name.split('-')[:-3])
-
-
 def get_region_from_zone(zone: str) -> str:
     """
     Get the region from the zone
+
+    ex. 'us-central1-a' -> 'us-central1'
 
     :param zone: The zone
     :return: The region
     """
     return '-'.join(zone.split('-')[:-1])
-
-
-def get_region_from_mig_name(mig_name: str) -> str:
-    """
-    Get the region from the MIG name
-
-    :param mig_name: The name of the MIG
-    :return: The region
-    """
-    return '-'.join(mig_name.split('-')[-2:])
-
-
-def get_subscription_id_from_mig_name(mig_name: str) -> str:
-    """
-    Get the subscription ID from the MIG name
-
-    :param mig_name: The name of the MIG
-    :return: The subscription ID
-    """
-    return LOCAL_SUBSCRIPTION_ID if mig_name == LOCAL_SUBSCRIPTION_ID else '-'.join(mig_name.split('-')[:-2])

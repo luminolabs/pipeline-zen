@@ -48,11 +48,14 @@ gcloud beta projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
   --role=roles/secretmanager.viewer
 
-# Allow access to receiving from Pub/Sub
+# Allow access to sending/receiving from Pub/Sub
 # TODO: Need to narrow down to specific subscriptions
 gcloud projects add-iam-policy-binding $PROJECT_ID \
   --member=$SERVICE_ACCOUNT \
-  --role=roles/pubsub.subscriber \
+  --role=roles/pubsub.subscriber
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member=$SERVICE_ACCOUNT \
+  --role=roles/pubsub.publisher
 
 # 1a. Create new role for deleting VMs from MIGs
 gcloud iam roles create mig_instance_deleter \

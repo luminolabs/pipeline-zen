@@ -28,6 +28,11 @@ size=$2
 # Extract gpu_type from machine_type
 gpu_type=$(echo $machine_type | cut -d'x' -f2)
 
+# Define the array of regions and their corresponding zones for v100
+regions_to_zones_v100=(
+  "us-central1:us-central1-a,us-central1-c"
+)
+
 # Define the array of regions and their corresponding zones for a100-40gb
 regions_to_zones_a100_40gb=(
     "asia-northeast1:asia-northeast1-a,asia-northeast1-c"
@@ -113,7 +118,9 @@ create_or_resize_mig() {
 }
 
 # Choose the correct array of regions and zones based on the gpu type
-if [[ $gpu_type == "a100-40gb" ]]; then
+if [[ $gpu_type == "v100" ]]; then
+    regions_to_zones=("${regions_to_zones_v100[@]}")
+elif [[ $gpu_type == "a100-40gb" ]]; then
     regions_to_zones=("${regions_to_zones_a100_40gb[@]}")
 elif [[ $gpu_type == "a100-80gb" ]]; then
     regions_to_zones=("${regions_to_zones_a100_80gb[@]}")

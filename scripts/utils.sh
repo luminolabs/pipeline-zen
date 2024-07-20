@@ -22,15 +22,14 @@ is_truthy() {
   echo "0"
 }
 
-# Function to extract subscription ID from VM name
-get_subscription_id_from_vm_name() {
-    # Extract subscription ID from VM name;
-    # ex. vm name: pipeline-zen-jobs-1xv100-us-central1-ushf -> subscription ID: pipeline-zen-jobs-1xv100
-    local vm_name=$1
-    echo $vm_name | sed "s/-[^-]*-[^-]*-[^-]*$//"
+# Function to extract cluster name from VM name
+# ex. pipeline-zen-jobs-4xa100-40gb-us-west4-t9sj -> 4xa100-40gb
+get_cluster_name_from_vm_name() {
+    echo "$1" | sed -E 's/^pipeline-zen-jobs-//; s/-[^-]+-[^-]+-[^-]+$//'
 }
 
 # Function to extract region from MIG name
+# ex. pipeline-zen-jobs-4xa100-40gb-us-west4-t9sj -> us-west4
 get_region_from_mig_name() {
   MIG_NAME=$1
   REGION=$(echo "$MIG_NAME" | rev | cut -d'-' -f1,2 | rev )

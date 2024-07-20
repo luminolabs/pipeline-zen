@@ -10,12 +10,19 @@ from utils import PROJECT_ID, get_mig_name_from_vm_name, get_vm_name_from_metada
     get_region_from_zone
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format='%(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 
 def delete_instance_from_mig(project_id: str, vm_zone: str, mig_name: str, vm_name: str) -> None:
     """
-    Delete an instance from a regional MIG
+    Delete an instance from a regional Managed Instance Group (MIG).
+
+    Args:
+        project_id (str): The Google Cloud project ID.
+        vm_zone (str): The zone of the VM instance.
+        mig_name (str): The name of the Managed Instance Group.
+        vm_name (str): The name of the VM instance to delete.
     """
     # Get the region from the zone
     vm_region = get_region_from_zone(vm_zone)
@@ -27,22 +34,23 @@ def delete_instance_from_mig(project_id: str, vm_zone: str, mig_name: str, vm_na
     request = compute_v1.DeleteInstancesRegionInstanceGroupManagerRequest(
         instance_group_manager=mig_name,
         region_instance_group_managers_delete_instances_request_resource=
-            compute_v1.RegionInstanceGroupManagersDeleteInstancesRequest(
-                instances=[f'zones/{vm_zone}/instances/{vm_name}']
-            ),
+        compute_v1.RegionInstanceGroupManagersDeleteInstancesRequest(
+            instances=[f'zones/{vm_zone}/instances/{vm_name}']
+        ),
         project=project_id,
         region=vm_region,
     )
 
     # Delete VM from MIG
+    logger.info(f"Deleting VM {vm_name} from MIG {mig_name} in zone {vm_zone}")
     operation = instance_group_managers_client.delete_instances(request=request)
     # Wait for the operation to complete
     operation.result()
+    logger.info(f"VM {vm_name} deleted successfully")
 
 
 if __name__ == '__main__':
-    # Require all args is PZ_ENV is `local`
-    # On other environments, the args are optional, because we can get the values from the metadata server
+    # Determine if arguments are required based on the environment
     args_required = os.environ.get('PZ_ENV', 'local') == 'local'
 
     # Parse the command-line arguments
@@ -57,7 +65,7 @@ if __name__ == '__main__':
     vm_zone = args.vm_zone if args.vm_zone else get_zone_from_metadata()
     mig_name = args.mig_name if args.mig_name else get_mig_name_from_vm_name(vm_name)
 
-    logging.info(f'Deleting VM {vm_name} from MIG {mig_name} in zone {vm_zone}...')
+    logger.info(f'Initiating deletion of VM {vm_name} from MIG {mig_name} in zone {vm_zone}')
     # Delete the VM from the MIG
     delete_instance_from_mig(PROJECT_ID, vm_zone, mig_name, vm_name)
-    logging.info('...VM deleted')
+    logger.info('VM deletion process completed')
