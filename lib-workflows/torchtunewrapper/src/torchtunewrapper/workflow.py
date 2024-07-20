@@ -4,14 +4,13 @@ from typing import Optional
 
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
-from torchtune.datasets._instruct import instruct_dataset
+from torchtune.datasets import chat_dataset
 
 from common.dataset.provider.huggingface import HuggingFace
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
     get_logs_path, get_results_path, save_job_results
-from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename, \
-    get_torchtune_dataset_template
+from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
 from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
 
 
@@ -31,19 +30,20 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     job_id = job_config['job_id']
 
     # TODO: Possibly implement custom torchtune logger
-    # TODO: Stream logs to cloud logging / bigquery
     # TODO: Unit tests
     # TODO: Put together detailed how to use instructions
 
     # Instantiate dataset
-    dataset = instruct_dataset(
+    dataset = chat_dataset(
         tokenizer=None,
         source=job_config['dataset_id'],
-        template=get_torchtune_dataset_template(job_config['dataset_template']),
-        train_on_input=job_config.get('train_on_input', False),
+        conversation_style="openai",
+        chat_format=None,
         max_seq_len=job_config.get('max_seq_len', None),
+        train_on_input=job_config.get('train_on_input', False),
         packed=job_config.get('packed', False),
         split=job_config.get('split', 'train'),
+        data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
         cache_dir=HuggingFace.get_dataset_cache_dir(),
     )
 
@@ -82,13 +82,13 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
     # Save and return the results
     results = {'see logs': 'see logs for results'}
-    save_job_results(job_id, results, 'torchtune')
+    save_job_results(job_id, results, 'torchtunewrapper')
     logger.info('The job id was: ' + job_id)
     return results
 
 
 def main(job_config_name: str, job_id: Optional[str] = None,
-         dataset_id: str = Optional[None], dataset_template: Optional[str] = None,
+         dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
          use_lora: bool = True,
          use_single_device: bool = True, num_gpus: int = 1):
@@ -97,8 +97,8 @@ def main(job_config_name: str, job_id: Optional[str] = None,
 
     :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param job_id: The job id to use for logs, results, etc.
-    :param dataset_id: The dataset identifier, ex:
-    :param dataset_template: The dataset template to use for training; e.g. `instruct`, or `summarization`
+    :param dataset_id: The dataset identifier, ex: `tatsu-lab/alpaca`
+    :param train_file_path: The path to the training file in the dataset, ex: `train.jsonl`
     :param batch_size: The training batch size, default is 1
     :param shuffle: Whether to shuffle the dataset or not, default is True
     :param num_epochs: Number of epochs to train
@@ -113,7 +113,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
     # Overwrite job config values with values from input, if any
     job_config['job_id'] = job_id = get_or_generate_job_id(job_config_name, job_id)
     job_config.setdefault('dataset_id', dataset_id)
-    job_config.setdefault('dataset_template', dataset_template)
+    job_config.setdefault('train_file_path', train_file_path)
     job_config.setdefault('batch_size', batch_size)
     job_config.setdefault('shuffle', shuffle)
     job_config.setdefault('num_epochs', num_epochs)
@@ -136,7 +136,7 @@ def main(job_config_name: str, job_id: Optional[str] = None,
         is_torchtune=True)
 
     # Instantiate the main logger
-    logger = setup_logger('torchtune_train_workflow', job_id)
+    logger = setup_logger('torchtunewrapper_train_workflow', job_id)
     # Run the `torchtune` workflow, and handle unexpected exceptions
     try:
         return run(job_config, tt_config, logger)

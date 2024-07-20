@@ -53,7 +53,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib-workflows/torchtunewrapper/src/torchtunewrapper/cli.py" />
-    <option name="PARAMETERS" value="--job_config_name llm_mistral_7b --job_id llm_mistral_7b-experiment1 --dataset_id yahma/alpaca-cleaned --dataset_template instruct --batch_size 2 --shuffle true --num_epochs 1 --use_lora true --use_single_device true --num_gpus 1" />
+    <option name="PARAMETERS" value="--job_config_name llm_mistral_7b --job_id llm_mistral_7b-experiment1 --dataset_id yahma/alpaca-cleaned --batch_size 2 --shuffle true --num_epochs 1 --use_lora true --use_single_device true --num_gpus 1" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

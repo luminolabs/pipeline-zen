@@ -13,7 +13,7 @@ def parse_args() -> tuple:
     args = parser.parse_args()
 
     return (args.job_config_name, args.job_id,
-            args.dataset_id, args.dataset_template,
+            args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
             args.use_lora,
             args.use_single_device, args.num_gpus)
@@ -34,9 +34,9 @@ def add_parser_args(parser: argparse.ArgumentParser):
                              "logs and other job results and artifacts will be named after this.")
 
     parser.add_argument('-ds', '--dataset_id', type=str, required=True,
-                        help="The dataset to use for training; e.g. `tatsu-lab/alpaca`")
-    parser.add_argument('-ds_tpl', '--dataset_template', type=str, required=True,
-                        help="The dataset template to use for training; e.g. `instruct`, or `summarization`")
+                        help="The dataset repo to use for training; e.g. `tatsu-lab/alpaca`")
+    parser.add_argument('-tfp', '--train_file_path', type=str, required=False,
+                        help="The path to the train file in the repo to use for training; e.g. `train.jsonl`")
     parser.add_argument('-bs', '--batch_size', type=int, required=False, default=1,
                         help="The batch size to use for training; default is 1")
     parser.add_argument('-s', '--shuffle', type=is_truthy, required=False, default=True,
