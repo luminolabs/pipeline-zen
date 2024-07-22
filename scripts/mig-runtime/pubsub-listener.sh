@@ -102,13 +102,13 @@ run_workflow() {
     sleep 10  # Send heartbeat 10 seconds
   done
 
-  # Check for .failed file
-  if [ -f ".results/.failed" ]; then
-    send_heartbeat "FAILED"
-    echo "Job failed. Check logs for details."
-  else
+  # Check for .finished file
+  if [ -f ".results/.finished" ]; then
     send_heartbeat "COMPLETED"
     echo "Job completed successfully."
+  else
+    send_heartbeat "FAILED"
+    echo "Job failed. Check logs for details."
   fi
 }
 

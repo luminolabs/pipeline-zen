@@ -16,14 +16,8 @@ from omegaconf import OmegaConf, DictConfig
 
 from common.config_manager import config
 
-#--- CONSTANTS ---#
-
-
 # Timestamp format to use for logs, results, etc
 system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
-
-
-#--- TYPES / CLASSES ---#
 
 
 class JsonEnumBase(Enum):
@@ -67,9 +61,6 @@ class AutoJSONEncoder(JSONEncoder):
             return json.dumps(obj)
 
 
-#--- METHODS ---#
-
-
 def get_system_timestamp() -> str:
     """
     :return: A timestamp formatted as a string; use in logs, results, etc
@@ -77,9 +68,9 @@ def get_system_timestamp() -> str:
     return datetime.now().strftime(system_timestamp_format)
 
 
-def get_results_path(job_id: str) -> str:
+def get_results_path(job_id: str = '') -> str:
     """
-    :param job_id: Job id to use as part of the results path
+    :param job_id: Job id to use as part of the results path, can be left empty to get the root results folder
     :return: Returns the path to the results directory
     """
     path = os.path.join(config.root_path, config.results_path, job_id)
