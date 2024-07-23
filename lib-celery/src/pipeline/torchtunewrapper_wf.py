@@ -1,6 +1,5 @@
 import os
 import platform
-import sys
 from typing import Optional
 
 from celery import Celery, chain
@@ -9,7 +8,7 @@ from celery.signals import task_failure
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, get_logs_path
+    upload_local_directory_to_gcs, get_logs_path, setup_logger
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -43,7 +42,11 @@ def handle_task_failure(*args, **kwargs):
     If any other task fails, we terminate the workflow as well as the worker, so that the whole
     script execution ends and the worker VM can shut down.
     """
-    print('Something went wrong during task execution')
+    # `job_id` is always the second argument passed to a task
+    job_id = kwargs.get('args')[1]
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+    # Not raising exception, since it's already raised by the task
+    logger.error('Something went wrong during task execution')
     app.control.shutdown()
 
 
@@ -53,6 +56,7 @@ def torchtunewrapper(_, job_config_name: str, job_id: Optional[str] = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
                      use_lora: bool = True,
                      use_single_device: bool = True, num_gpus: int = 1):
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
     try:
         return _torchtunewrapper(
             job_config_name, job_id,
@@ -62,7 +66,7 @@ def torchtunewrapper(_, job_config_name: str, job_id: Optional[str] = None,
             use_single_device, num_gpus)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
-        print(f'`torchtunewrapper` task failed with error: {e}')
+        logger.error(f'`torchtunewrapper` task failed with error: {e}')
         return None
 
 
@@ -90,9 +94,10 @@ def mark_finished(torchtunewrapper_result, job_id: str):
     :param job_id: The job id that finished
     :return:
     """
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
     if not torchtunewrapper_result:
         # Not touching this file allows the startup script to mark job as failed
-        print(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
+        logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
         return None
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
