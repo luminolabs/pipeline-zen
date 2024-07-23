@@ -28,8 +28,7 @@ from torchtune.modules.peft.peft_utils import (
 )
 from torchtune.recipe_interfaces import FTRecipeInterface
 
-
-log = utils.get_logger("DEBUG")
+from common.agents.model_scores import TorchtunewrapperScoresAgent
 
 
 class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
@@ -95,8 +94,12 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
 
     """
 
-    def __init__(self, cfg: DictConfig, dataset: Optional[Dataset] = None) -> None:
+    def __init__(self, cfg: DictConfig,
+                 scores_agent: TorchtunewrapperScoresAgent, dataset: Optional[Dataset] = None) -> None:
+        self._scores_agent = scores_agent
+        self._logger = scores_agent.logger
         self._dataset = dataset
+        
         self._device = utils.get_device(device=cfg.device)
         # Reduced precision logic
         self._dtype = utils.get_dtype(cfg.dtype, device=self._device)
@@ -115,8 +118,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             raise RuntimeError("Full bf16 training is not supported on this hardware.")
         # logging attributes
         self._output_dir = cfg.output_dir
-        self._log_every_n_steps = cfg.get("log_every_n_steps", 1)
-        self._log_peak_memory_stats = cfg.get("log_peak_memory_stats", False)
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
@@ -196,11 +197,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         Setup the recipe state. This includes recipe state (if resume_from_checkpoint is True),
         model, tokenizer, loss, optimizer, learning rate scheduler, sampler, and dataloader.
         """
-        self._metric_logger = config.instantiate(cfg.metric_logger)
-
-        # log config with parameter override
-        self._metric_logger.log_config(cfg)
-
         self._model_compile = cfg.compile
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=cfg.checkpointer)
 
@@ -217,7 +213,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         )
 
         self._tokenizer = config.instantiate(cfg.tokenizer)
-        log.info("Tokenizer is initialized from file.")
+        self._logger.info("Tokenizer is initialized from file.")
 
         self._optimizer = self._setup_optimizer(
             cfg_optimizer=cfg.optimizer,
@@ -227,7 +223,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         )
 
         self._loss_fn = config.instantiate(cfg.loss)
-        log.info("Loss is initialized.")
+        self._logger.info("Loss is initialized.")
 
         # Dataloader depends on the tokenizer and loss_fn and should be
         # setup after all of these are setup
@@ -314,10 +310,10 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             self.adapter_params.items(), dtype=self._dtype
         )
 
-        log.info(f"Model is initialized with precision {self._dtype}.")
+        self._logger.info(f"Model is initialized with precision {self._dtype}.")
         # Compile model, if enabled.
         if compile_model:
-            log.info("Compiling model with torch.compile...")
+            self._logger.info("Compiling model with torch.compile...")
             backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
             model.compile(backend=backend)
         if self._device.type == "cuda":
@@ -332,7 +328,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         if opt_state_dict:
             optimizer.load_state_dict(opt_state_dict)
 
-        log.info("Optimizer and loss are initialized.")
+        self._logger.info("Optimizer and loss are initialized.")
         return optimizer
 
     def _setup_lr_scheduler(
@@ -348,7 +344,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             last_epoch=last_epoch,
         )
 
-        log.info("Learning rate scheduler is initialized.")
+        self._logger.info("Learning rate scheduler is initialized.")
         return lr_scheduler
 
     def _setup_data(
@@ -398,7 +394,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             else None,
         )
 
-        log.info("Dataset and Sampler are initialized.")
+        self._logger.info("Dataset and Sampler are initialized.")
 
         return sampler, dataloader
 
@@ -467,8 +463,9 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         """
 
         if self._model_compile:
-            log.info(
-                "NOTE: torch.compile is enabled and model is compiled in first forward. Expect a relatively slow first iteration."
+            self._logger.info(
+                "NOTE: torch.compile is enabled and model is compiled in first forward. "
+                "Expect a relatively slow first iteration."
             )
 
         # Initialize tokens count and running loss (for grad accumulation)
@@ -529,42 +526,35 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                         # Update the number of steps when the weights are updated
                         self.global_step += 1
 
-                        loss_to_log = running_loss.item()
-                        log.info(f"Epoch: {curr_epoch+1}, Step: {self.global_step}/{self._steps_per_epoch}, Loss: {loss_to_log}")
-
-                        # Log per-step metrics
-                        if self.global_step % self._log_every_n_steps == 0:
-                            time_per_step = time.perf_counter() - t0
-                            log_dict = {
-                                "loss": loss_to_log,
-                                "lr": self._optimizer.param_groups[0]["lr"],
-                                "tokens_per_second_per_gpu": num_tokens / time_per_step,
-                            }
-                            if (
-                                self._device.type == "cuda"
-                                and self._log_peak_memory_stats
-                            ):
-                                log_dict.update(
-                                    utils.get_memory_stats(device=self._device)
-                                )
-                            self._metric_logger.log_dict(
-                                log_dict,
-                                step=self.global_step,
-                            )
+                        # Log per-step metrics and timestamps
+                        time_per_step = time.perf_counter() - t0
+                        mem_stats = utils.get_memory_stats(device=self._device)
+                        self._scores_agent.log_batch(
+                            batch_num=self.global_step,
+                            batch_len=self._steps_per_epoch,
+                            batch_loss=running_loss.item(),
+                            batch_lr=self._optimizer.param_groups[0]["lr"],
+                            batch_tokens_per_second_per_gpu=num_tokens / time_per_step,
+                            batch_tokens=num_tokens,
+                            batch_peak_memory_active=mem_stats.get("peak_memory_active"),
+                            batch_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
+                            batch_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
+                            epoch_num=curr_epoch,
+                            epoch_len=self.total_epochs,)
 
                         # Reset running stats for the next step
                         running_loss = 0
                         num_tokens = 0
                         t0 = time.perf_counter()
 
+            # Log per-epoch timestamps
+            self._scores_agent.log_epoch(epoch_num=curr_epoch, epoch_len=self.total_epochs)
+            
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
 
-    def cleanup(self) -> None:
-        self._metric_logger.close()
 
-
-def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
+def recipe_main(cfg: DictConfig, dataset: Dataset, scores_agent: TorchtunewrapperScoresAgent) -> None:
     """
     Entry point for the recipe.
 
@@ -573,7 +563,7 @@ def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
         - Overwritten by arguments from the command-line
     """
     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
-    recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg, dataset=dataset)
+    recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)
     recipe.train()
     recipe.cleanup()

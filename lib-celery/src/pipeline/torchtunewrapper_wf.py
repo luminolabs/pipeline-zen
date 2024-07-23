@@ -123,7 +123,7 @@ def shutdown_celery_worker(_):
     """
     Shuts down the celery worker.
     """
-    # sends shutdown signal to *all workers
+    # sends shutdown signal to *all workers*
     # ...there's just one worker though,
     # because we aren't using a distributed queue yet
     app.control.shutdown()

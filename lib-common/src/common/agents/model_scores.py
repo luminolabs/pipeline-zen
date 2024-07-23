@@ -13,6 +13,7 @@ from common.utils import AutoJSONEncoder, system_timestamp_format
 datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = f'{config.gcp_project}.{config.bq_dataset}.train'
 bq_table_evaluate = f'{config.gcp_project}.{config.bq_dataset}.evaluate'
+bq_table_torchtunewrapper = f'{config.gcp_project}.{config.bq_dataset}.torchtunewrapper'
 
 
 class BaseScoresAgent(ABC):
@@ -111,9 +112,9 @@ class BaseScoresAgent(ABC):
             # Create a new dict from the dicts below;
             # the new dict represents the target table structure
             **{'job_id': self.job_id,
-                'create_ts': str(datetime.now()),
-                'operation': operation,
-                'result': result_json},
+               'create_ts': str(datetime.now()),
+               'operation': operation,
+               'result': result_json},
             **self.bq_table_defaults,
             **kwargs}
 
@@ -216,4 +217,83 @@ class EvaluateScoresAgent(BaseScoresAgent):
             'precision': precision,
             'recall': recall,
             'f1': f1
+        })
+
+
+class TorchtunewrapperScoresAgent(BaseScoresAgent):
+    """
+    An agent used to log fine-tuning scores on the filesystem and on bigquery
+    """
+
+    def _get_bq_table(self) -> str:
+        return bq_table_torchtunewrapper
+
+    def _get_bq_table_defaults(self) -> dict:
+        return {
+            'batch_num': None,
+            'batch_len': None,
+            'batch_loss': None,
+            'batch_lr': None,
+            'batch_tokens_per_second_per_gpu': None,
+            'batch_tokens': None,
+            'batch_peak_memory_active': None,
+            'batch_peak_memory_alloc': None,
+            'batch_peak_memory_reserved': None,
+            'epoch_num': None,
+            'epoch_len': None,
+        }
+
+    def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, batch_lr: float,
+                  batch_tokens_per_second_per_gpu: float, batch_tokens: int,
+                  batch_peak_memory_active: int, batch_peak_memory_alloc: int, batch_peak_memory_reserved: int,
+                  epoch_num: int, epoch_len: int):
+        """
+        Log the fine-tuning batch scores
+
+        :param batch_num: The batch number
+        :param batch_len: The batch length
+        :param batch_loss: The fine-tuning batch loss
+        :param batch_lr: The fine-tuning batch learning rate
+        :param batch_tokens_per_second_per_gpu: The fine-tuning batch tokens per second per GPU
+        :param batch_tokens: The fine-tuning batch tokens
+        :param batch_peak_memory_active: The fine-tuning batch peak memory active
+        :param batch_peak_memory_alloc: The fine-tuning batch peak memory alloc
+        :param batch_peak_memory_reserved: The fine-tuning batch peak memory reserved
+        :param epoch_num: The epoch number
+        :param epoch_len: The epoch length
+        :return:
+        """
+        self.logger.info(f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}, '
+                         f'LR: {batch_lr:.4f}, '
+                         f'Tokens/s/GPU: {batch_tokens_per_second_per_gpu:.4f}, Tokens: {batch_tokens}, '
+                         f'Peak memory active: {batch_peak_memory_active}, '
+                         f'Peak memory alloc: {batch_peak_memory_alloc}, '
+                         f'Peak memory reserved: {batch_peak_memory_reserved}'
+                         f'Epoch #{epoch_num}/{epoch_len}')
+        self.bq_insert(operation='log_batch', **{
+            'batch_num': batch_num,
+            'batch_len': batch_len,
+            'batch_loss': batch_loss,
+            'batch_lr': batch_lr,
+            'batch_tokens_per_second_per_gpu': batch_tokens_per_second_per_gpu,
+            'batch_tokens': batch_tokens,
+            'batch_peak_memory_active': batch_peak_memory_active,
+            'batch_peak_memory_alloc': batch_peak_memory_alloc,
+            'batch_peak_memory_reserved': batch_peak_memory_reserved,
+            'epoch_num': epoch_num,
+            'epoch_len': epoch_len,
+        })
+
+    def log_epoch(self, epoch_num: int, epoch_len: int):
+        """
+        Log the fine-tuning epochs
+
+        :param epoch_num: The epoch number
+        :param epoch_len: The epoch length
+        :return:
+        """
+        self.logger.info(f'Epoch #{epoch_num}/{epoch_len}')
+        self.bq_insert(operation='log_epoch', **{
+            'epoch_num': epoch_num,
+            'epoch_len': epoch_len,
         })
