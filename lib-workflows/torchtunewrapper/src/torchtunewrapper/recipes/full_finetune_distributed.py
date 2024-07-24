@@ -113,9 +113,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                 "Using fused optimizer on CPU is only supported in PyTorch nightly."
             )
 
-        # logging attributes
-        self._output_dir = cfg.output_dir
-
         # _is_rank_zero is used primarily for logging. In the future, the logger
         # should directly take care of this
         _, rank = utils.get_world_size_and_rank()
@@ -536,6 +533,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                     time_per_step = time.perf_counter() - t0
                     mem_stats = utils.get_memory_stats(device=self._device)
                     self._scores_agent.log_batch(
+                        gpu_rank=rank,
                         batch_num=self.global_step,
                         batch_len=self._steps_per_epoch,
                         batch_loss=running_loss.item(),
@@ -554,7 +552,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                     t0 = time.perf_counter()
 
             # Log per-epoch timestamps
-            self._scores_agent.log_epoch(epoch_num=curr_epoch, epoch_len=self.total_epochs)
+            self._scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch, epoch_len=self.total_epochs)
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)

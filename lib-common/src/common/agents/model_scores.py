@@ -230,6 +230,7 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
 
     def _get_bq_table_defaults(self) -> dict:
         return {
+            'gpu_rank': None,
             'batch_num': None,
             'batch_len': None,
             'batch_loss': None,
@@ -243,13 +244,15 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_len': None,
         }
 
-    def log_batch(self, batch_num: int, batch_len: int, batch_loss: float, batch_lr: float,
+    def log_batch(self, gpu_rank: int,
+                  batch_num: int, batch_len: int, batch_loss: float, batch_lr: float,
                   batch_tokens_per_second_per_gpu: float, batch_tokens: int,
                   batch_peak_memory_active: int, batch_peak_memory_alloc: int, batch_peak_memory_reserved: int,
                   epoch_num: int, epoch_len: int):
         """
         Log the fine-tuning batch scores
 
+        :param gpu_rank: The GPU rank (ie. the GPU number)
         :param batch_num: The batch number
         :param batch_len: The batch length
         :param batch_loss: The fine-tuning batch loss
@@ -263,7 +266,8 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
         :param epoch_len: The epoch length
         :return:
         """
-        self.logger.info(f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}, '
+        self.logger.info(f'GPU #{gpu_rank}, '
+                         f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}, '
                          f'LR: {batch_lr:.4f}, '
                          f'Tokens/s/GPU: {batch_tokens_per_second_per_gpu:.4f}, Tokens: {batch_tokens}, '
                          f'Peak memory active: {batch_peak_memory_active}, '
@@ -271,6 +275,7 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
                          f'Peak memory reserved: {batch_peak_memory_reserved}'
                          f'Epoch #{epoch_num}/{epoch_len}')
         self.bq_insert(operation='log_batch', **{
+            'gpu_rank': gpu_rank,
             'batch_num': batch_num,
             'batch_len': batch_len,
             'batch_loss': batch_loss,
@@ -284,16 +289,19 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_len': epoch_len,
         })
 
-    def log_epoch(self, epoch_num: int, epoch_len: int):
+    def log_epoch(self, gpu_rank: int, epoch_num: int, epoch_len: int):
         """
         Log the fine-tuning epochs
 
+        :param gpu_rank: The GPU rank (ie. the GPU number)
         :param epoch_num: The epoch number
         :param epoch_len: The epoch length
         :return:
         """
-        self.logger.info(f'Epoch #{epoch_num}/{epoch_len}')
+        self.logger.info(f'GPU #{gpu_rank}, '
+                         f'Epoch #{epoch_num}/{epoch_len}')
         self.bq_insert(operation='log_epoch', **{
+            'gpu_rank': gpu_rank,
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
         })

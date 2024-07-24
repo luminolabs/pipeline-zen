@@ -2,7 +2,6 @@
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
-logs_path:
 output_dir:
 shuffle:
 batch_size:

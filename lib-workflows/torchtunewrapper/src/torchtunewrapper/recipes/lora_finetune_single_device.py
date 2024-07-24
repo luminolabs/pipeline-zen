@@ -116,8 +116,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             and not torch.cuda.is_bf16_supported()
         ):
             raise RuntimeError("Full bf16 training is not supported on this hardware.")
-        # logging attributes
-        self._output_dir = cfg.output_dir
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
