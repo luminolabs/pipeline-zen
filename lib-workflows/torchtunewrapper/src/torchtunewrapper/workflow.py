@@ -36,6 +36,11 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     # Setup logging and bigquery agent for scores
     scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
 
+    # Log a few things about this job
+    scores_logger.info('The job id is: ' + job_id)
+    scores_agent.log_system_specs()
+    scores_agent.log_job_config(tt_config)
+
     # Instantiate dataset
     dataset = chat_dataset(
         tokenizer=None,
