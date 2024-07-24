@@ -1,12 +1,14 @@
 import os
 import platform
+import sys
 
 from celery import Celery, chain
+from celery.signals import task_failure
 
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs
+    upload_local_directory_to_gcs, setup_logger
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
 from evaluate.workflow import main as _evaluate
@@ -28,14 +30,50 @@ if platform.system() == 'Darwin':
 app = Celery('train_evaluate', broker=config.celery_broker_url)
 
 
-@app.task
-def train(_, job_config_name: str, job_id: str, batch_size: int, num_epochs: int, num_batches: int):
-    return _train(job_config_name, job_id, batch_size, num_epochs, num_batches)
+@task_failure.connect
+def handle_task_failure(*args, **kwargs):
+    """
+    Handles task failures.
+
+    `train` and `evaluate` tasks have special logic that allows the workflow to continue without
+    reaching this function. We do this so that if `train` or `evaluate` fail, we can still run
+    the `upload_results` task, which will upload whatever artifacts and logs were generated before
+    the error occurred.
+
+    If any other task fails, we terminate the workflow as well as the worker, so that the whole
+    script execution ends and the worker VM can shut down.
+    """
+    # `job_id` is always the second argument passed to a task
+    job_id = kwargs.get('args')[1]
+    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    # Not raising exception, since it's already raised by the task
+    logger.error('Something went wrong during task execution')
+    app.control.shutdown()
 
 
 @app.task
-def evaluate(_, job_config_name: str, job_id: str, batch_size: int, num_batches: int):
-    return _evaluate(job_config_name, job_id, batch_size, num_batches)
+def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int, num_batches: int):
+    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    try:
+        return _train(job_config_name, job_id, batch_size, num_epochs, num_batches)
+    except Exception as e:
+        # Not raising exception, so that workflow can run `upload_results` task later on
+        logger.error(f'`train` task failed with error: {e}')
+        return None
+
+
+@app.task
+def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, num_batches: int):
+    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    if not train_result:
+        logger.warning(f'`train` task failed - will not run `evaluate` task')
+        return None
+    try:
+        return _evaluate(job_config_name, job_id, batch_size, num_batches)
+    except Exception as e:
+        # Not raising exception, so that workflow can run `upload_results` task later on
+        logger.error(f'`evaluate` task failed with error: {e}')
+        return None
 
 
 @app.task
@@ -50,15 +88,21 @@ def upload_results(_, job_id: str):
 
 
 @app.task
-def mark_finished(_, job_id: str):
+def mark_finished(evaluate_result, job_id: str):
     """
     Creates a `.finished` file that serves as a signal to listeners
     that the job finished.
 
+    :param evaluate_result: Result of the evaluation task
     :param job_id: The job id that finished
     :return:
     """
-    path = os.path.join(config.root_path, config.results_path, config.finished_file)
+    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    if not evaluate_result:
+        # Not touching this file allows the startup script to mark job as failed
+        logger.warning(f'`evaluate` task failed - will not run `mark_finished` task')
+        return None
+    path = os.path.join(config.root_path, get_results_path(), config.finished_file)
     with open(path, "w") as f:
         f.write(job_id)
 
@@ -72,17 +116,18 @@ def mark_started(_, job_id: str):
     :param job_id: The job id that started
     :return:
     """
-    path = os.path.join(config.root_path, config.results_path, config.started_file)
+    raise Exception('This task should not be called')
+    path = os.path.join(config.root_path, get_results_path(), config.started_file)
     with open(path, "w") as f:
         f.write(job_id)
 
 
 @app.task
-def shutdown_celery_worker(_):
+def shutdown_celery_worker(_, job_id: str):
     """
     Shuts down the celery worker.
     """
-    # sends shutdown signal to *all( workers
+    # sends shutdown signal to *all workers
     # ...there's just one worker though,
     # because we aren't using a distributed queue yet
     app.control.shutdown()
@@ -110,7 +155,7 @@ def schedule(*args):
         tasks.append(upload_results.s(job_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
-    tasks.append(shutdown_celery_worker.s())
+    tasks.append(shutdown_celery_worker.s(job_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 
