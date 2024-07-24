@@ -51,7 +51,7 @@ def handle_task_failure(*args, **kwargs):
 
 
 @app.task
-def torchtunewrapper(_, job_config_name: str, job_id: Optional[str] = None,
+def torchtunewrapper(_, job_id: str, job_config_name: str,
                      dataset_id: str = Optional[None], train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
                      use_lora: bool = True,
@@ -119,7 +119,7 @@ def mark_started(_, job_id: str):
 
 
 @app.task
-def shutdown_celery_worker(_):
+def shutdown_celery_worker(_, job_id: str):
     """
     Shuts down the celery worker.
     """
@@ -151,7 +151,7 @@ def schedule(*args):
         tasks.append(upload_results.s(job_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
-    tasks.append(shutdown_celery_worker.s())
+    tasks.append(shutdown_celery_worker.s(job_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 
