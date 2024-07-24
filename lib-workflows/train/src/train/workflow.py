@@ -100,7 +100,7 @@ def run(job_config: dict, logger: Logger) -> dict:
     return results
 
 
-def main(job_config_name: str, job_id: Optional[str],
+def main(job_id: str, job_config_name: str,
          batch_size: Optional[int], num_epochs: Optional[int], num_batches: Optional[int]) -> dict:
     """
     Workflow entry point, mainly for catching unhandled exceptions
