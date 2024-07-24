@@ -7,8 +7,25 @@
       <sourceFolder url="file://$MODULE_DIR$/lib-workflows/evaluate/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib-workflows/torchtunewrapper/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/lib-workflows/train/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/app-configs" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/deploy-artifacts" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/infra" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/job-configs" type="java-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/lib-celery/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/scripts" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/.cache" />
+      <excludeFolder url="file://$MODULE_DIR$/.results" />
+      <excludeFolder url="file://$MODULE_DIR$/.logs" />
+      <excludeFolder url="file://$MODULE_DIR$/.secrets" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+  <component name="TemplatesService">
+    <option name="TEMPLATE_FOLDERS">
+      <list>
+        <option value="$MODULE_DIR$/job-configs/templates" />
+      </list>
+    </option>
   </component>
 </module>

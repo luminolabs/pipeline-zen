@@ -30,8 +30,7 @@ from torchtune.datasets import ConcatDataset
 from torchtune.recipe_interfaces import FTRecipeInterface
 from torchtune.utils.activations import apply_selective_activation_checkpointing
 
-
-log = utils.get_logger("DEBUG")
+from common.agents.model_scores import TorchtunewrapperScoresAgent
 
 
 class FullFinetuneRecipeDistributed(FTRecipeInterface):
@@ -91,7 +90,10 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         ValueError: If ``dtype`` is set to fp16.
     """
 
-    def __init__(self, cfg: DictConfig, dataset: Dataset) -> None:
+    def __init__(self, cfg: DictConfig,
+                 scores_agent: TorchtunewrapperScoresAgent, dataset: Dataset) -> None:
+        self._scores_agent = scores_agent
+        self._logger = scores_agent.logger
         self._dataset = dataset
 
         self._device = utils.get_device(device=cfg.device)
@@ -110,11 +112,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             raise RuntimeError(
                 "Using fused optimizer on CPU is only supported in PyTorch nightly."
             )
-
-        # logging attributes
-        self._output_dir = cfg.output_dir
-        self._log_every_n_steps = cfg.get("log_every_n_steps", 1)
-        self._log_peak_memory_stats = cfg.get("log_peak_memory_stats", False)
 
         # _is_rank_zero is used primarily for logging. In the future, the logger
         # should directly take care of this
@@ -193,12 +190,6 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         Sets up the recipe state correctly. This includes setting recipe attributes based
         on the ``resume_from_checkpoint`` flag.
         """
-        if self._is_rank_zero:
-            self._metric_logger = config.instantiate(cfg.metric_logger)
-
-            # log config with parameter override
-            self._metric_logger.log_config(cfg)
-
         ckpt_dict = self.load_checkpoint(cfg.checkpointer)
 
         # ``_setup_model`` handles initialization and loading the state dict. This method
@@ -275,13 +266,13 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                the correct device.
         """
         if self._is_rank_zero:
-            log.info("FSDP is enabled. Instantiating Model on CPU for Rank 0 ...")
+            self._logger.info("FSDP is enabled. Instantiating Model on CPU for Rank 0 ...")
             init_start = time.perf_counter()
 
             with utils.set_default_dtype(self._dtype):
                 model = config.instantiate(cfg_model)
 
-            log.info(
+            self._logger.info(
                 f"Model instantiation took {time.perf_counter() - init_start:.2f} secs"
             )
 
@@ -371,7 +362,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
             optimizer.load_state_dict(opt_state_dict)
 
         if self._is_rank_zero:
-            log.info("Optimizer is initialized.")
+            self._logger.info("Optimizer is initialized.")
         return optimizer
 
     def _setup_data(
@@ -424,7 +415,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         )
 
         if self._is_rank_zero:
-            log.info("Dataset and Sampler are initialized.")
+            self._logger.info("Dataset and Sampler are initialized.")
 
         return sampler, dataloader
 
@@ -538,42 +529,39 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
                     # Update the number of steps when the weights are updated
                     self.global_step += 1
 
-                    loss_to_log = running_loss.item()
-                    log.info(f"Epoch: {curr_epoch+1}, Step: {self.global_step}/{self._steps_per_epoch}, Loss: {loss_to_log}")
-
-                    # Log per-step metrics
-                    if (
-                        self.global_step % self._log_every_n_steps == 0
-                        and self._is_rank_zero
-                    ):
-                        time_per_step = time.perf_counter() - t0
-                        log_dict = {
-                            "loss": loss_to_log,
-                            "lr": self._optimizer.param_groups[0]["lr"],
-                            "tokens_per_second_per_gpu": num_tokens / time_per_step,
-                        }
-                        if self._log_peak_memory_stats:
-                            log_dict.update(utils.get_memory_stats(device=self._device))
-                        self._metric_logger.log_dict(
-                            log_dict,
-                            step=self.global_step,
-                        )
+                    # Log per-step metrics and timestamps
+                    time_per_step = time.perf_counter() - t0
+                    mem_stats = utils.get_memory_stats(device=self._device)
+                    self._scores_agent.log_batch(
+                        gpu_rank=rank,
+                        batch_num=self.global_step,
+                        batch_len=self._steps_per_epoch,
+                        batch_loss=running_loss.item(),
+                        batch_lr=self._optimizer.param_groups[0]["lr"],
+                        batch_tokens_per_second_per_gpu=num_tokens / time_per_step,
+                        batch_tokens=num_tokens,
+                        batch_peak_memory_active=mem_stats.get("peak_memory_active"),
+                        batch_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
+                        batch_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
+                        epoch_num=curr_epoch,
+                        epoch_len=self.total_epochs,)
 
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
                     t0 = time.perf_counter()
 
+            # Log per-epoch timestamps
+            self._scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch, epoch_len=self.total_epochs)
+
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
 
     def cleanup(self) -> None:
-        if self._is_rank_zero:
-            self._metric_logger.close()
         torch.distributed.destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
+def recipe_main(cfg: DictConfig, scores_agent: TorchtunewrapperScoresAgent, dataset: Dataset) -> None:
     """
     Entry point for the recipe.
 
@@ -595,7 +583,7 @@ def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
 
     config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
 
-    recipe = FullFinetuneRecipeDistributed(cfg=cfg, dataset=dataset)
+    recipe = FullFinetuneRecipeDistributed(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)
     recipe.train()
     recipe.cleanup()
