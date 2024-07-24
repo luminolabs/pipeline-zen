@@ -407,7 +407,6 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             self._optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
-        t0 = time.perf_counter()
         running_loss = 0
         num_tokens = 0
 
@@ -417,6 +416,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             # in case shuffle is True
             self._sampler.set_epoch(curr_epoch)
 
+            # Log per-epoch timestamps
+            t_epoch_start = time.perf_counter()
+
             for idx, batch in enumerate(self._dataloader):
                 if (
                     self.max_steps_per_epoch is not None
@@ -424,6 +426,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                     == self.max_steps_per_epoch
                 ):
                     break
+
+                # Log per-batch timestamps
+                t_batch_start = time.perf_counter()
 
                 # Both are shape [b, s]
                 tokens, labels = batch["tokens"], batch["labels"]
@@ -461,28 +466,34 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                     self.global_step += 1
 
                     # Log per-step metrics and timestamps
-                    time_per_step = time.perf_counter() - t0
+                    time_per_batch = int(time.perf_counter() - t_batch_start)
                     mem_stats = utils.get_memory_stats(device=self._device)
                     self._scores_agent.log_batch(
+                        gpu_rank=0,  # single device training
                         batch_num=self.global_step,
                         batch_len=self._steps_per_epoch,
-                        batch_loss=running_loss.item(),
+                        batch_loss=running_loss,
                         batch_lr=self._optimizer.param_groups[0]["lr"],
-                        batch_tokens_per_second_per_gpu=num_tokens / time_per_step,
+                        batch_tokens_per_second=num_tokens / time_per_batch,
                         batch_tokens=num_tokens,
                         batch_peak_memory_active=mem_stats.get("peak_memory_active"),
                         batch_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
                         batch_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
+                        batch_time_elapsed_s=time_per_batch,
                         epoch_num=curr_epoch,
                         epoch_len=self.total_epochs,)
 
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
-                    t0 = time.perf_counter()
 
             # Log per-epoch timestamps
-            self._scores_agent.log_epoch(epoch_num=curr_epoch, epoch_len=self.total_epochs)
+            time_per_epoch = int(time.perf_counter() - t_epoch_start)
+            self._scores_agent.log_epoch(
+                gpu_rank=0,
+                epoch_num=curr_epoch,
+                epoch_len=self.total_epochs,
+                epoch_time_elapsed_s=int(time_per_epoch),)
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
