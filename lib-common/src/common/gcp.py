@@ -5,7 +5,7 @@ METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance
 METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
 LOCAL_ENV = 'local'
 LOCAL_CLUSTER = LOCAL_ENV
-STORAGE_BUCKET_PREFIX = 'pipeline-zen-jobs'
+STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
 
 
 # Function to get the VM name using the metadata server
