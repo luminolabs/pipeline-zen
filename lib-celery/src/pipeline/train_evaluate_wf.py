@@ -157,7 +157,7 @@ def schedule(*args):
     # distributed job queue yet in any environment
     tasks.append(shutdown_celery_worker.s(job_id))
     # Send task chain to celery scheduler
-    chain(*tasks).apply_async()
+    chain(*tasks)()
 
 
 def start_worker():
