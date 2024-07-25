@@ -59,7 +59,7 @@ def torchtunewrapper(_, job_id: str, job_config_name: str,
     logger = setup_logger('celery_torchtunewrapper_wf', job_id)
     try:
         return _torchtunewrapper(
-            job_config_name, job_id,
+            job_id, job_config_name,
             dataset_id, train_file_path,
             batch_size, shuffle, num_epochs,
             use_lora,

@@ -55,7 +55,7 @@ def handle_task_failure(*args, **kwargs):
 def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int, num_batches: int):
     logger = setup_logger('celery_train_evaluate_wf', job_id)
     try:
-        return _train(job_config_name, job_id, batch_size, num_epochs, num_batches)
+        return _train(job_id, job_config_name, batch_size, num_epochs, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`train` task failed with error: {e}')
@@ -69,7 +69,7 @@ def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, n
         logger.warning(f'`train` task failed - will not run `evaluate` task')
         return None
     try:
-        return _evaluate(job_config_name, job_id, batch_size, num_batches)
+        return _evaluate(job_id, job_config_name, batch_size, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`evaluate` task failed with error: {e}')
@@ -116,7 +116,6 @@ def mark_started(_, job_id: str):
     :param job_id: The job id that started
     :return:
     """
-    raise Exception('This task should not be called')
     path = os.path.join(config.root_path, get_results_path(), config.started_file)
     with open(path, "w") as f:
         f.write(job_id)
