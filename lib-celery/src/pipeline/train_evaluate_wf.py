@@ -58,7 +58,7 @@ def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int
         return _train(job_id, job_config_name, batch_size, num_epochs, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
-        logger.error(f'`train` task failed with error: {e}')
+        logger.error(f'`train` task failed with error: {e.with_traceback(e.__traceback__)}')
         return None
 
 
@@ -72,7 +72,7 @@ def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, n
         return _evaluate(job_id, job_config_name, batch_size, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
-        logger.error(f'`evaluate` task failed with error: {e}')
+        logger.error(f'`evaluate` task failed with error: {e.with_traceback(e.__traceback__)}')
         return None
 
 
