@@ -1,5 +1,6 @@
 import os
 import platform
+import traceback
 from typing import Optional
 
 from celery import Celery, chain
@@ -66,7 +67,7 @@ def torchtunewrapper(_, job_id: str, job_config_name: str,
             use_single_device, num_gpus)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
-        logger.error(f'`torchtunewrapper` task failed with error: {e.with_traceback(e.__traceback__)}')
+        logger.error(f'`torchtunewrapper` task failed with error: {e}\n{traceback.format_exc()}')
         return None
 
 
