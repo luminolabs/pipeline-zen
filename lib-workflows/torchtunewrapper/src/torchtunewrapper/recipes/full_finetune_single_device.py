@@ -473,7 +473,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                         gpu_rank=0,  # single device training
                         batch_num=self.global_step,
                         batch_len=self._steps_per_epoch,
-                        batch_loss=running_loss,
+                        batch_loss=running_loss.item(),
                         batch_lr=self._optimizer.param_groups[0]["lr"],
                         batch_tokens_per_second=num_tokens / time_per_batch,
                         batch_tokens=num_tokens,
