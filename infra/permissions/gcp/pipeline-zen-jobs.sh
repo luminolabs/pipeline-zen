@@ -9,7 +9,7 @@ SERVICE_ACCOUNT="serviceAccount:pipeline-zen-jobs-$ENV@$PROJECT_ID.iam.gservicea
 DOCKER_IMAGE_REGION="us-central1"
 DOCKER_IMAGE_REPO="lum-docker-images"
 # Results bucket for storing pipeline results
-RESULTS_BUCKET="lum-pipeline-zen"
+RESULTS_BUCKET="lum-pipeline-zen-jobs"
 
 # Allow storing results to `lum-pipeline-zen-*` buckets only
 # 1. Assign Storage Admin
@@ -22,7 +22,7 @@ gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-asia \
 gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-europe \
   --member=$SERVICE_ACCOUNT \
   --role=roles/storage.objectAdmin
-gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-west1 \
+gcloud storage buckets add-iam-policy-binding gs://$RESULTS_BUCKET-me-west1 \
   --member=$SERVICE_ACCOUNT \
   --role=roles/storage.objectAdmin
 

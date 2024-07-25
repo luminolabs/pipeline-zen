@@ -95,9 +95,9 @@ echo "Pulling new Docker image on VM: $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "gcloud auth configure-docker $DOCKER_IMAGE_HOST --quiet"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
 
-# Remove older Docker Image
-echo "Deleting older VM image..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
+## Remove older Docker Image
+#echo "Deleting older docker image..."
+#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Stop VM
 echo "Stopping VM..."

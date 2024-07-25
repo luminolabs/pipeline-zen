@@ -138,9 +138,9 @@ def schedule(*args):
     """
     # Get job id and update it if necessary
     args = list(args)
-    job_config_name = args[0]
-    job_id = args[1]
-    job_id = args[1] = get_or_generate_job_id(job_config_name, job_id)
+    job_config_name = args[1]
+    job_id = args[0]
+    job_id = args[0] = get_or_generate_job_id(job_config_name, job_id)
 
     # Define workflow tasks
     tasks = [mark_started.s(None, job_id),

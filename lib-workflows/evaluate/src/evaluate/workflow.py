@@ -98,13 +98,13 @@ def run(job_config: dict, logger: Logger) -> dict:
     return results
 
 
-def main(job_config_name: str, job_id: str,
+def main(job_id: str, job_config_name: str,
          batch_size: int, num_batches: int) -> dict:
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
-    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param job_id: The job id to use for logs, results, etc.
+    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param batch_size: The batch size to split the data into
     :param num_batches: How many batches to run on each epoch
     :return: A tuple containing the accuracy, precision, recall, f1 score

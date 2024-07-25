@@ -103,8 +103,8 @@ def main(job_id: str, job_config_name: str,
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
-    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param job_id: The job id to use for logs, results, etc.
+    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param dataset_id: The dataset identifier, ex: `tatsu-lab/alpaca`
     :param train_file_path: The path to the training file in the dataset, ex: `train.jsonl`
     :param batch_size: The training batch size, default is 1

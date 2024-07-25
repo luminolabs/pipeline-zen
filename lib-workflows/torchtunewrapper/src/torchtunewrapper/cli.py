@@ -12,7 +12,7 @@ def parse_args() -> tuple:
     add_parser_args(parser)
     args = parser.parse_args()
 
-    return (args.job_id,args.job_config_name,
+    return (args.job_id, args.job_config_name,
             args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
             args.use_lora,

@@ -105,8 +105,8 @@ def main(job_id: str, job_config_name: str,
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
-    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param job_id: The job id to use for logs, results, etc
+    :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param batch_size: The batch size to split the data into
     :param num_epochs: The number of epochs to train on
     :param num_batches: How many batches to run on each epoch

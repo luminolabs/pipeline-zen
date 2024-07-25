@@ -140,11 +140,11 @@ def schedule(*args):
     :param args: Arguments passed to the train and evaluate functions
     :return:
     """
-    job_config_name, job_id, batch_size, num_epochs, num_batches = args
+    job_id, job_config_name, batch_size, num_epochs, num_batches = args
     job_id = get_or_generate_job_id(job_config_name, job_id)
 
-    train_args = (job_config_name, job_id, batch_size, num_epochs, num_batches)
-    evaluate_args = (job_config_name, job_id, batch_size, num_batches)
+    train_args = (job_id, job_config_name, batch_size, num_epochs, num_batches)
+    evaluate_args = (job_id, job_config_name, batch_size, num_batches)
 
     # Define workflow tasks: `train` -> `evaluate`
     tasks = [mark_started.s(None, job_id),
