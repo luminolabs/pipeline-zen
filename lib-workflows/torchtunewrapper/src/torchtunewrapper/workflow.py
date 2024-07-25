@@ -32,7 +32,6 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
     # A logger for logging scores; also propagates to main logger
     scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, add_stdout=False)
-
     # Setup logging and bigquery agent for scores
     scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
 
@@ -62,7 +61,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 
     # Get the torchtune recipe function
     tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], job_config['use_single_device'])
-    tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset, scores_agent=scores_agent)
+    tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset, job_id=job_id)
 
     # Run the torchtune recipe, which will fine-tune the model
     if job_config['use_single_device']:

@@ -29,6 +29,7 @@ from torchtune.modules.peft.peft_utils import (
 from torchtune.recipe_interfaces import FTRecipeInterface
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.utils import setup_logger
 
 
 class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
@@ -560,7 +561,7 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             self.save_checkpoint(epoch=curr_epoch)
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, scores_agent: TorchtunewrapperScoresAgent) -> None:
+def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str) -> None:
     """
     Entry point for the recipe.
 
@@ -568,6 +569,11 @@ def recipe_main(cfg: DictConfig, dataset: Dataset, scores_agent: Torchtunewrappe
         - Parameters specified in config (see available configs through ``tune ls``)
         - Overwritten by arguments from the command-line
     """
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+
     config.log_config(recipe_name="LoRAFinetuneRecipeSingleDevice", cfg=cfg)
     recipe = LoRAFinetuneRecipeSingleDevice(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)

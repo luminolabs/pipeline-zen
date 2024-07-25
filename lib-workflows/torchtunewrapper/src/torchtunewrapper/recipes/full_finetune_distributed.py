@@ -31,6 +31,7 @@ from torchtune.recipe_interfaces import FTRecipeInterface
 from torchtune.utils.activations import apply_selective_activation_checkpointing
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.utils import setup_logger
 
 
 class FullFinetuneRecipeDistributed(FTRecipeInterface):
@@ -568,7 +569,7 @@ class FullFinetuneRecipeDistributed(FTRecipeInterface):
         torch.distributed.destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, scores_agent: TorchtunewrapperScoresAgent, dataset: Dataset) -> None:
+def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str) -> None:
     """
     Entry point for the recipe.
 
@@ -589,6 +590,11 @@ def recipe_main(cfg: DictConfig, scores_agent: TorchtunewrapperScoresAgent, data
         utils.set_torch_num_threads()
 
     config.log_config(recipe_name="FullFinetuneRecipeDistributed", cfg=cfg)
+
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
 
     recipe = FullFinetuneRecipeDistributed(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)

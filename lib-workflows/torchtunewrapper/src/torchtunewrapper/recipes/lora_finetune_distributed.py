@@ -36,6 +36,7 @@ from torchtune.modules.peft.peft_utils import (
 from torchtune.recipe_interfaces import FTRecipeInterface
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.utils import setup_logger
 
 
 class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
@@ -651,7 +652,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, scores_agent: TorchtunewrapperScoresAgent) -> None:
+def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str) -> None:
     """
     Entry point for the recipe.
 
@@ -668,6 +669,11 @@ def recipe_main(cfg: DictConfig, dataset: Dataset, scores_agent: Torchtunewrappe
     init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
 
     config.log_config(recipe_name="LoRAFinetuneRecipeDistributed", cfg=cfg)
+
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
 
     recipe = LoRAFinetuneRecipeDistributed(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)
