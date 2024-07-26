@@ -558,6 +558,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         # Initialize tokens count and running loss (for grad accumulation)
         running_loss = 0
         num_tokens = 0
+        t_step_start = time.perf_counter()
 
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
@@ -576,9 +577,6 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                     == self.max_steps_per_epoch
                 ):
                     break
-
-                # Log per-batch metrics and timestamps
-                t_batch_start = time.perf_counter()
 
                 # Both are shape [b, s]
                 tokens, labels = batch["tokens"], batch["labels"]
@@ -619,26 +617,27 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                     self.global_step += 1
 
                     # Log per-step metrics and timestamps
-                    time_per_batch = int(time.perf_counter() - t_batch_start)
+                    time_per_step = int(time.perf_counter() - t_step_start)
                     mem_stats = utils.get_memory_stats(device=self._device)
-                    self._scores_agent.log_batch(
+                    self._scores_agent.log_step(
                         gpu_rank=rank,
-                        batch_num=self.global_step,
-                        batch_len=self._steps_per_epoch,
-                        batch_loss=running_loss.item(),
-                        batch_lr=self._optimizer.param_groups[0]["lr"],
-                        batch_tokens_per_second=num_tokens / time_per_batch,
-                        batch_tokens=num_tokens,
-                        batch_peak_memory_active=mem_stats.get("peak_memory_active"),
-                        batch_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
-                        batch_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
-                        batch_time_elapsed_s=time_per_batch,
+                        step_num=self.global_step,
+                        step_len=self._steps_per_epoch,
+                        step_loss=running_loss.item(),
+                        step_lr=self._optimizer.param_groups[0]["lr"],
+                        step_tokens_per_second=num_tokens / time_per_step,
+                        step_tokens=num_tokens,
+                        step_peak_memory_active=mem_stats.get("peak_memory_active"),
+                        step_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
+                        step_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
+                        step_time_elapsed_s=time_per_step,
                         epoch_num=curr_epoch,
                         epoch_len=self.total_epochs,)
 
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
+                    t_step_start = time.perf_counter()
 
             # Log per-epoch timestamps
             time_per_epoch = int(time.perf_counter() - t_epoch_start)

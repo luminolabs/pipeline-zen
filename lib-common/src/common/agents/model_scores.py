@@ -244,51 +244,51 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_len': None,
         }
 
-    def log_batch(self, gpu_rank: int,
-                  batch_num: int, batch_len: int, batch_loss: float, batch_lr: float,
-                  batch_tokens_per_second: float, batch_tokens: int,
-                  batch_peak_memory_active: int, batch_peak_memory_alloc: int, batch_peak_memory_reserved: int,
-                  batch_time_elapsed_s: int,
+    def log_step(self, gpu_rank: int,
+                  step_num: int, step_len: int, step_loss: float, step_lr: float,
+                  step_tokens_per_second: float, step_tokens: int,
+                  step_peak_memory_active: int, step_peak_memory_alloc: int, step_peak_memory_reserved: int,
+                  step_time_elapsed_s: int,
                   epoch_num: int, epoch_len: int):
         """
-        Log the fine-tuning batch scores
+        Log the fine-tuning step scores
 
         :param gpu_rank: The GPU rank (ie. the GPU number)
-        :param batch_num: The batch number
-        :param batch_len: The batch length
-        :param batch_loss: The batch loss
-        :param batch_lr: The batch learning rate
-        :param batch_tokens_per_second: The batch tokens per second per GPU
-        :param batch_tokens: The batch tokens
-        :param batch_peak_memory_active: The batch peak memory active
-        :param batch_peak_memory_alloc: The batch peak memory alloc
-        :param batch_peak_memory_reserved: The batch peak memory reserved
-        :param batch_time_elapsed_s: The batch time elapsed in seconds
+        :param step_num: The step number
+        :param step_len: The step length
+        :param step_loss: The step loss
+        :param step_lr: The step learning rate
+        :param step_tokens_per_second: The step tokens per second per GPU
+        :param step_tokens: The step tokens
+        :param step_peak_memory_active: The step peak memory active
+        :param step_peak_memory_alloc: The step peak memory alloc
+        :param step_peak_memory_reserved: The step peak memory reserved
+        :param step_time_elapsed_s: The step time elapsed in seconds
         :param epoch_num: The epoch number
         :param epoch_len: The epoch length
         :return:
         """
         self.logger.info(f'GPU #{gpu_rank}, '
-                         f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}, '
-                         f'LR: {batch_lr:.4f}, '
-                         f'Tokens/s/GPU: {batch_tokens_per_second:.4f}, Tokens: {batch_tokens}, '
-                         f'Peak memory active: {batch_peak_memory_active}, '
-                         f'Peak memory alloc: {batch_peak_memory_alloc}, '
-                         f'Peak memory reserved: {batch_peak_memory_reserved}'
-                         f'Time elapsed (seconds): {batch_time_elapsed_s}'
+                         f'step #{step_num}/{step_len}, Loss: {step_loss:.4f}, '
+                         f'LR: {step_lr:.4f}, '
+                         f'Tokens/s/GPU: {step_tokens_per_second:.4f}, Tokens: {step_tokens}, '
+                         f'Peak memory active: {step_peak_memory_active}, '
+                         f'Peak memory alloc: {step_peak_memory_alloc}, '
+                         f'Peak memory reserved: {step_peak_memory_reserved}'
+                         f'Time elapsed (seconds): {step_time_elapsed_s}'
                          f'Epoch #{epoch_num}/{epoch_len}')
-        self.bq_insert(operation='log_batch', **{
+        self.bq_insert(operation='log_step', **{
             'gpu_rank': gpu_rank,
-            'batch_num': batch_num,
-            'batch_len': batch_len,
-            'batch_loss': batch_loss,
-            'batch_lr': batch_lr,
-            'batch_tokens_per_second': batch_tokens_per_second,
-            'batch_tokens': batch_tokens,
-            'batch_peak_memory_active': batch_peak_memory_active,
-            'batch_peak_memory_alloc': batch_peak_memory_alloc,
-            'batch_peak_memory_reserved': batch_peak_memory_reserved,
-            'batch_time_elapsed_s': batch_time_elapsed_s,
+            'step_num': step_num,
+            'step_len': step_len,
+            'step_loss': step_loss,
+            'step_lr': step_lr,
+            'step_tokens_per_second': step_tokens_per_second,
+            'step_tokens': step_tokens,
+            'step_peak_memory_active': step_peak_memory_active,
+            'step_peak_memory_alloc': step_peak_memory_alloc,
+            'step_peak_memory_reserved': step_peak_memory_reserved,
+            'step_time_elapsed_s': step_time_elapsed_s,
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
         })
