@@ -2,7 +2,6 @@
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
-logs_path:
 output_dir:
 shuffle:
 batch_size:
@@ -81,13 +80,6 @@ loss:
 # Training
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1
-
-# Logging
-metric_logger:
-  _component_: torchtune.utils.metric_logging.DiskLogger
-  log_dir: ${logs_path}
-log_every_n_steps: 1
-log_peak_memory_stats: True
 
 # Environment
 device: cuda

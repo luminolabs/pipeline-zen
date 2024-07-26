@@ -30,8 +30,10 @@ VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscore
 JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 # Prefix for most resources created by this script, also used for some folder names
 RESOURCES_PREFIX="pipeline-zen-jobs"
-# Folder in VM where scripts are stored
+# Folder where scripts are stored
 SCRIPTS_FOLDER="scripts"
+# Folder where common libraries are stored
+LIB_COMMON_FOLDER="lib-common"
 # Name of the base image to use for the new image
 NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
 # Path to the Docker image containing the ML pipeline, to pull on the VM
@@ -72,9 +74,12 @@ gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --comman
 # Remove old files and create scripts folder
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
   --command "rm -rf /$RESOURCES_PREFIX/$SCRIPTS_FOLDER /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/$SCRIPTS_FOLDER"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
+  --command "rm -rf /$RESOURCES_PREFIX/$LIB_COMMON_FOLDER && mkdir -p /$RESOURCES_PREFIX/$LIB_COMMON_FOLDER"
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 gcloud compute scp --recurse ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp --recurse ./$LIB_COMMON_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 # TODO: Choose the right .env file based on the environment
 gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
@@ -90,9 +95,9 @@ echo "Pulling new Docker image on VM: $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "gcloud auth configure-docker $DOCKER_IMAGE_HOST --quiet"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
 
-# Remove older Docker Image
-echo "Deleting older VM image..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
+## Remove older Docker Image
+#echo "Deleting older docker image..."
+#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Stop VM
 echo "Stopping VM..."

@@ -11,7 +11,7 @@ def parse_args() -> tuple:
     add_parser_args(parser)
     args = parser.parse_args()
 
-    return args.job_config_name, args.job_id, args.batch_size, args.num_batches
+    return args.job_id, args.job_config_name, args.batch_size, args.num_batches
 
 
 def add_parser_args(parser: argparse.ArgumentParser):

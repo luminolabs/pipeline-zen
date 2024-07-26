@@ -21,8 +21,8 @@ from torchtune import config, modules, utils
 from torchtune.datasets import ConcatDataset
 from torchtune.recipe_interfaces import FTRecipeInterface
 
-
-log = utils.get_logger("DEBUG")
+from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.utils import setup_logger
 
 
 class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
@@ -91,7 +91,10 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         RuntimeError: If ``gradient_accumulation_steps > 1`` and ``optimizer_in_bwd`` is `True`.
     """
 
-    def __init__(self, cfg: DictConfig, dataset: Dataset) -> None:
+    def __init__(self, cfg: DictConfig,
+                 scores_agent: TorchtunewrapperScoresAgent, dataset: Dataset) -> None:
+        self._scores_agent = scores_agent
+        self._logger = scores_agent.logger
         self._dataset = dataset
 
         self._device = utils.get_device(device=cfg.device)
@@ -102,11 +105,6 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             raise RuntimeError(
                 "full fp16 training is not supported with this recipe. Please use bf16 or fp32 instead."
             )
-
-        # logging attributes
-        self._output_dir = cfg.output_dir
-        self._log_every_n_steps = cfg.get("log_every_n_steps", 1)
-        self._log_peak_memory_stats = cfg.get("log_peak_memory_stats", False)
 
         # Training cfg
         self._resume_from_checkpoint = cfg.resume_from_checkpoint
@@ -189,11 +187,6 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         Sets up the recipe state correctly. This includes setting recipe attributes based
         on the ``resume_from_checkpoint`` flag.
         """
-        self._metric_logger = config.instantiate(cfg.metric_logger)
-
-        # log config with parameter override
-        self._metric_logger.log_config(cfg)
-
         ckpt_dict = self.load_checkpoint(cfg.checkpointer)
 
         # ``_setup_model`` handles initialization and loading the state dict. This method
@@ -207,7 +200,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
         )
         self._tokenizer = config.instantiate(cfg.tokenizer)
-        log.info("Tokenizer is initialized from file.")
+        self._logger.info("Tokenizer is initialized from file.")
 
         # _setup_optimizer should take in ckpt_dict only if training is resumed from
         # checkpoint. Transforming the opt state dict is handled by this method
@@ -220,7 +213,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         )
 
         self._loss_fn = config.instantiate(cfg.loss)
-        log.info("Loss is initialized.")
+        self._logger.info("Loss is initialized.")
 
         # sampler and dataloader depend on the tokenizer and loss_fn and should be
         # setup after both of these are initialized
@@ -269,11 +262,11 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
 
         # Validate model was loaded in with the expected dtype.
         utils.validate_expected_param_dtype(model.named_parameters(), dtype=self._dtype)
-        log.info(f"Model is initialized with precision {self._dtype}.")
+        self._logger.info(f"Model is initialized with precision {self._dtype}.")
 
         # Compile model, if enabled.
         if compile_model:
-            log.info("Compiling model with torch.compile...")
+            self._logger.info("Compiling model with torch.compile...")
             backend = os.environ.get("TORCH_COMPILE_BACKEND", "inductor")
             model.compile(backend=backend)
         if self._device.type == "cuda":
@@ -314,14 +307,14 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                         "Failed loading in-backward optimizer checkpoints."
                         "Please make sure run being restored from was using in-backward optimizer."
                     ) from e
-            log.info("In-backward optimizers are set up.")
+            self._logger.info("In-backward optimizers are set up.")
             return None
         else:
             optimizer = config.instantiate(cfg_optimizer, self._model.parameters())
 
             if opt_state_dict:
                 optimizer.load_state_dict(opt_state_dict)
-            log.info("Optimizer is initialized.")
+            self._logger.info("Optimizer is initialized.")
             return optimizer
 
     def _setup_data(
@@ -371,7 +364,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             else None,
         )
 
-        log.info("Dataset and Sampler are initialized.")
+        self._logger.info("Dataset and Sampler are initialized.")
 
         return sampler, dataloader
 
@@ -407,7 +400,7 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         ``max_steps_per_epoch``.
         """
         if self._model_compile:
-            log.info(
+            self._logger.info(
                 "NOTE: torch.compile is enabled and model is compiled in first forward. Expect a relatively slow first iteration."
             )
         # zero out the gradients before starting training
@@ -415,7 +408,6 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             self._optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
-        t0 = time.perf_counter()
         running_loss = 0
         num_tokens = 0
 
@@ -425,6 +417,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
             # in case shuffle is True
             self._sampler.set_epoch(curr_epoch)
 
+            # Log per-epoch timestamps
+            t_epoch_start = time.perf_counter()
+
             for idx, batch in enumerate(self._dataloader):
                 if (
                     self.max_steps_per_epoch is not None
@@ -432,6 +427,9 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                     == self.max_steps_per_epoch
                 ):
                     break
+
+                # Log per-batch timestamps
+                t_batch_start = time.perf_counter()
 
                 # Both are shape [b, s]
                 tokens, labels = batch["tokens"], batch["labels"]
@@ -468,43 +466,41 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
 
                     self.global_step += 1
 
-                    loss_to_log = running_loss.item()
-                    log.info(f"Epoch: {curr_epoch+1}, Step: {self.global_step}/{self._steps_per_epoch}, Loss: {loss_to_log}")
-
-                    # Log per-step metrics
-                    if self.global_step % self._log_every_n_steps == 0:
-                        time_per_step = time.perf_counter() - t0
-                        log_dict = {
-                            "loss": loss_to_log,
-                            # NOTE: for optim in backward, this assumes all optimizers have the same LR. This is currently
-                            # true since we don't expose the ability to configure this yet.
-                            "lr": (
-                                self._optim_ckpt_wrapper.get_optim_key("lr")
-                                if self._optimizer_in_bwd
-                                else self._optimizer.param_groups[0]["lr"]
-                            ),
-                            "tokens_per_second_per_gpu": num_tokens / time_per_step,
-                        }
-                        if self._device.type == "cuda" and self._log_peak_memory_stats:
-                            log_dict.update(utils.get_memory_stats(device=self._device))
-                        self._metric_logger.log_dict(
-                            log_dict,
-                            step=self.global_step,
-                        )
+                    # Log per-step metrics and timestamps
+                    time_per_batch = int(time.perf_counter() - t_batch_start)
+                    mem_stats = utils.get_memory_stats(device=self._device)
+                    self._scores_agent.log_batch(
+                        gpu_rank=0,  # single device training
+                        batch_num=self.global_step,
+                        batch_len=self._steps_per_epoch,
+                        batch_loss=running_loss.item(),
+                        batch_lr=self._optimizer.param_groups[0]["lr"],
+                        batch_tokens_per_second=num_tokens / time_per_batch,
+                        batch_tokens=num_tokens,
+                        batch_peak_memory_active=mem_stats.get("peak_memory_active"),
+                        batch_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
+                        batch_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
+                        batch_time_elapsed_s=time_per_batch,
+                        epoch_num=curr_epoch,
+                        epoch_len=self.total_epochs,)
 
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
-                    t0 = time.perf_counter()
+
+            # Log per-epoch timestamps
+            time_per_epoch = int(time.perf_counter() - t_epoch_start)
+            self._scores_agent.log_epoch(
+                gpu_rank=0,
+                epoch_num=curr_epoch,
+                epoch_len=self.total_epochs,
+                epoch_time_elapsed_s=int(time_per_epoch),)
 
             self.epochs_run += 1
             self.save_checkpoint(epoch=curr_epoch)
 
-    def cleanup(self) -> None:
-        self._metric_logger.close()
 
-
-def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
+def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str) -> None:
     """
     Entry point for the recipe.
 
@@ -512,8 +508,13 @@ def recipe_main(cfg: DictConfig, dataset: Dataset) -> None:
         - Parameters specified in config (see available configs through ``tune ls``)
         - Overwritten by arguments from the command-line
     """
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+
     config.log_config(recipe_name="FullFinetuneRecipeSingleDevice", cfg=cfg)
-    recipe = FullFinetuneRecipeSingleDevice(cfg=cfg, dataset=dataset)
+    recipe = FullFinetuneRecipeSingleDevice(cfg=cfg, scores_agent=scores_agent, dataset=dataset)
     recipe.setup(cfg=cfg)
     recipe.train()
     recipe.cleanup()
