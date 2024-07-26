@@ -1,5 +1,6 @@
 import json
 import subprocess
+import traceback
 from logging import Logger
 from typing import List, Optional
 
@@ -30,7 +31,11 @@ class SystemSpecs:
             self.logger.error('`nvidia-smi` command not found')
             return None
 
-        j = xmltodict.parse(r.stdout.decode('utf-8'))
+        try:
+            j = xmltodict.parse(r.stdout.decode('utf-8'))
+        except Exception as e:
+            self.logger.error(f'Could not parse nvidia-smi output "{r.stdout.decode('utf-8')}":  {e}\n{traceback.format_exc()}')
+            return None
 
         nvidia_smi_specs = j['nvidia_smi_log']['gpu']
         is_single_gpu = isinstance(j['nvidia_smi_log']['gpu'], dict)

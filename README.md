@@ -34,10 +34,9 @@ Send a new job request to the Scheduler with the following command:
 
 ```
 curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '{
-  "job_id": "vasilis-protoml1-run4",
+  "job_id": "vasilis-protoml1-llama3-8b-lora-4xa100-40gb-run1",
   "workflow": "torchtunewrapper",
   "args": {
-    "job_id": "vasilis-protoml1-run4",
     "job_config_name": "llm_llama3_8b",
     "dataset_id": "scaraveos/protoml1",
     "train_file_path": "text2sql.jsonl",
@@ -49,7 +48,7 @@ curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '
     "num_gpus": 4
   },
   "keep_alive": false,
-  "cluster": "1xa100-40gb"
+  "cluster": "4xa100-40gb"
 }'
 ```
 
