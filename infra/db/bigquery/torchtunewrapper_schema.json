@@ -25,52 +25,52 @@
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_num",
+        "name": "step_num",
         "type": "INTEGER",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_len",
+        "name": "step_len",
         "type": "INTEGER",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_loss",
+        "name": "step_loss",
         "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_lr",
+        "name": "step_lr",
         "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_tokens_per_second",
+        "name": "step_tokens_per_second",
         "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_tokens",
+        "name": "step_tokens",
         "type": "INTEGER",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_peak_memory_active",
-        "type": "INTEGER",
+        "name": "step_peak_memory_active",
+        "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_peak_memory_alloc",
-        "type": "INTEGER",
+        "name": "step_peak_memory_alloc",
+        "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_peak_memory_reserved",
-        "type": "INTEGER",
+        "name": "step_peak_memory_reserved",
+        "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
-        "name": "batch_time_elapsed_s",
+        "name": "step_time_elapsed_s",
         "type": "INTEGER",
         "mode": "NULLABLE"
     },
