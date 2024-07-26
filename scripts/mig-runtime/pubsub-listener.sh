@@ -127,7 +127,4 @@ else
   echo "No messages to process."
 fi
 
-# Cleanup the job_id and keep_alive files
-rm -f .results/.job_id .results/.keep_alive
-
 echo "Pub/Sub job listener finished."

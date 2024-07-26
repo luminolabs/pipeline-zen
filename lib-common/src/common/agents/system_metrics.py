@@ -34,7 +34,7 @@ class SystemSpecs:
         try:
             j = xmltodict.parse(r.stdout.decode('utf-8'))
         except Exception as e:
-            self.logger.error(f'Could not parse nvidia-smi output "{r.stdout.decode('utf-8')}":  {e}\n{traceback.format_exc()}')
+            self.logger.error(f'Could not parse nvidia-smi output "{r.stdout.decode("utf-8")}": {e}\n{traceback.format_exc()}')
             return None
 
         nvidia_smi_specs = j['nvidia_smi_log']['gpu']
