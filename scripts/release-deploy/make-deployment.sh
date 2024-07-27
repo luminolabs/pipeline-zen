@@ -48,6 +48,7 @@ IMAGE_CREATOR_VM_ZONE="us-central1-a"
 CONFIGS=(
   "count=1,type=nvidia-tesla-v100 n1-highcpu-8 $RESOURCES_PREFIX-1xv100"
   "count=1,type=nvidia-tesla-a100 a2-highgpu-1g $RESOURCES_PREFIX-1xa100-40gb"
+  "count=2,type=nvidia-tesla-a100 a2-highgpu-2g $RESOURCES_PREFIX-2xa100-40gb"
   "count=4,type=nvidia-tesla-a100 a2-highgpu-4g $RESOURCES_PREFIX-4xa100-40gb"
   "count=8,type=nvidia-tesla-a100 a2-highgpu-8g $RESOURCES_PREFIX-8xa100-40gb"
   "count=16,type=nvidia-tesla-a100 a2-megagpu-16g $RESOURCES_PREFIX-16xa100-40gb"
