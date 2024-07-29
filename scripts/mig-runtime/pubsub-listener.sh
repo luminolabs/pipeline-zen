@@ -124,6 +124,7 @@ if [[ "$response" != "[]" ]]; then
   # Process the message
   run_workflow "$message_data"
 else
+  echo "false" > .results/.keep_alive
   echo "No messages to process."
 fi
 
