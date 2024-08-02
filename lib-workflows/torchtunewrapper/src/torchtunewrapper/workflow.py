@@ -45,7 +45,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         tokenizer=None,
         source=job_config['dataset_id'],
         conversation_style="openai",
-        chat_format=None,
+        chat_format='torchtune.data.ChatMLFormat',
         max_seq_len=job_config.get('max_seq_len', None),
         train_on_input=job_config.get('train_on_input', False),
         packed=job_config.get('packed', False),
