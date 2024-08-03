@@ -17,6 +17,9 @@ Install python dependencies:
 
 ### Run the torchtunewrapper workflow
 
+Note: Unless you have a beefy machine, you probably want to run this workflow remotely, 
+not locally; see the next section for instructions.
+
 ```
 ./scripts/runners/single-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
