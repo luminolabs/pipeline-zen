@@ -41,28 +41,31 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     scores_agent.log_system_specs()
     scores_agent.log_job_config(job_config)
 
-    dataset_path_local = None
-    if job_config['dataset_id'].startswith('gs://'):
-        # Download the dataset from GCS
-        gcp_bucket_ds = dataset_provider_factory(
-            'gcp_bucket', job_config['dataset_id'], None, logger).fetch(logger)
-        gcp_bucket_ds.fetch(logger)
-        dataset_path_local = gcp_bucket_ds.dataset
-
-    # Instantiate dataset
-    dataset = chat_dataset(
+    chat_dataset_partial = partial(
+        chat_dataset,
         tokenizer=None,
-        # Use the local dataset path if it exists, otherwise use the dataset id from huggingface
-        source=dataset_path_local or job_config['dataset_id'],
         conversation_style="openai",
         chat_format='torchtune.data.ChatMLFormat',
         max_seq_len=job_config.get('max_seq_len', None),
         train_on_input=job_config.get('train_on_input', False),
-        packed=job_config.get('packed', False),
-        split=job_config.get('split', 'train'),
-        data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
-        cache_dir=HuggingFace.get_dataset_cache_dir(),
-    )
+        packed=job_config.get('packed', False))
+
+    if job_config['dataset_id'].startswith('gs://'):
+        # Download the dataset from GCS
+        gcp_bucket_ds = dataset_provider_factory('gcp_bucket', job_config['dataset_id'], None, logger)
+        gcp_bucket_ds.fetch(logger)
+        # Instantiate the chat dataset to pull from GCP bucket
+        dataset = chat_dataset_partial(
+            source=gcp_bucket_ds.dataset,
+        )
+    else:
+        # Instantiate the chat dataset to pull from HuggingFace
+        dataset = chat_dataset_partial(
+            source=job_config['dataset_id'],
+            split=job_config.get('split', 'train'),
+            data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
+            cache_dir=HuggingFace.get_dataset_cache_dir(),
+        )
 
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)

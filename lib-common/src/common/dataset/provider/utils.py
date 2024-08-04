@@ -1,10 +1,11 @@
 from logging import Logger
+from typing import Optional
 
 from common.dataset.provider.gcp_bucket import GcpBucket
 from common.dataset.provider.huggingface import HuggingFace
 
 
-def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: str,
+def dataset_provider_factory(dataset_provider: str, dataset_id: str, split: Optional[str],
                              logger: Logger):
     """
     Factory method for creating a dataset provider instance
