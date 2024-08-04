@@ -55,7 +55,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         # Download the dataset from GCS
         gcp_bucket_ds = dataset_provider_factory('gcp_bucket', job_config['dataset_id'], None, logger)
         gcp_bucket_ds.fetch(logger)
-        # Instantiate the chat dataset to pull from GCP bucket
+        # Instantiate the chat dataset to use the downloaded dataset
         dataset = chat_dataset_partial(
             source="json",
             data_files=gcp_bucket_ds.dataset
