@@ -1,3 +1,4 @@
+import os
 from functools import partial
 from logging import Logger
 from typing import Optional
@@ -8,7 +9,7 @@ from torchtune.datasets import chat_dataset
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.dataset.provider.huggingface import HuggingFace
-from common.dataset.provider.utils import download_from_gcs, dataset_provider_factory
+from common.dataset.provider.utils import dataset_provider_factory
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
     get_logs_path, get_results_path, save_job_results
@@ -56,7 +57,8 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         gcp_bucket_ds.fetch(logger)
         # Instantiate the chat dataset to pull from GCP bucket
         dataset = chat_dataset_partial(
-            source=gcp_bucket_ds.dataset,
+            source="json",
+            data_files=gcp_bucket_ds.dataset
         )
     else:
         # Instantiate the chat dataset to pull from HuggingFace

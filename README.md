@@ -21,8 +21,7 @@ Install python dependencies:
 ./scripts/runners/single-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
-  --dataset_id scaraveos/protoml1 \
-  --train_file_path text2sql.jsonl \
+  --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true \
   --use_single_device true --num_gpus 1

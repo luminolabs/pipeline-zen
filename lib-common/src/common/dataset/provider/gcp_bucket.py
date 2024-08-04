@@ -36,6 +36,8 @@ class GcpBucket(BaseDatasetProvider):
         source_blob_name = '/'.join(gs_url.split('/')[3:])  # ex. path-to-dataset/dataset-name
         # Generate the destination file name, ex: .cache/gcp_bucket/path-to-dataset/dataset-name
         destination_file_name = os.path.join(self.get_dataset_cache_dir(), *source_blob_name.split('/'))
+        # Make sure the directory exists
+        os.makedirs(os.path.dirname(destination_file_name), exist_ok=True)
 
         # Download the dataset from GCS
         download_from_gcs(bucket_name, source_blob_name, destination_file_name)

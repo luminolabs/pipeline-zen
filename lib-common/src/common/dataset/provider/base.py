@@ -50,5 +50,5 @@ class BaseDatasetProvider(BaseDataset):
         """
         if not isinstance(dataset_id, str):
             raise TypeError('`dataset_id` must be of type `str`')
-        if not isinstance(split, str):
+        if split and not isinstance(split, str):
             raise TypeError('`split` must be of type `str`')
