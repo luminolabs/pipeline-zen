@@ -30,7 +30,7 @@ gpu_type=$(echo $machine_type | cut -d'x' -f2)
 
 # Define the array of regions and their corresponding zones for v100
 regions_to_zones_v100=(
-  "us-central1:us-central1-a,us-central1-c"
+  "us-central1:us-central1-a,us-central1-b,us-central1-c,us-central1-f"
 )
 
 # Define the array of regions and their corresponding zones for a100-40gb
@@ -39,9 +39,9 @@ regions_to_zones_a100_40gb=(
     "asia-northeast3:asia-northeast3-a,asia-northeast3-b"
     "asia-southeast1:asia-southeast1-b,asia-southeast1-c"
     "europe-west4:europe-west4-a,europe-west4-b"
-    "me-west1:me-west1-b,me-west1-c"
-    "us-central1:us-central1-a,us-central1-c"
-    "us-east1:us-east1-a,us-east1-b"
+    "me-west1:me-west1-c"
+    "us-central1:us-central1-a,us-central1-b,us-central1-c,us-central1-f"
+    "us-east1:us-east1-b"
     "us-west1:us-west1-b"
     "us-west3:us-west3-b"
     "us-west4:us-west4-b"
@@ -54,6 +54,11 @@ regions_to_zones_a100_80gb=(
     "us-east5:us-east5-b"
     "europe-west4:europe-west4-a,europe-west4-b,europe-west4-c"
     "asia-southeast1:asia-southeast1-c"
+)
+
+# Define the array of regions and their corresponding zones for h100-80gb
+regions_to_zones_h100_80gb=(
+    "us-central1:us-central1-a,us-central1-c"
 )
 
 echo "Starting Managed Instance Group creation/resizing process..."
@@ -124,6 +129,8 @@ elif [[ $gpu_type == "a100-40gb" ]]; then
     regions_to_zones=("${regions_to_zones_a100_40gb[@]}")
 elif [[ $gpu_type == "a100-80gb" ]]; then
     regions_to_zones=("${regions_to_zones_a100_80gb[@]}")
+elif [[ $gpu_type == "h100-80gb" ]]; then
+    regions_to_zones=("${regions_to_zones_h100_80gb[@]}")
 else
     echo "Unsupported GPU type: $gpu_type"
     exit 1

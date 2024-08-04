@@ -1,9 +1,8 @@
 import os
 from abc import abstractmethod
 from logging import Logger
-from typing import Any
+from typing import Any, Optional
 
-from common import utils
 from common.config_manager import config
 from common.dataset.base import BaseDataset
 
@@ -13,7 +12,7 @@ class BaseDatasetProvider(BaseDataset):
     Abstract base class for dataset providers, such as huggingface or s3
     """
 
-    def __init__(self, dataset_id: str, split: str) -> None:
+    def __init__(self, dataset_id: str, split: Optional[str] = None) -> None:
         """
         :param dataset_id: The dataset ID to download
         :param split: The dataset split to download (ex. train, valid, test)
@@ -51,5 +50,5 @@ class BaseDatasetProvider(BaseDataset):
         """
         if not isinstance(dataset_id, str):
             raise TypeError('`dataset_id` must be of type `str`')
-        if not isinstance(split, str):
+        if split and not isinstance(split, str):
             raise TypeError('`split` must be of type `str`')
