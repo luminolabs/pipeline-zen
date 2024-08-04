@@ -12,4 +12,4 @@ bitsandbytes
 # TORCHAO_NIGHTLY=1 python setup.py install
 # ```
 #
-torchtune>=0.2.1
+torchtune==0.2.1
