@@ -323,7 +323,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         profiler, profiler_cfg = config.instantiate(cfg_profiler)
 
         if self._is_rank_zero:
-            log.info(f" Profiler config after instantiation: {profiler_cfg}")
+            self._logger.info(f" Profiler config after instantiation: {profiler_cfg}")
 
         return profiler
 
