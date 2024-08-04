@@ -26,16 +26,16 @@ class GcpBucket(BaseDatasetProvider):
         Raises:
             ValueError: If the bucket name is not `lum-pipeline-zen-jobs-us`
         """
+        # Raise an error if the bucket name is not allowed
+        if not self.dataset_id.startswith('gs://lum-pipeline-zen-jobs-us/datasets'):
+            raise ValueError(f'Upload datasets to `gs://lum-pipeline-zen-jobs-us/datasets/<customer name>` only')
+
         # Parse the GCS URL to get the bucket name and source blob name
         gs_url = self.dataset_id  # ex. gs://bucket-name/path-to-dataset/dataset-name
         bucket_name = gs_url.split('/')[2]  # ex. bucket-name
         source_blob_name = '/'.join(gs_url.split('/')[3:])  # ex. path-to-dataset/dataset-name
         # Generate the destination file name, ex: .cache/gcp_bucket/path-to-dataset/dataset-name
         destination_file_name = os.path.join(self.get_dataset_cache_dir(), *source_blob_name.split('/'))
-
-        # Raise an error if the bucket name is not allowed
-        if not gs_url.startswith('gs://lum-pipeline-zen-jobs-us/datasets'):
-            raise ValueError(f'Upload datasets to `gs://lum-pipeline-zen-jobs-us/datasets/<customer name>` only')
 
         # Download the dataset from GCS
         download_from_gcs(bucket_name, source_blob_name, destination_file_name)
