@@ -8,6 +8,7 @@ from torchtune.datasets import chat_dataset
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.dataset.provider.huggingface import HuggingFace
+from common.dataset.provider.utils import download_from_gcs, dataset_provider_factory
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
     get_logs_path, get_results_path, save_job_results
@@ -39,6 +40,15 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     scores_logger.info('The job id is: ' + job_id)
     scores_agent.log_system_specs()
     scores_agent.log_job_config(job_config)
+
+    if job_config['dataset_id'].startswith('gs://'):
+        # Download the dataset from GCS
+        gcp_bucket_ds = dataset_provider_factory(
+            'gcp_bucket', job_config['dataset_id'], None, logger).fetch(logger)
+        gcp_bucket_ds.fetch(logger)
+
+
+
 
     # Instantiate dataset
     dataset = chat_dataset(
