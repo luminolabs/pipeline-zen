@@ -41,19 +41,19 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     scores_agent.log_system_specs()
     scores_agent.log_job_config(job_config)
 
+    dataset_path_local = None
     if job_config['dataset_id'].startswith('gs://'):
         # Download the dataset from GCS
         gcp_bucket_ds = dataset_provider_factory(
             'gcp_bucket', job_config['dataset_id'], None, logger).fetch(logger)
         gcp_bucket_ds.fetch(logger)
-
-
-
+        dataset_path_local = gcp_bucket_ds.dataset
 
     # Instantiate dataset
     dataset = chat_dataset(
         tokenizer=None,
-        source=job_config['dataset_id'],
+        # Use the local dataset path if it exists, otherwise use the dataset id from huggingface
+        source=dataset_path_local or job_config['dataset_id'],
         conversation_style="openai",
         chat_format='torchtune.data.ChatMLFormat',
         max_seq_len=job_config.get('max_seq_len', None),

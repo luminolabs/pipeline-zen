@@ -13,6 +13,7 @@ class GcpBucket(BaseDatasetProvider):
 
     NOTE: This is more of a downloader than a dataset provider.
     LATER: To use as a dataset provider, `_getitem()` and `_len()` methods need to be implemented.
+    TODO: This is integrated with the torchtunewrapper workflow; it needs to be integrated with the other workflows.
     """
 
     def fetch(self, logger: Logger, **kwargs) -> None:
