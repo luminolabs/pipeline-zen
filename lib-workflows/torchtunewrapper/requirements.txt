@@ -5,10 +5,13 @@ bitsandbytes
 #
 # If you're on a mac and you're having trouble installing this, try building `torchao` from source.
 # `torchao` is a dependency of `torchtune` and it's not available for mac on PyPI.
+# You need to install both the stable and nightly versions of `torchao` to get `torchtune` to work.
 #
 # ```bash
 # git clone https://github.com/pytorch/ao
 # cd ao
+# git checkout v0.3.1-rc1
+# python setup.py install
 # TORCHAO_NIGHTLY=1 python setup.py install
 # ```
 #
