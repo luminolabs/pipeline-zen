@@ -8,7 +8,7 @@ import os
 import time
 
 from functools import partial
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple, Union
 from warnings import warn
 
 import torch
@@ -27,6 +27,7 @@ from torchtune.modules.peft.peft_utils import (
     validate_missing_and_unexpected_for_lora,
 )
 from torchtune.recipe_interfaces import FTRecipeInterface
+from torchtune.utils import DummyProfiler, PROFILER_KEY
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.utils import setup_logger
@@ -125,8 +126,8 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
         self.global_step = 0
-
         self._resume_from_checkpoint = cfg.resume_from_checkpoint
+        self._save_adapter_weights_only = cfg.get("save_adapter_weights_only", False)
         self._gradient_accumulation_steps = cfg.gradient_accumulation_steps
 
     def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
@@ -257,8 +258,69 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             last_epoch=self.global_step - 1,
         )
 
-        self._profiler_enabled = cfg.profiler.enabled
-        self._profiler = config.instantiate(cfg.profiler)
+        # Set up profiler, returns DummyProfiler (nullcontext object with no-op `step` method)
+        # if cfg is missing profiler key or if `cfg.profiler.enabled = False
+        self._profiler = self._setup_profiler(cfg.get(PROFILER_KEY, None))
+
+    def _setup_profiler(
+            self, cfg_profiler: DictConfig
+    ) -> Union[torch.profiler.profile, DummyProfiler]:
+        """
+        Parses the `profiler` section of top-level `cfg` and sets up profiler
+
+        Args:
+            cfg_profiler (DictConfig): `profiler` section of the top-level `cfg` (the main config passed to `recipe.main`)
+
+        Returns:
+            profiler: Union[torch.profiler.profile, DummyProfiler] - DummyProfiler is a nullcontext with no-op methods
+            for `start`, `stop`, and `step` that can be used in place of `torch.profiler.profile` if profiler is not enabled such
+            that the instrumented training loop does not need to be changed profiling is disabled.
+
+        The profiler config can be provided in configs under the `profiler` key with the following layout:
+
+        .. code-block:: yaml
+            profiler:
+                enabled: bool
+
+                #Output directory of trace artifacts
+                output_dir: str
+
+            #`torch.profiler.ProfilerActivity` types to trace
+            cpu: bool
+            cuda: bool
+
+                #Trace options
+                profile_memory: bool
+                with_stack: bool
+                record_shapes: bool
+                with_flops: bool
+
+            # `torch.profiler.schedule` options:
+            # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
+            wait_steps: int
+            warmup_steps: int
+            active_steps: int
+            num_cycles: int
+        """
+
+        # Missing profiler section in config, assume disabled
+        if cfg_profiler is None:
+            cfg_profiler = DictConfig({"enabled": False})
+
+        # Check that component is included and set correctly
+        if cfg_profiler.get("_component_", None) is None:
+            cfg_profiler["_component_"] = "torchtune.utils.setup_torch_profiler"
+        else:
+            assert (
+                    cfg_profiler.get("_component_")
+                    == "torchtune.utils.setup_torch_profiler"
+            ), "Only torch profiler supported currently: component must be `torchtune.utils.setup_torch_profiler`"
+
+        profiler, profiler_cfg = config.instantiate(cfg_profiler)
+
+        self._logger.info(f" Profiler config after instantiation: {profiler_cfg}")
+
+        return profiler
 
     def _setup_model(
         self,
@@ -404,14 +466,15 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         - Merged weights with key MODEL_KEY
         - Adapter weights with key ADAPTER_KEY
         - Relevant recipe state if training is not complete
+        - If the `self._save_adapter_weights_only` option is True, the checkpointer will save only the adapter weights
 
-        Checkpointer will save the merged weights, adapter weights and recipe state in
-        different checkpoint files. To correctly resume from training, the adapter weights
-        and recipe state must be provided along with the base model weights.
+        To correctly resume from training, the adapter weights and recipe state must be provided along with the base model weights.
         """
         ckpt_dict = {}
+
+        intermediate_checkpoint = epoch + 1 < self.total_epochs
         # if training is in-progress, checkpoint the optimizer state as well
-        if epoch + 1 < self.total_epochs:
+        if intermediate_checkpoint:
             ckpt_dict.update(
                 {
                     utils.OPT_KEY: self._optimizer.state_dict(),
@@ -450,10 +513,12 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             "peft_type": "LORA",
         }
         ckpt_dict.update({utils.ADAPTER_CONFIG: adapter_config})
+
         self._checkpointer.save_checkpoint(
             ckpt_dict,
             epoch=epoch,
-            intermediate_checkpoint=(epoch + 1 < self.total_epochs),
+            intermediate_checkpoint=intermediate_checkpoint,
+            adapter_only=self._save_adapter_weights_only,
         )
 
     def train(self) -> None:
@@ -472,17 +537,16 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         num_tokens = 0
         t_step_start = time.perf_counter()
 
-        # self.epochs_run should be non-zero when we're resuming from a checkpoint
-        for curr_epoch in range(self.epochs_run, self.total_epochs):
-            # Update the sampler to ensure data is correctly shuffled across epochs
-            # in case shuffle is True
-            self._sampler.set_epoch(curr_epoch)
+        with self._profiler as prof:
+            # self.epochs_run should be non-zero when we're resuming from a checkpoint
+            for curr_epoch in range(self.epochs_run, self.total_epochs):
+                # Update the sampler to ensure data is correctly shuffled across epochs
+                # in case shuffle is True
+                self._sampler.set_epoch(curr_epoch)
 
-            # Log per-epoch metrics and timestamps
-            t_epoch_start = time.perf_counter()
+                # Log per-epoch metrics and timestamps
+                t_epoch_start = time.perf_counter()
 
-            # Optionally profile the training loop
-            with self._profiler:
                 for idx, batch in enumerate(self._dataloader):
                     if (
                         self.max_steps_per_epoch is not None
@@ -490,9 +554,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                         == self.max_steps_per_epoch
                     ):
                         break
-
-                    if self._profiler_enabled:
-                        self._profiler.step()
 
                     # Both are shape [b, s]
                     tokens, labels = batch["tokens"], batch["labels"]
@@ -516,6 +577,9 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                     logits = logits.transpose(1, 2)
                     # Compute loss
                     loss = self._loss_fn(logits, labels)
+                    # free logits otherwise it peaks backward memory
+                    del logits
+
                     loss = loss / self._gradient_accumulation_steps
                     running_loss += loss
                     loss.backward()
@@ -551,13 +615,18 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
                         num_tokens = 0
                         t_step_start = time.perf_counter()
 
-            # Log per-epoch timestamps
-            time_per_epoch = int(time.perf_counter() - t_epoch_start)
-            self._scores_agent.log_epoch(gpu_rank=0, epoch_num=curr_epoch, epoch_len=self.total_epochs,
-                                         epoch_time_elapsed_s=time_per_epoch)
-            
-            self.epochs_run += 1
-            self.save_checkpoint(epoch=curr_epoch)
+                    # Step the profiler
+                    # Note we are stepping each batch, which might not include optimizer step in the trace
+                    # if the schedule cycle doesn't align with gradient accumulation.
+                    prof.step()
+
+                # Log per-epoch timestamps
+                time_per_epoch = int(time.perf_counter() - t_epoch_start)
+                self._scores_agent.log_epoch(gpu_rank=0, epoch_num=curr_epoch, epoch_len=self.total_epochs,
+                                             epoch_time_elapsed_s=time_per_epoch)
+
+                self.epochs_run += 1
+                self.save_checkpoint(epoch=curr_epoch)
 
 
 def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str) -> None:

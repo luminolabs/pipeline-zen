@@ -1,6 +1,18 @@
-# Needed for full fine-tuning on single GPU
+# Needed for full LLM fine-tuning on single GPU
 bitsandbytes
 
-# We need torchtune==0.2.0 but it's not released yet,
-# so we install it from the master branch of the git repository
-git+https://github.com/pytorch/torchtune.git@59d36e633ed9f1055f08498805df2ea0486657c2
+# Framework for LLM fine-tuning
+#
+# If you're on a mac and you're having trouble installing this, try building `torchao` from source.
+# `torchao` is a dependency of `torchtune` and it's not available for mac on PyPI.
+# You need to install both the stable and nightly versions of `torchao` to get `torchtune` to work.
+#
+# ```bash
+# git clone https://github.com/pytorch/ao
+# cd ao
+# git checkout v0.3.1-rc1
+# python setup.py install
+# TORCHAO_NIGHTLY=1 python setup.py install
+# ```
+#
+torchtune==0.2.1
