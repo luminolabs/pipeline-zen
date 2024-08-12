@@ -23,14 +23,25 @@ def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_de
     # Map model base to config prefix;
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
+        # Llama 3 Instruct
         'meta-llama/Meta-Llama-3-8B-Instruct': 'llama3/8B',
         'meta-llama/Meta-Llama-3-70B-Instruct': 'llama3/70B',
-        'mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
-        'mistralai/Mistral-7B-Instruct-v0.3': 'mistral/7B',
-        'mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistral/8x7B',  # yes, `Mixtral` is intentional
+        # Llama 3 base
         'meta-llama/Meta-Llama-3-8B': 'llama3/8B',
         'meta-llama/Meta-Llama-3-70B': 'llama3/70B',
+        # Llama 3.1 Instruct
+        'meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
+        'meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
+        # Llama 3.1 base
+        'meta-llama/Meta-Llama-3.1-8B': 'llama3_1/8B',
+        'meta-llama/Meta-Llama-3.1-70B': 'llama3_1/70B',
+        # Mistral v0.1 Instruct
+        'mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
+        'mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistral/8x7B',  # yes, `Mixtral` is intentional
+        # Mistral v0.1 base
         'mistralai/Mistral-7B-v0.1': 'mistral/7B',
+        'mistralai/Mistral-7B-Instruct-v0.3': 'mistral/7B',
+        # Mistral v0.3 base
         'mistralai/Mistral-7B-v0.3': 'mistral/7B',
     }
     # Raise error if model base is not supported
