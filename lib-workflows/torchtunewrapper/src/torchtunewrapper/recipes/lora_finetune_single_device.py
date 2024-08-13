@@ -127,7 +127,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
         self.global_step = 0
         self._resume_from_checkpoint = cfg.resume_from_checkpoint
-        self._save_adapter_weights_only = cfg.get("save_adapter_weights_only", False)
         self._gradient_accumulation_steps = cfg.gradient_accumulation_steps
 
     def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
@@ -466,9 +465,10 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         - Merged weights with key MODEL_KEY
         - Adapter weights with key ADAPTER_KEY
         - Relevant recipe state if training is not complete
-        - If the `self._save_adapter_weights_only` option is True, the checkpointer will save only the adapter weights
 
-        To correctly resume from training, the adapter weights and recipe state must be provided along with the base model weights.
+        Checkpointer will save the merged weights, adapter weights and recipe state in
+        different checkpoint files. To correctly resume from training, the adapter weights
+        and recipe state must be provided along with the base model weights.
         """
         ckpt_dict = {}
 
@@ -518,7 +518,6 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
             ckpt_dict,
             epoch=epoch,
             intermediate_checkpoint=intermediate_checkpoint,
-            adapter_only=self._save_adapter_weights_only,
         )
 
     def train(self) -> None:
