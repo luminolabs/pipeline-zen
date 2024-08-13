@@ -47,6 +47,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         tokenizer=None,
         conversation_style="openai",
         chat_format='torchtune.data.ChatMLFormat',
+        split=job_config.get('split', 'train'),
         max_seq_len=job_config.get('max_seq_len', None),
         train_on_input=job_config.get('train_on_input', False),
         packed=job_config.get('packed', False))
@@ -64,7 +65,6 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         # Instantiate the chat dataset to pull from HuggingFace
         dataset = chat_dataset_partial(
             source=job_config['dataset_id'],
-            split=job_config.get('split', 'train'),
             data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
             cache_dir=HuggingFace.get_dataset_cache_dir(),
         )
