@@ -61,8 +61,3 @@ compile: False
 device: cuda
 dtype: bf16
 enable_activation_checkpointing: True
-
-# Profiler (disabled)
-profiler:
-  _component_: torchtune.utils.profiler
-  enabled: False
