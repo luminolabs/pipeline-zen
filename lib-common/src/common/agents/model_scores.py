@@ -274,8 +274,8 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
                          f'Tokens/s/GPU: {step_tokens_per_second:.4f}, Tokens: {step_tokens}, '
                          f'Peak memory active: {step_peak_memory_active}, '
                          f'Peak memory alloc: {step_peak_memory_alloc}, '
-                         f'Peak memory reserved: {step_peak_memory_reserved}'
-                         f'Time elapsed (seconds): {step_time_elapsed_s}'
+                         f'Peak memory reserved: {step_peak_memory_reserved}, '
+                         f'Time elapsed (seconds): {step_time_elapsed_s}, '
                          f'Epoch #{epoch_num}/{epoch_len}')
         self.bq_insert(operation='log_step', **{
             'gpu_rank': gpu_rank,

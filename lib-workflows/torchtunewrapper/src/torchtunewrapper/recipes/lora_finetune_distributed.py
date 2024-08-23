@@ -696,7 +696,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
                         step_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
                         step_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
                         step_time_elapsed_s=time_per_step,
-                        epoch_num=curr_epoch,
+                        epoch_num=curr_epoch + 1,
                         epoch_len=self.total_epochs,)
 
                     # Reset running stats for the next step
@@ -711,11 +711,14 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
             # Log per-epoch timestamps
             time_per_epoch = int(time.perf_counter() - t_epoch_start)
-            self._scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch, epoch_len=self.total_epochs,
+            self._scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch + 1, epoch_len=self.total_epochs,
                                          epoch_time_elapsed_s=time_per_epoch)
 
             self.epochs_run += 1
-            self.save_checkpoint(epoch=curr_epoch)
+
+            # Only save the last epoch checkpoint
+            if self.epochs_run == self.total_epochs:
+                self.save_checkpoint(epoch=curr_epoch)
 
         self._profiler.stop()
 
