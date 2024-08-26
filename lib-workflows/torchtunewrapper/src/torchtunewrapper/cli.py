@@ -15,8 +15,7 @@ def parse_args() -> tuple:
     return (args.job_id, args.job_config_name,
             args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
-            args.use_lora,
-            args.use_single_device, args.num_gpus)
+            args.use_lora, args.num_gpus)
 
 
 def add_parser_args(parser: argparse.ArgumentParser):
@@ -46,8 +45,6 @@ def add_parser_args(parser: argparse.ArgumentParser):
                         help="The number of epochs to train for; default is 1")
     parser.add_argument('-l', '--use_lora', type=is_truthy, required=False, default=True,
                         help="Whether to use the LoRA; default is True")
-    parser.add_argument('-sd', '--use_single_device', type=is_truthy, required=False, default=True,
-                        help="Whether to use a single GPU device; default is True")
     parser.add_argument('-gpus', '--num_gpus', type=int, required=True, default=1,
                         help="The number of GPUs to use for training; default is 1")
 

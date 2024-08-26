@@ -27,7 +27,7 @@ not locally; see the next section for instructions.
   --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true \
-  --use_single_device true --num_gpus 1
+  --num_gpus 1
 ```
 
 ## Running remotely on a VM (aka on `dev`)
@@ -44,12 +44,11 @@ curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '
     "batch_size": 2,
     "shuffle": true,
     "num_epochs": 1,
-    "use_lora": true,
-    "use_single_device": false,
-    "num_gpus": 4
+    "use_lora": true
   },
-  "keep_alive": false,
-  "cluster": "4xa100-40gb"
+  "gpu_type": "a100-40gb",
+  "num_gpus": 4,
+  "keep_alive": false
 }'
 ```
 

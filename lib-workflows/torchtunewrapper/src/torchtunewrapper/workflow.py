@@ -69,17 +69,20 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
             cache_dir=HuggingFace.get_dataset_cache_dir(),
         )
 
+    # Check if we are using a single device
+    use_single_device = job_config['num_gpus'] == 1
+
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
 
     # Get the torchtune recipe function
-    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], job_config['use_single_device'])
+    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], use_single_device)
     tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset, job_id=job_id)
 
     # Run the torchtune recipe, which will fine-tune the model
-    if job_config['use_single_device']:
+    if use_single_device:
         # Run the recipe on a single device
         tt_recipe_fn()
     else:
@@ -112,8 +115,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 def main(job_id: str, job_config_name: str,
          dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
-         use_lora: bool = True,
-         use_single_device: bool = True, num_gpus: int = 1):
+         use_lora: bool = True, num_gpus: int = 1):
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
@@ -125,7 +127,6 @@ def main(job_id: str, job_config_name: str,
     :param shuffle: Whether to shuffle the dataset or not, default is True
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
-    :param use_single_device: Whether to train on a single or multiple GPU devices
     :param num_gpus: The number of GPUs to use for training
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
@@ -140,12 +141,14 @@ def main(job_id: str, job_config_name: str,
     job_config.setdefault('shuffle', shuffle)
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
-    job_config.setdefault('use_single_device', use_single_device)
     job_config.setdefault('num_gpus', num_gpus)
+
+    # Check if we are using a single device
+    use_single_device = job_config['num_gpus'] == 1
 
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
-        job_config['model_base'], job_config['use_lora'], job_config['use_single_device'])
+        job_config['model_base'], job_config['use_lora'], use_single_device)
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={

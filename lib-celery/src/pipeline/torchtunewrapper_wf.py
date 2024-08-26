@@ -55,16 +55,14 @@ def handle_task_failure(*args, **kwargs):
 def torchtunewrapper(_, job_id: str, job_config_name: str,
                      dataset_id: str = Optional[None], train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
-                     use_lora: bool = True,
-                     use_single_device: bool = True, num_gpus: int = 1):
+                     use_lora: bool = True, num_gpus: int = 1):
     logger = setup_logger('celery_torchtunewrapper_wf', job_id)
     try:
         return _torchtunewrapper(
             job_id, job_config_name,
             dataset_id, train_file_path,
             batch_size, shuffle, num_epochs,
-            use_lora,
-            use_single_device, num_gpus)
+            use_lora, num_gpus)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`torchtunewrapper` task failed with error: {e}\n{traceback.format_exc()}')
