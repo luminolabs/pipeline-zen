@@ -15,7 +15,7 @@ def parse_args() -> tuple:
     return (args.job_id, args.job_config_name,
             args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
-            args.use_lora, args.num_gpus,
+            args.use_lora, args.use_qlora, args.num_gpus,
             args.pytorch_cuda_alloc_conf)
 
 
