@@ -44,7 +44,8 @@ curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '
     "batch_size": 2,
     "shuffle": true,
     "num_epochs": 1,
-    "use_lora": true
+    "use_lora": true,
+    "pytorch_cuda_alloc_conf": "expandable_segments:True"
   },
   "gpu_type": "a100-40gb",
   "num_gpus": 4,

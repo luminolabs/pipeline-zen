@@ -474,7 +474,11 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
                         step_num=self.global_step,
                         step_len=self._steps_per_epoch,
                         step_loss=running_loss.item(),
-                        step_lr=self._optimizer.param_groups[0]["lr"],
+                        step_lr=(
+                            self._optim_ckpt_wrapper.get_optim_key("lr")
+                            if self._optimizer_in_bwd
+                            else self._optimizer.param_groups[0]["lr"]
+                        ),
                         step_tokens_per_second=num_tokens / time_per_step,
                         step_tokens=num_tokens,
                         step_peak_memory_active=mem_stats.get("peak_memory_active"),
