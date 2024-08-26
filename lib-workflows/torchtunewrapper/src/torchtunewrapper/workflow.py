@@ -115,7 +115,8 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 def main(job_id: str, job_config_name: str,
          dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
-         use_lora: bool = True, num_gpus: int = 1,
+         use_lora: bool = True, use_qlora: bool = False,
+         num_gpus: int = 1,
          pytorch_cuda_alloc_conf: str = None):
     """
     Workflow entry point, mainly for catching unhandled exceptions
@@ -128,6 +129,7 @@ def main(job_id: str, job_config_name: str,
     :param shuffle: Whether to shuffle the dataset or not, default is True
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
+    :param use_qlora: Whether to use QLoRA or not
     :param num_gpus: The number of GPUs to use for training
     :param pytorch_cuda_alloc_conf: The PyTorch CUDA allocation configuration
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
@@ -143,6 +145,7 @@ def main(job_id: str, job_config_name: str,
     job_config.setdefault('shuffle', shuffle)
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
+    job_config.setdefault('use_qlora', use_qlora)
     job_config.setdefault('num_gpus', num_gpus)
 
     # Set the PyTorch CUDA allocation configuration
@@ -153,9 +156,13 @@ def main(job_id: str, job_config_name: str,
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
 
+    # If we are not using LoRA, we cannot use QLoRA either
+    if not job_config['use_lora']:
+        job_config['use_qlora'] = False
+
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
-        job_config['model_base'], job_config['use_lora'], is_single_device)
+        job_config['model_base'], job_config['use_lora'], job_config['use_qlora'], is_single_device)
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={

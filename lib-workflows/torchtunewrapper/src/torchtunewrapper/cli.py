@@ -44,8 +44,12 @@ def add_parser_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('-ne', '--num_epochs', type=int, required=False, default=1,
                         help="The number of epochs to train for; default is 1")
+
     parser.add_argument('-l', '--use_lora', type=is_truthy, required=False, default=True,
                         help="Whether to use the LoRA; default is True")
+    parser.add_argument('-ql', '--use_qlora', type=is_truthy, required=False, default=False,
+                        help="Whether to use the QLoRA; default is False and only used if `use_lora` is True")
+
     parser.add_argument('-gpus', '--num_gpus', type=int, required=True, default=1,
                         help="The number of GPUs to use for training; default is 1")
 
