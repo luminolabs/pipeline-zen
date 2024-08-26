@@ -162,7 +162,9 @@ def main(job_id: str, job_config_name: str,
 
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
-        job_config['model_base'], job_config['use_lora'], job_config['use_qlora'], is_single_device)
+        job_config['model_base'],
+        job_config['use_lora'], job_config['use_qlora'],
+        is_single_device)
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={
