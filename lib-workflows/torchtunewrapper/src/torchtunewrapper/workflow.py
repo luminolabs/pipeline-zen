@@ -2,6 +2,7 @@ import os
 from functools import partial
 from logging import Logger
 from typing import Optional
+from venv import logger
 
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
@@ -134,6 +135,7 @@ def main(job_id: str, job_config_name: str,
     :param pytorch_cuda_alloc_conf: The PyTorch CUDA allocation configuration
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
+
     # Load job configuration
     job_config = load_job_config(job_config_name)
 
@@ -147,11 +149,10 @@ def main(job_id: str, job_config_name: str,
     job_config.setdefault('use_lora', use_lora)
     job_config.setdefault('use_qlora', use_qlora)
     job_config.setdefault('num_gpus', num_gpus)
+    job_config.setdefault('pytorch_cuda_alloc_conf', pytorch_cuda_alloc_conf)
 
-    # Set the PyTorch CUDA allocation configuration
-    # This is useful for memory management on GPUs and can be used to prevent OOM errors
-    if pytorch_cuda_alloc_conf:
-        os.environ['PYTORCH_CUDA_ALLOC_CONF'] = pytorch_cuda_alloc_conf
+    # Instantiate the main logger
+    logger = setup_logger('torchtunewrapper_workflow', job_id)
 
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
@@ -172,12 +173,11 @@ def main(job_id: str, job_config_name: str,
             'output_dir': get_results_path(job_config['job_id']),
             'epochs': job_config['num_epochs'],
             'shuffle': job_config['shuffle'],
-            'batch_size': job_config['batch_size']
+            'batch_size': job_config['batch_size'],
+            'pytorch_cuda_alloc_conf': job_config['pytorch_cuda_alloc_conf'],
         },
         is_torchtune=True)
 
-    # Instantiate the main logger
-    logger = setup_logger('torchtunewrapper_workflow', job_id)
     # Run the `torchtune` workflow, and handle unexpected exceptions
     try:
         return run(job_config, tt_config, logger)

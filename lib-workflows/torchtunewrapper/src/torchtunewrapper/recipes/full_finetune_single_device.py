@@ -111,6 +111,13 @@ class FullFinetuneRecipeSingleDevice(FTRecipeInterface):
         self._gradient_accumulation_steps = cfg.gradient_accumulation_steps
         self._optimizer_in_bwd = cfg.optimizer_in_bwd
 
+        # Set the PyTorch CUDA allocation configuration
+        # This is useful for memory management on GPUs and can be used to prevent OOM errors
+        pytorch_cuda_alloc_conf = cfg.get("pytorch_cuda_alloc_conf", None)
+        if pytorch_cuda_alloc_conf:
+            self._logger.info(f"Setting PYTORCH_CUDA_ALLOC_CONF to: {pytorch_cuda_alloc_conf} for rank 0")
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = pytorch_cuda_alloc_conf
+
         # TODO: find a better place / way to perform validation of args that don't yet
         # compose with each other.
         if self._gradient_accumulation_steps > 1 and self._optimizer_in_bwd:

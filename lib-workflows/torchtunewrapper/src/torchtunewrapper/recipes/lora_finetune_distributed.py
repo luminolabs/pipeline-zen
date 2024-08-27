@@ -126,6 +126,13 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         # training attributes
         self._enable_activation_checkpointing = cfg.enable_activation_checkpointing
 
+        # Set the PyTorch CUDA allocation configuration
+        # This is useful for memory management on GPUs and can be used to prevent OOM errors
+        pytorch_cuda_alloc_conf = cfg.get("pytorch_cuda_alloc_conf", None)
+        if pytorch_cuda_alloc_conf:
+            self._logger.info(f"Setting PYTORCH_CUDA_ALLOC_CONF to: {pytorch_cuda_alloc_conf} for rank {rank}")
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = pytorch_cuda_alloc_conf
+
         # These attributes constitute the recipe state and are updated by ``load_checkpoint``
         # when ``resume_from_checkpoint`` is ``True``
         self.seed = utils.set_seed(seed=cfg.seed)

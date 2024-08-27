@@ -119,6 +119,13 @@ class LoRAFinetuneRecipeSingleDevice(FTRecipeInterface):
         ):
             raise RuntimeError("Full bf16 training is not supported on this hardware.")
 
+        # Set the PyTorch CUDA allocation configuration
+        # This is useful for memory management on GPUs and can be used to prevent OOM errors
+        pytorch_cuda_alloc_conf = cfg.get("pytorch_cuda_alloc_conf", None)
+        if pytorch_cuda_alloc_conf:
+            self._logger.info(f"Setting PYTORCH_CUDA_ALLOC_CONF to: {pytorch_cuda_alloc_conf} for rank 0")
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = pytorch_cuda_alloc_conf
+
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
         self.seed = utils.set_seed(seed=cfg.seed)
