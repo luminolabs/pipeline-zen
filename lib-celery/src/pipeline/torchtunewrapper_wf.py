@@ -5,7 +5,6 @@ from typing import Optional
 
 from celery import Celery, chain
 from celery.signals import task_failure
-from torchtune.config import log_config
 
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
