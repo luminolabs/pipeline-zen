@@ -1,8 +1,6 @@
-import os
 from functools import partial
 from logging import Logger
 from typing import Optional
-from venv import logger
 
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig

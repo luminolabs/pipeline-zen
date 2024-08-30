@@ -6,6 +6,7 @@ from typing import Optional
 from celery import Celery, chain
 from celery.signals import task_failure
 
+from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
@@ -144,6 +145,13 @@ def schedule(*args):
     job_config_name = args[1]
     job_id = args[0]
     job_id = args[0] = get_or_generate_job_id(job_config_name, job_id)
+
+    # On non-local environments, we require the presence of GPUs
+    if config.env_name != 'local':
+        logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+        system_specs = SystemSpecs(logger)
+        if system_specs.get_gpu_spec() is None:
+            raise RuntimeError('No GPUs found on this machine')
 
     # Define workflow tasks
     tasks = [mark_started.s(None, job_id),
