@@ -6,6 +6,7 @@ from typing import Optional
 from celery import Celery, chain
 from celery.signals import task_failure
 
+from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
@@ -55,14 +56,18 @@ def handle_task_failure(*args, **kwargs):
 def torchtunewrapper(_, job_id: str, job_config_name: str,
                      dataset_id: str = Optional[None], train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
-                     use_lora: bool = True, num_gpus: int = 1, pytorch_cuda_alloc_conf: str = None):
+                     use_lora: bool = True, use_qlora: bool = False,
+                     num_gpus: int = 1,
+                     pytorch_cuda_alloc_conf: str = None):
     logger = setup_logger('celery_torchtunewrapper_wf', job_id)
     try:
         return _torchtunewrapper(
             job_id, job_config_name,
             dataset_id, train_file_path,
             batch_size, shuffle, num_epochs,
-            use_lora, num_gpus, pytorch_cuda_alloc_conf)
+            use_lora, use_qlora,
+            num_gpus,
+            pytorch_cuda_alloc_conf)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`torchtunewrapper` task failed with error: {e}\n{traceback.format_exc()}')
@@ -140,6 +145,13 @@ def schedule(*args):
     job_config_name = args[1]
     job_id = args[0]
     job_id = args[0] = get_or_generate_job_id(job_config_name, job_id)
+
+    # On non-local environments, we require the presence of GPUs
+    if config.env_name != 'local':
+        logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+        system_specs = SystemSpecs(logger)
+        if system_specs.get_gpu_spec() is None:
+            raise RuntimeError('No GPUs found on this machine')
 
     # Define workflow tasks
     tasks = [mark_started.s(None, job_id),

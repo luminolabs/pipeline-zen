@@ -9,42 +9,39 @@ epochs:
 
 # Tokenizer
 tokenizer:
-  _component_: torchtune.models.llama3.llama3_tokenizer
-  path: ${base_model_path}/original/tokenizer.model
+  _component_: torchtune.models.mistral.mistral_tokenizer
+  path: ${base_model_path}/tokenizer.model
+
+# Dataset
+dataset:
+  _component_:  # leave empty, this is injected by the job launcher
+seed: null
 
 # Model Arguments
 model:
-  _component_: torchtune.models.llama3_1.lora_llama3_1_8b
-  lora_attn_modules: ['q_proj', 'v_proj']
-  apply_lora_to_mlp: False
+  _component_: torchtune.models.mistral.qlora_mistral_7b
+  lora_attn_modules: ['q_proj', 'k_proj', 'v_proj']
+  apply_lora_to_mlp: True
   apply_lora_to_output: False
-  lora_rank: 8
+  lora_rank: 64
   lora_alpha: 16
 
 checkpointer:
   _component_: torchtune.utils.FullModelHFCheckpointer
   checkpoint_dir: ${base_model_path}
   checkpoint_files: [
-    model-00001-of-00004.safetensors,
-    model-00002-of-00004.safetensors,
-    model-00003-of-00004.safetensors,
-    model-00004-of-00004.safetensors,
+    model-00001-of-00002.safetensors,
+    model-00002-of-00002.safetensors,
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
-  model_type: LLAMA3
+  model_type: MISTRAL
 resume_from_checkpoint: False
 
-# Dataset and Sampler
-dataset:
-  _component_:  # leave empty, this is injected by the job launcher
-seed: null
-
-# Optimizer and Scheduler
 optimizer:
   _component_: torch.optim.AdamW
-  weight_decay: 0.01
-  lr: 3e-4
+  lr: 2e-5
+
 lr_scheduler:
   _component_: torchtune.modules.get_cosine_schedule_with_warmup
   num_warmup_steps: 10
@@ -52,12 +49,16 @@ lr_scheduler:
 loss:
   _component_: torch.nn.CrossEntropyLoss
 
-# Training
+# Fine-tuning parameters
 max_steps_per_epoch: null
-gradient_accumulation_steps: 64
+gradient_accumulation_steps: 4
 compile: False
 
-# Environment
+# Training env
 device: cuda
-dtype: bf16
+
+# Memory management
 enable_activation_checkpointing: True
+
+# Reduced precision
+dtype: bf16
