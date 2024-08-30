@@ -16,7 +16,9 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Calla
     return getattr(module, 'recipe_main')
 
 
-def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_device: bool) -> str:
+def get_torchtune_config_filename(model_base: str,
+                                  use_lora: bool, use_qlora: bool,
+                                  use_single_device: bool) -> str:
     """
     :return: The torchtune config filename
     """
@@ -50,5 +52,6 @@ def get_torchtune_config_filename(model_base: str, use_lora: bool, use_single_de
                          f'{", ".join(model_base_to_config_prefix.keys())}')
     # Return the config filename
     return (f'{model_base_to_config_prefix[model_base]}_'
+            f'{"q" if use_qlora else ""}'
             f'{"lora" if use_lora else "full"}'
             f'{"_single_device" if use_single_device else ""}.yml')

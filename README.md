@@ -11,7 +11,7 @@ Download and copy the GCP service account credentials file to `.secrets` under t
 This step isn't needed unless `config.provider_log_scores` is enabled
 
 Install python dependencies:
-```
+```bash
 ./scripts/install-deps.sh
 ```
 
@@ -20,13 +20,13 @@ Install python dependencies:
 Note: Unless you have a beefy machine, you probably want to run this workflow remotely, 
 not locally; see the next section for instructions.
 
-```
+```bash
 ./scripts/runners/single-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_8b \
   --job_id llm_llama3_8b-experiment1 \
   --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
-  --use_lora true \
+  --use_lora true --use_qlora false \
   --num_gpus 1
 ```
 
@@ -34,7 +34,7 @@ not locally; see the next section for instructions.
 
 Send a new job request to the Scheduler with the following command:
 
-```
+```bash
 curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '{
   "job_id": "vasilis-protoml1-llama3-8b-lora-4xa100-40gb-run1",
   "workflow": "torchtunewrapper",
@@ -44,7 +44,9 @@ curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '
     "batch_size": 2,
     "shuffle": true,
     "num_epochs": 1,
-    "use_lora": true
+    "use_lora": true,
+    "use_qlora": false,
+    "pytorch_cuda_alloc_conf": "expandable_segments:True"
   },
   "gpu_type": "a100-40gb",
   "num_gpus": 4,
@@ -63,13 +65,13 @@ Download and copy the GCP service account credentials file to `.secrets` under t
 This step isn't needed unless `config.provider_log_scores` is enabled
 
 Install python dependencies:
-```
+```bash
 ./scripts/install-deps.sh
 ```
 
 ### Run train and evaluate workflows in one go
 
-```
+```bash
 ./scripts/runners/celery-wf.sh train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
@@ -84,7 +86,7 @@ Make sure you have `gcloud` installed and that you
 are authenticated. Try this: `gcloud auth list`; 
 you should see your email in that list, with a `*` next to it
 
-```
+```bash
 python ./scripts/runners/remote.py train_evaluate \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
@@ -97,7 +99,7 @@ python ./scripts/runners/remote.py train_evaluate \
 
 ### Running the train workflow
 
-```
+```bash
 ./scripts/runners/single-wf.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
@@ -107,7 +109,7 @@ python ./scripts/runners/remote.py train_evaluate \
 
 ### Running the evaluate workflow
 
-```
+```bash
 ./scripts/runners/single-wf.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --job_id <use same job id as in the train workflow> \
@@ -119,7 +121,7 @@ python ./scripts/runners/remote.py train_evaluate \
 
 ### Running the train workflow
 
-```
+```bash
 ./scripts/runners/single-wf-docker.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
@@ -129,7 +131,7 @@ python ./scripts/runners/remote.py train_evaluate \
 
 ### Running the evaluate workflow
 
-```
+```bash
 ./scripts/runners/single-wf-docker.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --job_id <use same job id as in the train workflow> \
@@ -139,7 +141,7 @@ python ./scripts/runners/remote.py train_evaluate \
 
 IMPORTANT: Docker creates folders and files as root, so after running a workflow for the first time,
 run the following command to change filesystem permissions back to your user:
-```
+```bash
 sudo chown $(whoami) -R .results .cache .logs .secrets
 ```
 
@@ -149,7 +151,7 @@ Examples of workflow outputs
 
 ### Train Workflow
 
-```
+```bash
 $ ./scripts/runners/single-wf.sh train \
   --job_config_name imdb_nlp_classification \
   --batch_size 8 \
@@ -193,7 +195,7 @@ train_workflow :: INFO :: Trained model saved! at: ../../.results/model_weights/
 
 ### Evaluate Workflow
 
-```
+```bash
 $ ./scripts/runners/single-wf.sh evaluate \
   --job_config_name imdb_nlp_classification \
   --model_weights imdb_nlp_classification-2024-05-02-15-31-14/2024-05-02-15-31-26.pt \

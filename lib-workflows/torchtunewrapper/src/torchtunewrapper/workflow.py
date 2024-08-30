@@ -1,4 +1,3 @@
-import os
 from functools import partial
 from logging import Logger
 from typing import Optional
@@ -70,7 +69,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
         )
 
     # Check if we are using a single device
-    use_single_device = job_config['num_gpus'] == 1
+    is_single_device = job_config['num_gpus'] == 1
 
     # Fetch and load the base model
     m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
@@ -78,11 +77,11 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
 
     # Get the torchtune recipe function
-    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], use_single_device)
+    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device)
     tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset, job_id=job_id)
 
     # Run the torchtune recipe, which will fine-tune the model
-    if use_single_device:
+    if is_single_device:
         # Run the recipe on a single device
         tt_recipe_fn()
     else:
@@ -115,7 +114,9 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
 def main(job_id: str, job_config_name: str,
          dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
-         use_lora: bool = True, num_gpus: int = 1):
+         use_lora: bool = True, use_qlora: bool = False,
+         num_gpus: int = 1,
+         pytorch_cuda_alloc_conf: str = None):
     """
     Workflow entry point, mainly for catching unhandled exceptions
 
@@ -127,9 +128,12 @@ def main(job_id: str, job_config_name: str,
     :param shuffle: Whether to shuffle the dataset or not, default is True
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
+    :param use_qlora: Whether to use QLoRA or not
     :param num_gpus: The number of GPUs to use for training
+    :param pytorch_cuda_alloc_conf: The PyTorch CUDA allocation configuration
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
     """
+
     # Load job configuration
     job_config = load_job_config(job_config_name)
 
@@ -141,14 +145,25 @@ def main(job_id: str, job_config_name: str,
     job_config.setdefault('shuffle', shuffle)
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
+    job_config.setdefault('use_qlora', use_qlora)
     job_config.setdefault('num_gpus', num_gpus)
+    job_config.setdefault('pytorch_cuda_alloc_conf', pytorch_cuda_alloc_conf)
+
+    # Instantiate the main logger
+    logger = setup_logger('torchtunewrapper_workflow', job_id)
 
     # Check if we are using a single device
-    use_single_device = job_config['num_gpus'] == 1
+    is_single_device = job_config['num_gpus'] == 1
+
+    # If we are not using LoRA, we cannot use QLoRA either
+    if not job_config['use_lora']:
+        job_config['use_qlora'] = False
 
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
-        job_config['model_base'], job_config['use_lora'], use_single_device)
+        job_config['model_base'],
+        job_config['use_lora'], job_config['use_qlora'],
+        is_single_device)
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={
@@ -156,12 +171,11 @@ def main(job_id: str, job_config_name: str,
             'output_dir': get_results_path(job_config['job_id']),
             'epochs': job_config['num_epochs'],
             'shuffle': job_config['shuffle'],
-            'batch_size': job_config['batch_size']
+            'batch_size': job_config['batch_size'],
+            'pytorch_cuda_alloc_conf': job_config['pytorch_cuda_alloc_conf'],
         },
         is_torchtune=True)
 
-    # Instantiate the main logger
-    logger = setup_logger('torchtunewrapper_workflow', job_id)
     # Run the `torchtune` workflow, and handle unexpected exceptions
     try:
         return run(job_config, tt_config, logger)
