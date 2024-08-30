@@ -551,6 +551,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         intermediate_checkpoint = epoch + 1 < self.total_epochs
         # To prevent GPU memory from spiking during checkpoint save,
         # we consolidate the full model and optim state dicts on CPU for rank 0
+        self._logger.info("Saving checkpoint... Consolidating state dicts on CPU for rank 0")
         with FSDP.state_dict_type(
             self._model,
             StateDictType.FULL_STATE_DICT,
@@ -566,7 +567,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
         # Now that we have the model and opt state dict, create the actual checkpoint dict
         # to be sent to the checkpointer and ultimately written to file
         if self._is_rank_zero:
-
+            self._logger.info("Saving checkpoint... Creating checkpoint dict on rank 0")
             # Filter out the adapter keys and weights from the model state dict. These will
             # be saved separately
             adapter_key_filter = lambda x: x in self.adapter_params
@@ -586,6 +587,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             # if training is in-progress, checkpoint the optimizer state and recipe state
             # as well.
             if intermediate_checkpoint:
+                self._logger.info("Saving checkpoint... Saving optimizer state dict")
                 checkpoint_dict.update(
                     {
                         utils.OPT_KEY: opt_state_dict,
@@ -608,6 +610,7 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
             }
             checkpoint_dict.update({utils.ADAPTER_CONFIG: adapter_config})
 
+            self._logger.info("Saving checkpoint... Saving checkpoint dict to file")
             self._checkpointer.save_checkpoint(
                 checkpoint_dict,
                 epoch=epoch,
@@ -725,7 +728,9 @@ class LoRAFinetuneRecipeDistributed(FTRecipeInterface):
 
             # Only save the last epoch checkpoint
             if self.epochs_run == self.total_epochs:
+                self._logger.info("Saving final checkpoint...")
                 self.save_checkpoint(epoch=curr_epoch)
+                self._logger.info("Done saving final checkpoint...")
 
         self._profiler.stop()
 

@@ -73,6 +73,8 @@ echo "Wait 60s to allow VM to start services..."
 sleep 60
 
 echo "Copying files to VM..."
+# Remove any local python cache files so they don't get copied to the VM
+find . | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf
 # Make sure we have access permissions to the files and folders
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
 # Remove old files and create scripts folder
