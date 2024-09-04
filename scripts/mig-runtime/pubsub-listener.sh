@@ -64,8 +64,12 @@ run_workflow() {
   keep_alive=$(echo "$job" | jq -r '.keep_alive')
   echo "$keep_alive" > .results/.keep_alive
 
-  # Send initial status update
-  send_heartbeat "RUNNING"
+  # Let the scheduler know that we found a VM;
+  # The scheduler will detach the VM from the MIG so that
+  # it doesn't get deleted by the MIG scaler while the job is running
+  send_heartbeat "FOUND_VM"
+  # Sleep for 1 minute to allow the scheduler to detach the VM
+  sleep 60
 
   # Run the workflow script
   echo "Running workflow script..."
@@ -99,7 +103,7 @@ run_workflow() {
 
     send_heartbeat "RUNNING"
 
-    sleep 10  # Send heartbeat 10 seconds
+    sleep 10  # Send heartbeat every 10 seconds
   done
 
   # Check for .finished file
