@@ -10,28 +10,64 @@ set -e  # Exit immediately if a command fails
 
 source ./scripts/utils.sh
 
-# New version Information (pulled from VERSION file locally)
-VERSION=$(cat VERSION)
-VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
-
-echo "Updating MIGs with new templates..."
-# Get the list of MIGs
-migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
-# Loop through each MIG and update it with the new template
-while IFS=',' read -r mig_name; do
-  (
+# Function to update a single MIG
+update_mig() {
+    local mig_name=$1
+    local version=$2
     # Extract the region from the MIG name
     mig_region=$(get_region_from_mig_name $mig_name)
     # Extract the template prefix from the MIG name
     template_prefix=$(echo $mig_name | sed 's/-[a-z]*-[a-z]*[0-9]*$//')
     # Construct the new template name
-    new_template_name="${template_prefix}-${VERSION_FOR_IMAGE}"
+    new_template_name="${template_prefix}-${version}"
     echo "Updating MIG: $mig_name to use template: $new_template_name"
     # Update the MIG with the new template
     gcloud compute instance-groups managed set-instance-template $mig_name \
       --region=$mig_region \
       --template=$new_template_name > /dev/null 2>&1
-  ) &
-done <<< "$migs"
-# Wait for all background commands to finish
-wait
+}
+
+# Parse command line arguments
+MIG_NAME=""
+VERSION=""
+
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        -m|--mig) MIG_NAME="$2"; shift ;;
+        -v|--version) VERSION="$2"; shift ;;
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
+done
+
+# If version is not provided, read it from VERSION file
+if [ -z "$VERSION" ]; then
+    if [ -f VERSION ]; then
+        VERSION=$(cat VERSION)
+    else
+        echo "Error: VERSION file not found and no version provided."
+        exit 1
+    fi
+fi
+
+# Replace dots with hyphens in the version
+VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-')
+
+echo "Using version: $VERSION"
+
+if [ -n "$MIG_NAME" ]; then
+    echo "Updating specific MIG: $MIG_NAME"
+    update_mig "$MIG_NAME" "$VERSION_FOR_IMAGE"
+else
+    echo "Updating all MIGs with new templates..."
+    # Get the list of MIGs
+    migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
+    # Loop through each MIG and update it with the new template
+    while IFS=',' read -r mig_name; do
+        update_mig "$mig_name" "$VERSION_FOR_IMAGE" &
+    done <<< "$migs"
+    # Wait for all background commands to finish
+    wait
+fi
+
+echo "MIG update process completed."
