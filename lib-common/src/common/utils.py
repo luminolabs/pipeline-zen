@@ -314,14 +314,17 @@ def heartbeat_wrapper(workflow_name, task_name):
             job_id = config.job_id
             user_id = config.user_id
             start_time = utcnow()
+            # Send a start heartbeat when the task starts
             send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
             e = result = None
             try:
                 result = func(*args, **kwargs)
+                # If the task returns a result, we'll send a finish heartbeat
                 send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
             except Exception as e:
                 # We'll raise this later
                 pass
+            # Send a total heartbeat with the elapsed time
             send_heartbeat(
                 job_id, user_id, f"wf-{workflow_name}-{task_name}-total",
                 elapsed_time=(utcnow() - start_time).total_seconds())
