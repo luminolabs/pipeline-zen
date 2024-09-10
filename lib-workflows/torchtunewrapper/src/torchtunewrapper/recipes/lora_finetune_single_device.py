@@ -13,8 +13,6 @@ from torchtune.modules.peft.peft_utils import (
     validate_missing_and_unexpected_for_lora,
 )
 
-from common.agents.model_scores import TorchtunewrapperScoresAgent
-from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe
 
@@ -27,7 +25,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
     def __init__(self, *args, **kwargs):
         self.is_lora = True
         super().__init__(*args, **kwargs)
-    
+
     def setup(self):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
         self.model = self.setup_model(
