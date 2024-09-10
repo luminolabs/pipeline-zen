@@ -16,13 +16,11 @@ from common.agents.model_scores import TorchtunewrapperScoresAgent
 # noinspection PyProtocol
 class RecipeBase(FTRecipeInterface):
     def __init__(self, cfg: DictConfig,
-                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent, dataset: Optional[Dataset] = None,
-                 is_lora: bool = False):
+                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent, dataset: Optional[Dataset] = None):
         self.cfg = cfg
         self.logger = logger
         self.scores_agent = scores_agent
         self.dataset = dataset
-        self.is_lora = is_lora
 
         self.device = utils.get_device(device=cfg.device)
         self.dtype = utils.get_dtype(cfg.dtype, device=self.device)
@@ -84,6 +82,7 @@ class RecipeBase(FTRecipeInterface):
         self.checkpointer = None
         self.lr_scheduler = None
         # LoRA-specific attributes
+        self.is_lora = False
         self.apply_lora_to_output = None
         self.apply_lora_to_mlp = None
         self.lora_attn_modules = None

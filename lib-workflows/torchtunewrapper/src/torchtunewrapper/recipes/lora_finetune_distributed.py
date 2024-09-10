@@ -25,6 +25,7 @@ from torchtune.modules.peft.peft_utils import (
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
+from torchtunewrapper.utils import run_recipe
 
 
 # noinspection PyProtocol
@@ -32,6 +33,10 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
     """
     The LoRA Fine-tuning Recipe for distributed training.
     """
+    def __init__(self, *args, **kwargs):
+        self.is_lora = True
+        super().__init__(*args, **kwargs)
+
     def setup(self):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
         self.model = self.setup_model(
@@ -245,16 +250,5 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
 def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
     os.environ["TORCH_NCCL_AVOID_RECORD_STREAMS"] = "1"
     init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
-
-    # Set up the main logger
-    logger = setup_logger("torchtunewrapper_recipe", job_id, user_id)
-    # A logger for logging scores; also propagates to main logger
-    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
-    # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
-    # Initialize the recipe and start training
-    recipe = LoRAFinetuneRecipeDistributed(cfg, logger, scores_agent, dataset, is_lora=True)
-    recipe.setup()
-    recipe.train()
-    recipe.save_checkpoint()
-    recipe.cleanup()
+    # Run the recipe
+    run_recipe(LoRAFinetuneRecipeDistributed, job_id, user_id, cfg, dataset)

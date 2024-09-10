@@ -19,6 +19,7 @@ from torchtune.utils.activations import apply_selective_activation_checkpointing
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
+from torchtunewrapper.utils import run_recipe
 
 
 # noinspection PyProtocol
@@ -180,15 +181,5 @@ def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
     if cfg.get("fsdp_cpu_offload", False):
         utils.set_torch_num_threads()
 
-    # Set up the main logger
-    logger = setup_logger("torchtunewrapper_recipe", job_id, user_id)
-    # A logger for logging scores; also propagates to main logger
-    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
-    # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
-    # Initialize the recipe and start training
-    recipe = FullFinetuneRecipeDistributed(cfg, logger, scores_agent, dataset)
-    recipe.setup()
-    recipe.train()
-    recipe.save_checkpoint()
-    recipe.cleanup()
+    # Run the recipe
+    run_recipe(FullFinetuneRecipeDistributed, job_id, user_id, cfg, dataset)
