@@ -1,4 +1,5 @@
 log_level: DEBUG
+log_stdout: true
 
 # GCP SA key location
 # Temporarily disabled because the local development service account is out of date with required permissions

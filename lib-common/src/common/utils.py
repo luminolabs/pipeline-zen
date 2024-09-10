@@ -8,7 +8,7 @@ from enum import Enum
 from json import JSONEncoder
 from os.path import basename
 from typing import Optional, Union
-from datetime import datetime
+from datetime import datetime, timezone
 
 from google.cloud import storage
 from google.cloud.storage import Bucket
@@ -61,11 +61,40 @@ class AutoJSONEncoder(JSONEncoder):
             return json.dumps(obj)
 
 
-def get_system_timestamp() -> str:
-    """
-    :return: A timestamp formatted as a string; use in logs, results, etc
-    """
-    return datetime.now().strftime(system_timestamp_format)
+class JsonFormatter(logging.Formatter):
+    def __init__(self, job_id: str, user_id: str):
+        """
+        :param job_id: The job id to use in the log record
+        :param user_id: The user id to use in the log record
+        """
+        super(JsonFormatter, self).__init__()
+
+        # Set the JSON encoder to use for the log records
+        self.json_encoder = AutoJSONEncoder()
+        self.job_id = job_id
+        self.user_id = user_id
+
+    def format(self, record) -> str:
+        """
+        Formats the log record as a JSON string
+        :param record: The log record to format
+        :return: The JSON formatted log record
+        """
+        # Define the log record format
+        log_record = {
+            "env": config.env_name,
+            "logger_name": record.name,
+            "level": record.levelname,
+            "timestamp": utcnow_str(),
+            "message": record.getMessage(),
+            "job_id": self.job_id,
+            "user_id": self.user_id
+        }
+        # Add any extra attributes
+        if hasattr(record, 'extra'):
+            log_record.update(record.extra)
+        # Return the JSON formatted log record
+        return json.dumps(log_record)
 
 
 def get_results_path(job_id: str = '') -> str:
@@ -98,7 +127,7 @@ def get_logs_path(job_id: str) -> str:
     return path
 
 
-def setup_logger(name: str, job_id: str,
+def setup_logger(name: str, job_id: str, user_id: str,
                  add_stdout: bool = True,
                  log_level: int = logging.INFO) -> logging.Logger:
     """
@@ -106,20 +135,28 @@ def setup_logger(name: str, job_id: str,
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
+    :param user_id: User id to use as part of the logger path
     :param add_stdout: Whether to add the stdout logger or not
     :param log_level: The log level to log at, ex. `logging.INFO`
     :return: A logger instance
     """
     log_level = log_level or config.log_level
-    log_format = logging.Formatter(f'{config.env_name} - %(asctime)s - %(message)s')
+
+    # Set the logger format for stdout
+    log_format = logging.Formatter(
+        f'{config.env_name} - %(name)s - %(levelname)s - %(asctime)s - %(message)s - job_id: {job_id} - user_id: {user_id}',
+        datefmt=system_timestamp_format
+    )
+    # Set the logger format to use the current UTC time
+    log_format.converter = lambda *args: utcnow().timetuple()
 
     # Log to stdout and to file
     stdout_handler = logging.StreamHandler(sys.stdout)
     file_handler = logging.FileHandler(os.path.join(get_logs_path(job_id), f'{name}.log'))
 
-    # Set the logger format
+    # Set the logger formats
     stdout_handler.setFormatter(log_format)
-    file_handler.setFormatter(log_format)
+    file_handler.setFormatter(JsonFormatter(job_id, user_id))
 
     # Configure logger
     pg_logger = logging.getLogger(name)
@@ -244,3 +281,17 @@ def read_job_config_from_file(job_config_name: str,
             job_config['category'] = getattr(JobCategory, job_config['category'])
 
     return job_config
+
+
+def utcnow() -> datetime:
+    """
+    :return: The current UTC time
+    """
+    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+
+def utcnow_str() -> str:
+    """
+    :return: The current UTC time as a string
+    """
+    return utcnow().strftime(system_timestamp_format)
