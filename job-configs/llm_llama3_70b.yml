@@ -1,6 +1,0 @@
-# Don't change this file, instead use the CLI interface to set options for the job
-
-job_id: llm_llama3_70b
-category: LLM
-type: INSTRUCTION
-model_base: meta-llama/Meta-Llama-3-70B-Instruct

@@ -1,12 +1,26 @@
-.idea
+# Python cache files
+__pycache__/
+*.py[cod]
 
-__pycache__
-
-.cache
-.results
-.logs
-.secrets
-
+# Environment variables file
 .env
 
+# IDE-specific files
+.idea/
+.vscode/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files and folders
+.cache/
+.results/
+.logs/
+.secrets/
 .output.log
+
+# This is the repopack genared file that
+# is contains the whole repo content for
+# submitting to AIs, like Claude
+pipeline-zen.txt
