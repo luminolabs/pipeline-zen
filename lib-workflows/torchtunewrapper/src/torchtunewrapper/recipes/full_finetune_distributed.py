@@ -51,7 +51,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
@@ -149,7 +149,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
             optimizer.load_state_dict(opt_state_dict)
         return optimizer
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         checkpoint_dict = {}
         # To prevent GPU memory from spiking during checkpoint save,
         # we consolidate the full model and optim state dicts on CPU for rank 0
@@ -174,7 +174,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
         destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
     if cfg.get("fsdp_cpu_offload", False):
         utils.set_torch_num_threads()

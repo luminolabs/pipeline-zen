@@ -1,22 +1,28 @@
 import os
 import time
+from abc import abstractmethod
 from functools import partial
 from logging import Logger
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any
 
 import torch
 from omegaconf import DictConfig
+from torch import nn
 from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config
-from torchtune.recipe_interfaces import FTRecipeInterface
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.utils import heartbeat_wrapper
 
 
 # noinspection PyProtocol
-class RecipeBase(FTRecipeInterface):
-    def __init__(self, cfg: DictConfig,
-                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent, dataset: Optional[Dataset] = None):
+class RecipeBase:
+    def __init__(self,
+                 job_id: str, user_id: str,
+                 cfg: DictConfig, dataset: Dataset,
+                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent):
+        self.job_id = job_id
+        self.user_id = user_id
         self.cfg = cfg
         self.logger = logger
         self.scores_agent = scores_agent
@@ -115,12 +121,11 @@ class RecipeBase(FTRecipeInterface):
                 utils.padded_collate,
                 padding_idx=self.tokenizer.pad_id,
                 ignore_idx=self.loss_fn.ignore_index,
-            )
-            if not packed
-            else None,
+            ) if not packed else None,
         )
         return sampler, dataloader
 
+    @heartbeat_wrapper('torchtunewrapper', 'download_weights')
     def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
         self.checkpointer = config.instantiate(
             cfg_checkpointer,
@@ -128,6 +133,23 @@ class RecipeBase(FTRecipeInterface):
         checkpoint_dict = self.checkpointer.load_checkpoint()
         return checkpoint_dict
 
+    @heartbeat_wrapper('torchtunewrapper', 'save_weights')
+    def save_checkpoint(self) -> None:
+        self._save_checkpoint()
+
+    @abstractmethod
+    def _save_checkpoint(self):
+        pass
+
+    @heartbeat_wrapper('torchtunewrapper', 'load_model')
+    def setup_model(self, *args, **kwargs) -> nn.Module:
+        return self._setup_model(*args, **kwargs)
+
+    @abstractmethod
+    def _setup_model(self, *args, **kwargs) -> nn.Module:
+        pass
+
+    @heartbeat_wrapper('torchtunewrapper', 'train')
     def train(self) -> None:
         utils.cleanup_before_training()
         _, rank = utils.get_world_size_and_rank()

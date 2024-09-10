@@ -62,11 +62,11 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
             last_epoch=self.global_step - 1,
         )
 
-    def setup_model(
+    def _setup_model(
             self,
             cfg_model: DictConfig,
             enable_activation_checkpointing: bool,
-            base_model_state_dict: Dict[str, Any],
+            model_state_dict: Dict[str, Any],
             lora_weights_state_dict: Optional[Dict[str, Any]] = None,
     ) -> nn.Module:
         """
@@ -107,12 +107,12 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
                     if lora_weights_state_dict is not None
                     else None
                 ),
-                base_model_state_dict_keys=base_model_state_dict.keys(),
+                base_model_state_dict_keys=model_state_dict.keys(),
             )
 
             # Load both the base model weights and (if available) the adapter weights. Both
             # of this should happen only on Rank 0
-            model.load_state_dict(base_model_state_dict, strict=False)
+            model.load_state_dict(model_state_dict, strict=False)
             if lora_weights_state_dict:
                 model.load_state_dict(lora_weights_state_dict, strict=False)
         else:
@@ -193,7 +193,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
         )
         return lr_scheduler
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         checkpoint_dict = {}
         # To prevent GPU memory from spiking during checkpoint save,
         # we consolidate the full model and optim state dicts on CPU for rank 0
@@ -245,7 +245,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
         destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     os.environ["TORCH_NCCL_AVOID_RECORD_STREAMS"] = "1"
     init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
     # Run the recipe

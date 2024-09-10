@@ -52,11 +52,11 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
             last_epoch=self.global_step - 1,
         )
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
-        base_model_state_dict: Dict[str, Any],
+        model_state_dict: Dict[str, Any],
         lora_weights_state_dict: Optional[Dict[str, Any]] = None,
     ) -> nn.Module:
         with utils.set_default_dtype(self.dtype), self.device:
@@ -76,7 +76,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
             )
 
         base_missing, base_unexpected = model.load_state_dict(
-            base_model_state_dict, strict=False
+            model_state_dict, strict=False
         )
         if lora_weights_state_dict:
             lora_missing, lora_unexpected = model.load_state_dict(
@@ -125,7 +125,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
         return lr_scheduler
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         ckpt_dict = {}
         # Move to CPU to avoid a copy on GPU
         state_dict = {k: v.cpu() for k, v in self.model.state_dict().items()}
@@ -159,6 +159,6 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     # Run the recipe
     run_recipe(LoRAFinetuneRecipeSingleDevice, job_id, user_id, cfg, dataset)

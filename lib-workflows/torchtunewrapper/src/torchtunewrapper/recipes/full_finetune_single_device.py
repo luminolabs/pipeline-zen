@@ -38,7 +38,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
@@ -92,7 +92,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
                 optimizer.load_state_dict(opt_state_dict)
             return optimizer
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         checkpoint_dict = {utils.MODEL_KEY: self.model.state_dict()}
         self.checkpointer.save_checkpoint(
             checkpoint_dict,
@@ -101,6 +101,6 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         )
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     # Run the recipe
     run_recipe(FullFinetuneRecipeSingleDevice, job_id, user_id, cfg, dataset)
