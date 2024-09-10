@@ -1,6 +1,27 @@
 import importlib
 from typing import Callable
 
+from omegaconf import DictConfig
+from torch.utils.data import Dataset
+
+from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.gcp import send_heartbeat as _send_heartbeat
+from common.utils import setup_logger
+
+
+def send_heartbeat(job_id: str, user_id: str, task: str, status: str) -> None:
+    """
+    Send a heartbeat message to the pipeline-zen-jobs-heartbeats topic.
+
+    :param job_id: The job id
+    :param user_id: The user id
+    :param task: The task name
+    :param status: The status of the job
+    """
+    status = f"wf-torchtune-{task}-{status}"
+    _send_heartbeat(job_id, user_id, status)
+    pass
+
 
 def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Callable:
     """
@@ -16,6 +37,24 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Calla
     return getattr(module, 'recipe_main')
 
 
+def run_recipe(recipe_class, job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset) -> None:
+    """
+    Run a torchtune recipe.
+    """
+    # Set up the main logger
+    logger = setup_logger("torchtunewrapper_recipe", job_id, user_id)
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+    # Initialize the recipe and start training
+    recipe = recipe_class(cfg, logger, scores_agent, dataset, is_lora=True)
+    recipe.setup()
+    recipe.train()
+    recipe.save_checkpoint()
+    recipe.cleanup()
+
+
 def get_torchtune_config_filename(model_base: str,
                                   use_lora: bool, use_qlora: bool,
                                   use_single_device: bool) -> str:
@@ -25,12 +64,6 @@ def get_torchtune_config_filename(model_base: str,
     # Map model base to config prefix;
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
-        # Llama 3 Instruct
-        'meta-llama/Meta-Llama-3-8B-Instruct': 'llama3/8B',
-        'meta-llama/Meta-Llama-3-70B-Instruct': 'llama3/70B',
-        # Llama 3 base
-        'meta-llama/Meta-Llama-3-8B': 'llama3/8B',
-        'meta-llama/Meta-Llama-3-70B': 'llama3/70B',
         # Llama 3.1 Instruct
         'meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
         'meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
