@@ -17,7 +17,7 @@ from omegaconf import OmegaConf, DictConfig
 from common.config_manager import config
 
 # Timestamp format to use for logs, results, etc
-system_timestamp_format = '%Y-%m-%d %H-%M-%S'
+system_timestamp_format = '%Y-%m-%d %H:%M:%S'
 
 
 class JsonEnumBase(Enum):
