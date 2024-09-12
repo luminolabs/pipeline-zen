@@ -170,7 +170,8 @@ class FullFinetuneRecipeDistributed(RecipeBase):
                 intermediate_checkpoint=(self.epochs_run < self.total_epochs),
             )
 
-    def cleanup(self):
+    @staticmethod
+    def cleanup():
         destroy_process_group()
 
 
