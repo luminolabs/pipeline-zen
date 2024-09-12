@@ -74,7 +74,7 @@ class ConfigManager:
     def __getattr__(self, attr):
         return self.loaded_config[attr]
 
-    def __setattr__(self, key, value):
+    def set(self, key, value):
         self.loaded_config[key] = value
 
 

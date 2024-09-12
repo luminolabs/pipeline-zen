@@ -10,7 +10,8 @@ from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, get_logs_path, setup_logger, heartbeat_wrapper
+    upload_local_directory_to_gcs, get_logs_path, setup_logger
+from common.helpers import heartbeat_wrapper
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 

@@ -28,7 +28,7 @@ def send_heartbeat(job_id: str, user_id: str, status: str, elapsed_time: Optiona
     topic_path = publisher.topic_path(config.gcp_project, config.heartbeat_topic)
     msg = {'job_id': job_id, 'user_id': user_id, 'status': status,
            'timestamp': utcnow_str(),
-           'elapsed_time': f'{elapsed_time:.2f s}' if elapsed_time else None}
+           'elapsed_time_s': f'{elapsed_time:.2f}' if elapsed_time else None}
     msg_str = json.dumps(msg)
     publisher.publish(topic_path, msg_str.encode("utf-8"))
 

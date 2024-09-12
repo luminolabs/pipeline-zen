@@ -13,8 +13,8 @@ def parse_args() -> tuple:
     args = parser.parse_args()
 
     # Update the application config so that they can be accessed globally
-    config.job_id = args.job_id
-    config.user_id = args.user_id
+    config.set('job_id', args.job_id)
+    config.set('user_id', args.user_id)
 
     return (args.job_id, args.user_id, args.job_config_name,
             args.dataset_id, args.train_file_path,

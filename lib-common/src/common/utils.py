@@ -1,4 +1,3 @@
-import functools
 import glob
 import json
 import logging
@@ -16,7 +15,6 @@ from google.cloud.storage import Bucket
 from omegaconf import OmegaConf, DictConfig
 
 from common.config_manager import config
-from common.gcp import send_heartbeat
 
 # Timestamp format to use for logs, results, etc
 system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
@@ -298,43 +296,3 @@ def utcnow_str() -> str:
     :return: The current UTC time as a string
     """
     return utcnow().strftime(system_timestamp_format)
-
-
-def heartbeat_wrapper(workflow_name, task_name):
-    """
-    A decorator that sends a heartbeat message to the pipeline-zen-jobs-heartbeats topic
-    when a task starts, finishes, or errors out.
-
-    :param workflow_name: The name of the workflow
-    :param task_name: The name of the task
-    """
-    def decorator(func):
-        @functools.wraps(func)
-        def wrapper(*args, **kwargs):
-            job_id = config.job_id
-            user_id = config.user_id
-            start_time = utcnow()
-            # Send a start heartbeat when the task starts
-            send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
-            e = result = None
-            try:
-                result = func(*args, **kwargs)
-                # If the task returns a result, we'll send a finish heartbeat
-                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
-            except Exception as e:
-                # We'll raise this later
-                pass
-            # Send a total heartbeat with the elapsed time
-            send_heartbeat(
-                job_id, user_id, f"wf-{workflow_name}-{task_name}-total",
-                elapsed_time=(utcnow() - start_time).total_seconds())
-            # A task will return -1 if an exception occurred, and it doesn't want to raise it.
-            # This is useful for tasks that want to run other tasks after them.
-            # So, we'll send an error heartbeat when an exception occurs or the task returns -1
-            if e or result == -1:
-                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
-                # Raise the exception if there is one
-                if e:
-                    raise e
-        return wrapper
-    return decorator

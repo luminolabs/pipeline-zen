@@ -15,15 +15,15 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
     """
     Full fine-tuning recipe for single device training.
     """
-    def setup(self):
+    def _setup(self):
         ckpt_dict = self.load_checkpoint(self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
             enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
             optimizer_in_bwd=self.cfg.optimizer_in_bwd,
         )
@@ -54,7 +54,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         utils.validate_expected_param_dtype(model.named_parameters(), dtype=self.dtype)
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
         self,
         cfg_optimizer: DictConfig,
         optimizer_in_bwd: bool = False,

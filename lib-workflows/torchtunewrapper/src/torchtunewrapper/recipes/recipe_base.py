@@ -12,7 +12,7 @@ from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
-from common.utils import heartbeat_wrapper
+from common.helpers import heartbeat_wrapper
 
 
 # noinspection PyProtocol
@@ -125,6 +125,13 @@ class RecipeBase:
         )
         return sampler, dataloader
 
+    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
+        self.checkpointer = config.instantiate(
+            cfg_checkpointer,
+        )
+        checkpoint_dict = self.checkpointer.load_checkpoint()
+        return checkpoint_dict
+
     @heartbeat_wrapper('torchtunewrapper', 'train')
     def train(self) -> None:
         utils.cleanup_before_training()
@@ -220,28 +227,20 @@ class RecipeBase:
                                         epoch_time_elapsed_s=time_per_epoch)
             self.epochs_run += 1
 
-    @heartbeat_wrapper('torchtunewrapper', 'download_weights')
-    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
-        self.checkpointer = config.instantiate(
-            cfg_checkpointer,
-        )
-        checkpoint_dict = self.checkpointer.load_checkpoint()
-        return checkpoint_dict
-
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:
         self._save_checkpoint()
 
-    @heartbeat_wrapper('torchtunewrapper', 'load_model')
-    def setup_model(self, *args, **kwargs) -> nn.Module:
-        return self._setup_model(*args, **kwargs)
+    @heartbeat_wrapper('torchtunewrapper', 'setup')
+    def setup(self):
+        return self._setup()
 
     @staticmethod
     def cleanup():
         pass
 
     @abstractmethod
-    def _setup_model(self, *args, **kwargs) -> nn.Module:
+    def _setup(self):
         pass
 
     @abstractmethod
