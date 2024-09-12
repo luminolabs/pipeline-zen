@@ -48,7 +48,7 @@ def run_recipe(recipe_class, job_id: str, user_id: str, cfg: DictConfig, dataset
     # Setup logging and bigquery agent for scores
     scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
     # Initialize the recipe and start training
-    recipe = recipe_class(cfg, dataset, logger, scores_agent)
+    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, scores_agent)
     recipe.setup()
     recipe.train()
     recipe.save_checkpoint()
