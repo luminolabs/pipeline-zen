@@ -2,6 +2,8 @@
 # torch
 # torchvision
 # transformers
+# datasets
+# segmentation_models_pytorch
 
 # GCP libs
 google-cloud-bigquery
@@ -10,8 +12,6 @@ google-cloud-pubsub
 
 # ML libs
 numpy
-datasets
-segmentation_models_pytorch
 
 # Other libs
 xmltodict
