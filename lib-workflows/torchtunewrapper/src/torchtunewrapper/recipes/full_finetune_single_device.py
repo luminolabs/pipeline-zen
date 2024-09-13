@@ -15,30 +15,29 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
     """
     Full fine-tuning recipe for single device training.
     """
-    def setup(self):
+    def _setup(self):
         ckpt_dict = self.load_checkpoint(self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
-            optimizer_in_bwd=self.cfg.optimizer_in_bwd,
+            optimizer_in_bwd=self.optimizer_in_bwd,
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
                 len(self.dataloader) // self.gradient_accumulation_steps
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
@@ -54,7 +53,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         utils.validate_expected_param_dtype(model.named_parameters(), dtype=self.dtype)
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
         self,
         cfg_optimizer: DictConfig,
         optimizer_in_bwd: bool = False,
@@ -92,7 +91,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
                 optimizer.load_state_dict(opt_state_dict)
             return optimizer
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         checkpoint_dict = {utils.MODEL_KEY: self.model.state_dict()}
         self.checkpointer.save_checkpoint(
             checkpoint_dict,
@@ -101,6 +100,6 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         )
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     # Run the recipe
     run_recipe(FullFinetuneRecipeSingleDevice, job_id, user_id, cfg, dataset)

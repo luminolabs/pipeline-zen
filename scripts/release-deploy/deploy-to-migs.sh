@@ -28,12 +28,12 @@ update_mig() {
 }
 
 # Parse command line arguments
-MIG_NAME=""
+MIG_PREFIX=""
 VERSION=""
 
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        -m|--mig) MIG_NAME="$2"; shift ;;
+        -m|--mig) MIG_PREFIX="$2"; shift ;;
         -v|--version) VERSION="$2"; shift ;;
         *) echo "Unknown parameter passed: $1"; exit 1 ;;
     esac
@@ -55,19 +55,26 @@ VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-')
 
 echo "Using version: $VERSION"
 
-if [ -n "$MIG_NAME" ]; then
-    echo "Updating specific MIG: $MIG_NAME"
-    update_mig "$MIG_NAME" "$VERSION_FOR_IMAGE"
+if [ -n "$MIG_PREFIX" ]; then
+    echo "Updating MIGs starting with: $MIG_PREFIX"
+    # Get the list of MIGs that start with the specified prefix
+    migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)" --filter="name~^$MIG_PREFIX")
+    if [ -z "$migs" ]; then
+        echo "No MIGs found starting with: $MIG_PREFIX"
+        exit 0
+    fi
 else
     echo "Updating all MIGs with new templates..."
-    # Get the list of MIGs
+    # Get the list of all MIGs
     migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
-    # Loop through each MIG and update it with the new template
-    while IFS=',' read -r mig_name; do
-        update_mig "$mig_name" "$VERSION_FOR_IMAGE" &
-    done <<< "$migs"
-    # Wait for all background commands to finish
-    wait
 fi
+
+# Loop through each MIG and update it with the new template
+while IFS=',' read -r mig_name; do
+    update_mig "$mig_name" "$VERSION_FOR_IMAGE" &
+done <<< "$migs"
+
+# Wait for all background commands to finish
+wait
 
 echo "MIG update process completed."

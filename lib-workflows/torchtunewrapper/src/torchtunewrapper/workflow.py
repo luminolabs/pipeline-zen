@@ -4,7 +4,9 @@ from typing import Optional
 
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
+from torch.utils.data import Dataset
 from torchtune.datasets import chat_dataset
+from transformers import PreTrainedModel
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.dataset.provider.huggingface import HuggingFace
@@ -12,35 +14,25 @@ from common.dataset.provider.utils import dataset_provider_factory
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
     get_logs_path, get_results_path, save_job_results
-from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
+from common.helpers import heartbeat_wrapper
 from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
-
+from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
 
 # Update the convert weights function to support the Mixtral-8x7B model
 update_convert_weights_from_hf()
 
 
-def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
+@heartbeat_wrapper('torchtunewrapper', 'download_dataset')
+def _download_dataset(job_config: DictConfig, logger: Logger) -> Dataset:
     """
-    Trains a model using torchtune recipies
+    Load the dataset for training;
+    this will download the dataset from GCS if the dataset id is a GCS path otherwise
+    it will pull the dataset from HuggingFace
 
     :param job_config: The job configuration
-    :param tt_config: The torchtune specific job configuration
     :param logger: The logger instance
-    :return: The final loss value
+    :return:
     """
-    job_id = job_config['job_id']
-
-    # A logger for logging scores; also propagates to main logger
-    scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, add_stdout=False)
-    # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
-
-    # Log a few things about this job
-    scores_logger.info('The job id is: ' + job_id)
-    scores_agent.log_system_specs()
-    scores_agent.log_job_config(job_config)
-
     chat_dataset_partial = partial(
         chat_dataset,
         tokenizer=None,
@@ -67,18 +59,49 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
             data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
             cache_dir=HuggingFace.get_dataset_cache_dir(),
         )
+    return dataset
+
+
+@heartbeat_wrapper('torchtunewrapper', 'download_model')
+def _download_model(job_config: DictConfig, logger: Logger) -> PreTrainedModel:
+    return model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
+
+
+def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
+    """
+    Trains a model using torchtune recipies
+
+    :param job_id: The job id for the job
+    :param user_id: The user id for the job
+    :param job_config: The job configuration
+    :param tt_config: The torchtune specific job configuration
+    :param logger: The logger instance
+    :return: The final loss value
+    """
+    # A logger for logging scores; also propagates to main logger
+    scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, user_id, add_stdout=False)
+    # Setup logging and bigquery agent for scores
+    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+
+    # Log a few things about this job
+    scores_logger.info('The job id is: ' + job_id)
+    scores_agent.log_system_specs()
+    scores_agent.log_job_config(dict(job_config))
+
+    # Load the dataset
+    dataset = _download_dataset(job_config, logger)
 
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
 
     # Fetch and load the base model
-    m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
+    m = _download_model(job_config, logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
 
     # Get the torchtune recipe function
     tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device)
-    tt_recipe_fn = partial(tt_recipe_fn_orig, cfg=tt_config, dataset=dataset, job_id=job_id)
+    tt_recipe_fn = partial(tt_recipe_fn_orig, job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
 
     # Run the torchtune recipe, which will fine-tune the model
     if is_single_device:
@@ -111,7 +134,7 @@ def run(job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     return results
 
 
-def main(job_id: str, job_config_name: str,
+def main(job_id: str, user_id: str, job_config_name: str,
          dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
          use_lora: bool = True, use_qlora: bool = False,
@@ -121,6 +144,7 @@ def main(job_id: str, job_config_name: str,
     Workflow entry point, mainly for catching unhandled exceptions
 
     :param job_id: The job id to use for logs, results, etc.
+    :param user_id: The user id for the job
     :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param dataset_id: The dataset identifier, ex: `tatsu-lab/alpaca`
     :param train_file_path: The path to the training file in the dataset, ex: `train.jsonl`
@@ -150,7 +174,7 @@ def main(job_id: str, job_config_name: str,
     job_config.setdefault('pytorch_cuda_alloc_conf', pytorch_cuda_alloc_conf)
 
     # Instantiate the main logger
-    logger = setup_logger('torchtunewrapper_workflow', job_id)
+    logger = setup_logger('torchtunewrapper_workflow', job_id, user_id)
 
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
@@ -178,7 +202,7 @@ def main(job_id: str, job_config_name: str,
 
     # Run the `torchtune` workflow, and handle unexpected exceptions
     try:
-        return run(job_config, tt_config, logger)
+        return run(job_id, user_id, job_config, tt_config, logger)
     except Exception as ex:
         logger.error(f"Exception occurred: {ex}")
         raise ex

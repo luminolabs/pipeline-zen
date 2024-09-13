@@ -25,33 +25,32 @@ class FullFinetuneRecipeDistributed(RecipeBase):
     """
     A full fine-tuning recipe for distributed training.
     """
-    def setup(self):
+    def _setup(self):
         ckpt_dict = self.load_checkpoint(self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
-            memory_efficient_fsdp_wrap=self.cfg.get("memory_efficient_fsdp_wrap", False),
-            fsdp_cpu_offload=self.cfg.get("fsdp_cpu_offload", False),
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
+            memory_efficient_fsdp_wrap=self.memory_efficient_fsdp_wrap,
+            fsdp_cpu_offload=self.fsdp_cpu_offload,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
             ac_mode=self.cfg.get("ac_mode", None),
             ac_option=self.cfg.get("ac_option", None),
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
             len(self.dataloader) // self.gradient_accumulation_steps
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
@@ -137,7 +136,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
 
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
         self, cfg_optimizer: DictConfig, opt_state_dict: Optional[Dict[str, Any]] = None
     ) -> Optimizer:
         # noinspection PyTypeChecker
@@ -149,7 +148,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
             optimizer.load_state_dict(opt_state_dict)
         return optimizer
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         checkpoint_dict = {}
         # To prevent GPU memory from spiking during checkpoint save,
         # we consolidate the full model and optim state dicts on CPU for rank 0
@@ -170,11 +169,12 @@ class FullFinetuneRecipeDistributed(RecipeBase):
                 intermediate_checkpoint=(self.epochs_run < self.total_epochs),
             )
 
-    def cleanup(self):
+    @staticmethod
+    def cleanup():
         destroy_process_group()
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     init_process_group(backend="gloo" if cfg.device == "cpu" else "nccl")
     if cfg.get("fsdp_cpu_offload", False):
         utils.set_torch_num_threads()

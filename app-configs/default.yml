@@ -4,7 +4,7 @@ provider_log_scores: false  # insert scores to bigquery?, or any other future re
 
 # Logging
 log_level: INFO
-log_stdout: true
+log_stdout: false  # In dev and prod we only want to log to files, to avoid generating duplicate logs
 
 # Paths
 root_path: .
@@ -25,6 +25,7 @@ celery_broker_url: memory://localhost/
 # GCP
 gcp_project: neat-airport-407301
 bq_dataset: pipeline_zen
+heartbeat_topic: pipeline-zen-jobs-heartbeats
 
 # Hugging Face
 huggingface_token:  # Set this in your .env file: `PZ_HUGGINGFACE_TOKEN=.....`

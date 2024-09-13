@@ -71,7 +71,7 @@
     },
     {
         "name": "step_time_elapsed_s",
-        "type": "INTEGER",
+        "type": "FLOAT",
         "mode": "NULLABLE"
     },
     {
@@ -86,7 +86,7 @@
     },
     {
         "name": "epoch_time_elapsed_s",
-        "type": "INTEGER",
+        "type": "FLOAT",
         "mode": "NULLABLE"
     }
 ]
