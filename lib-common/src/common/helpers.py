@@ -152,26 +152,21 @@ def heartbeat_wrapper(workflow_name, task_name):
             start_time = utcnow()
             # Send a start heartbeat when the task starts
             send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
-            e = result = None
             try:
                 result = func(*args, **kwargs)
-                # If the task returns a result, we'll send a finish heartbeat
-                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
+                if result != -1:
+                    # Function run successfully
+                    send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
+                else:
+                    # Function returned -1, indicating an error, the error is already logged by the function
+                    send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
             except Exception as e:
-                # We'll raise this later
-                pass
+                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
+                raise e
             # Send a total heartbeat with the elapsed time
             send_heartbeat(
                 job_id, user_id, f"wf-{workflow_name}-{task_name}-total",
                 elapsed_time=(utcnow() - start_time).total_seconds())
-            # A task will return -1 if an exception occurred, and it doesn't want to raise it.
-            # This is useful for tasks that want to run other tasks after them.
-            # So, we'll send an error heartbeat when an exception occurs or the task returns -1
-            if e or result == -1:
-                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
-                # Raise the exception if there is one
-                if e:
-                    raise e
             return result
         return wrapper
     return decorator
