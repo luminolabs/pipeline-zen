@@ -6,13 +6,15 @@ from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torch.utils.data import Dataset
 from torchtune.datasets import chat_dataset
+from transformers import PreTrainedModel
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
 from common.dataset.provider.huggingface import HuggingFace
 from common.dataset.provider.utils import dataset_provider_factory
 from common.model.factory import model_factory
 from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
-    get_logs_path, get_results_path, save_job_results, heartbeat_wrapper
+    get_logs_path, get_results_path, save_job_results
+from common.helpers import heartbeat_wrapper
 from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
 
@@ -60,6 +62,11 @@ def _download_dataset(job_config: DictConfig, logger: Logger) -> Dataset:
     return dataset
 
 
+@heartbeat_wrapper('torchtunewrapper', 'download_model')
+def _download_model(job_config: DictConfig, logger: Logger) -> PreTrainedModel:
+    return model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
+
+
 def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
     """
     Trains a model using torchtune recipies
@@ -88,7 +95,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     is_single_device = job_config['num_gpus'] == 1
 
     # Fetch and load the base model
-    m = model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
+    m = _download_model(job_config, logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': m.name_or_path})  # path, not name
 

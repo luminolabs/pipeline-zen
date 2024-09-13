@@ -1,3 +1,4 @@
+import functools
 import math
 import os
 from logging import Logger
@@ -8,12 +9,15 @@ from torch import nn
 from torch.utils.data import DataLoader
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
+from common.config_manager import config
 from common.dataset.kind.utils import dataset_kind_factory
 from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.dataset.provider.utils import dataset_provider_factory
+from common.gcp import send_heartbeat
 from common.model.factory import model_factory
+from common.model.image import resnet
 from common.tokenizer.utils import tokenizer_factory
-from common.utils import get_model_weights_path
+from common.utils import get_model_weights_path, utcnow
 
 
 def get_device(logger: Logger):
@@ -130,3 +134,39 @@ def configure_model_and_dataloader(
         model = nn.DataParallel(model)
 
     return model, dataloader, tokenizer, device
+
+
+def heartbeat_wrapper(workflow_name, task_name):
+    """
+    A decorator that sends a heartbeat message to the pipeline-zen-jobs-heartbeats topic
+    when a task starts, finishes, or errors out.
+
+    :param workflow_name: The name of the workflow
+    :param task_name: The name of the task
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            job_id = config.job_id
+            user_id = config.user_id
+            start_time = utcnow()
+            # Send a start heartbeat when the task starts
+            send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
+            try:
+                result = func(*args, **kwargs)
+                if result != -1:
+                    # Function run successfully
+                    send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
+                else:
+                    # Function returned -1, indicating an error, the error is already logged by the function
+                    send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
+            except Exception as e:
+                send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
+                raise e
+            # Send a total heartbeat with the elapsed time
+            send_heartbeat(
+                job_id, user_id, f"wf-{workflow_name}-{task_name}-total",
+                elapsed_time=(utcnow() - start_time).total_seconds())
+            return result
+        return wrapper
+    return decorator

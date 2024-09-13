@@ -25,26 +25,25 @@ class FullFinetuneRecipeDistributed(RecipeBase):
     """
     A full fine-tuning recipe for distributed training.
     """
-    def setup(self):
+    def _setup(self):
         ckpt_dict = self.load_checkpoint(self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
-            memory_efficient_fsdp_wrap=self.cfg.get("memory_efficient_fsdp_wrap", False),
-            fsdp_cpu_offload=self.cfg.get("fsdp_cpu_offload", False),
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
+            memory_efficient_fsdp_wrap=self.memory_efficient_fsdp_wrap,
+            fsdp_cpu_offload=self.fsdp_cpu_offload,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
             ac_mode=self.cfg.get("ac_mode", None),
             ac_option=self.cfg.get("ac_option", None),
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
             len(self.dataloader) // self.gradient_accumulation_steps
@@ -137,7 +136,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
 
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
         self, cfg_optimizer: DictConfig, opt_state_dict: Optional[Dict[str, Any]] = None
     ) -> Optimizer:
         # noinspection PyTypeChecker

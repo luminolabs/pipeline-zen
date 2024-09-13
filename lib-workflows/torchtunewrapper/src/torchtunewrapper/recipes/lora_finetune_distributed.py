@@ -1,4 +1,5 @@
 import os
+from logging import Logger
 from typing import Any, Dict, Optional
 
 import torch
@@ -22,6 +23,7 @@ from torchtune.modules.peft.peft_utils import (
     validate_state_dict_for_lora,
 )
 
+from common.agents.model_scores import TorchtunewrapperScoresAgent
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe
 
@@ -31,33 +33,34 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
     """
     The LoRA Fine-tuning Recipe for distributed training.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, job_id: str, user_id: str,
+                 cfg: DictConfig, dataset: Dataset,
+                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent):
         self.is_lora = True
-        super().__init__(*args, **kwargs)
+        super().__init__(job_id, user_id, cfg, dataset, logger, scores_agent)
 
-    def setup(self):
+    def _setup(self):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
-            base_model_state_dict=checkpoint_dict[utils.MODEL_KEY],
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
+            model_state_dict=checkpoint_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
                 len(self.dataloader) // self.gradient_accumulation_steps
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
-        self.lr_scheduler = self.setup_lr_scheduler(
-            cfg_lr_scheduler=self.cfg.lr_scheduler,
+        self.lr_scheduler = self._setup_lr_scheduler(
+            cfg_lr_scheduler=self.lr_scheduler,
             num_training_steps=self.total_epochs * self.steps_per_epoch,
             last_epoch=self.global_step - 1,
         )
@@ -166,7 +169,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
 
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
             self, cfg_optimizer: DictConfig, opt_state_dict: Optional[Dict[str, Any]] = None
     ) -> Optimizer:
         # noinspection PyTypeChecker
@@ -178,7 +181,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
             optimizer.load_state_dict(opt_state_dict)
         return optimizer
 
-    def setup_lr_scheduler(
+    def _setup_lr_scheduler(
             self,
             cfg_lr_scheduler: DictConfig,
             num_training_steps: int,

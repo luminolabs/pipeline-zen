@@ -12,7 +12,7 @@ from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
-from common.utils import heartbeat_wrapper
+from common.helpers import heartbeat_wrapper
 
 
 # noinspection PyProtocol
@@ -27,56 +27,6 @@ class RecipeBase:
         self.logger = logger
         self.scores_agent = scores_agent
         self.dataset = dataset
-
-        self.device = utils.get_device(device=cfg.device)
-        self.dtype = utils.get_dtype(cfg.dtype, device=self.device)
-
-        if self.dtype == torch.float16:
-            raise ValueError(
-                "Full fp16 training is not supported with this recipe. "
-                "Please use bf16 or fp32 instead."
-            )
-
-        if (
-                self.dtype == torch.bfloat16
-                and self.device != torch.device("cpu")
-                and not torch.cuda.is_bf16_supported()
-        ):
-            raise ValueError("Full bf16 training is not supported on this hardware.")
-
-        if (
-                cfg.fsdp_cpu_offload
-                and cfg.optimizer.fused
-                and not utils.torch_version_ge("2.4.0")
-        ):
-            raise ValueError("Using fused optimizer on CPU is only supported in PyTorch nightly.")
-
-        if cfg.gradient_accumulation_steps > 1 and cfg.optimizer_in_bwd:
-            raise ValueError(
-                "Gradient accumulation is not supported with optimizer in bwd."
-                "Please set gradient_accumulation_steps=1, or optimizer_in_bwd=False."
-            )
-
-        _, rank = utils.get_world_size_and_rank()
-        self.is_rank_zero = rank == 0
-
-        # Set the PyTorch CUDA allocation configuration
-        # This is useful for memory management on GPUs and can be used to prevent OOM errors
-        pytorch_cuda_alloc_conf = cfg.get("pytorch_cuda_alloc_conf", None)
-        if pytorch_cuda_alloc_conf:
-            self.logger.info(f"Set PYTORCH_CUDA_ALLOC_CONF to: {pytorch_cuda_alloc_conf} for GPU #{rank}")
-            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = pytorch_cuda_alloc_conf
-
-        # Set the seed for reproducibility
-        self.seed = utils.set_seed(seed=cfg.seed)
-
-        # Initialize the recipe state
-        self.epochs_run = 0
-        self.total_epochs = cfg.epochs
-        self.global_step = 0
-        self.gradient_accumulation_steps = cfg.gradient_accumulation_steps
-        self.steps_per_epoch = None
-        self.optim_ckpt_wrapper = None
 
         # Initialize objects variables
         self.dataloader = None
@@ -95,17 +45,70 @@ class RecipeBase:
         self.adapter_params = None
         self.lora_alpha = None
         self.lora_rank = None
+        # Other configuration
+        self.device = utils.get_device(device=cfg.get('device', 'cuda'))
+        self.dtype = utils.get_dtype(cfg.dtype, device=self.device)
+        self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
+        self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)
+        self.memory_efficient_fsdp_wrap = cfg.get('memory_efficient_fsdp_wrap', False)
+        self.fused = cfg.optimizer.get('fused', False)
+        self.optimizer_in_bwd = cfg.get('optimizer_in_bwd', False)
+        self.pytorch_cuda_alloc_conf = cfg.get('pytorch_cuda_alloc_conf', None)
+        self.enable_activation_checkpointing = cfg.get('enable_activation_checkpointing', True)
+        self.dataset_packed = cfg.dataset.get('packed', False)
+        # Distributed environment variables
+        _, rank = utils.get_world_size_and_rank()
+        self.is_rank_zero = rank == 0
+        # State variables
+        self.total_epochs = cfg.get('epochs', 1)
+        self.shuffle = cfg.get('shuffle', True)
+        self.batch_size = cfg.get('batch_size', 2)
+        self.optim_ckpt_wrapper = None
+        # Training variables
+        self.epochs_run = 0
+        self.global_step = 0
+        self.steps_per_epoch = None
+        # Set the seed for reproducibility
+        self.seed = utils.set_seed(seed=cfg.get('seed', None))
+
+        # Set the PyTorch CUDA allocation configuration
+        # This is useful for memory management on GPUs and can be used to prevent OOM errors
+        if self.pytorch_cuda_alloc_conf:
+            self.logger.info(f"Set PYTORCH_CUDA_ALLOC_CONF to: {self.pytorch_cuda_alloc_conf} for GPU #{rank}")
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = self.pytorch_cuda_alloc_conf
+
+        # Validate configuration
+        if self.dtype == torch.float16:
+            raise ValueError(
+                "Full fp16 training is not supported with this recipe. "
+                "Please use bf16 or fp32 instead."
+            )
+        if (
+            self.dtype == torch.bfloat16
+            and self.device != torch.device("cpu")
+            and not torch.cuda.is_bf16_supported()
+        ):
+            raise ValueError("Full bf16 training is not supported on this hardware.")
+        if (
+            self.fsdp_cpu_offload
+            and self.fused
+            and not utils.torch_version_ge("2.4.0")
+        ):
+            raise ValueError("Using fused optimizer on CPU is only supported in PyTorch nightly.")
+        if self.gradient_accumulation_steps > 1 and self.optimizer_in_bwd:
+            raise ValueError(
+                "Gradient accumulation is not supported with optimizer in bwd."
+                "Please set gradient_accumulation_steps=1, or optimizer_in_bwd=False."
+            )
 
     def setup_data(
             self,
-            cfg_dataset: DictConfig,
             shuffle: bool,
             batch_size: int,
     ) -> Tuple[DistributedSampler, DataLoader]:
         world_size, rank = utils.get_world_size_and_rank()
         ds = self.dataset
         ds.tokenizer = self.tokenizer
-        packed = cfg_dataset.get("packed", False)
         sampler = DistributedSampler(
             ds,
             num_replicas=world_size,
@@ -121,15 +124,22 @@ class RecipeBase:
                 utils.padded_collate,
                 padding_idx=self.tokenizer.pad_id,
                 ignore_idx=self.loss_fn.ignore_index,
-            ) if not packed else None,
+            ) if not self.dataset_packed else None,
         )
         return sampler, dataloader
+
+    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
+        self.checkpointer = config.instantiate(
+            cfg_checkpointer,
+        )
+        checkpoint_dict = self.checkpointer.load_checkpoint()
+        return checkpoint_dict
 
     @heartbeat_wrapper('torchtunewrapper', 'train')
     def train(self) -> None:
         utils.cleanup_before_training()
         _, rank = utils.get_world_size_and_rank()
-        if not self.cfg.optimizer_in_bwd:
+        if not self.optimizer_in_bwd:
             self.optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
@@ -177,7 +187,7 @@ class RecipeBase:
 
                 # Step with optimizer
                 if (idx + 1) % self.gradient_accumulation_steps == 0:
-                    if not self.cfg.optimizer_in_bwd:
+                    if not self.optimizer_in_bwd:
                         self.optimizer.step()
                         self.optimizer.zero_grad(set_to_none=True)
                         if self.is_lora:
@@ -196,7 +206,7 @@ class RecipeBase:
                         step_loss=running_loss.item(),
                         step_lr=(
                             self.optim_ckpt_wrapper.get_optim_key("lr")
-                            if self.optim_ckpt_wrapper and self.cfg.optimizer_in_bwd
+                            if self.optim_ckpt_wrapper and self.optimizer_in_bwd
                             else self.optimizer.param_groups[0]["lr"]
                         ),
                         step_tokens_per_second=num_tokens / time_per_step,
@@ -220,28 +230,20 @@ class RecipeBase:
                                         epoch_time_elapsed_s=time_per_epoch)
             self.epochs_run += 1
 
-    @heartbeat_wrapper('torchtunewrapper', 'download_weights')
-    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
-        self.checkpointer = config.instantiate(
-            cfg_checkpointer,
-        )
-        checkpoint_dict = self.checkpointer.load_checkpoint()
-        return checkpoint_dict
-
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:
         self._save_checkpoint()
 
-    @heartbeat_wrapper('torchtunewrapper', 'load_model')
-    def setup_model(self, *args, **kwargs) -> nn.Module:
-        return self._setup_model(*args, **kwargs)
+    @heartbeat_wrapper('torchtunewrapper', 'setup')
+    def setup(self):
+        return self._setup()
 
     @staticmethod
     def cleanup():
         pass
 
     @abstractmethod
-    def _setup_model(self, *args, **kwargs) -> nn.Module:
+    def _setup(self):
         pass
 
     @abstractmethod
