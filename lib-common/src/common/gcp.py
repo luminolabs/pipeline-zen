@@ -1,4 +1,11 @@
+import json
+from typing import Optional
+
 import requests
+from google.cloud import pubsub_v1
+
+from common.config_manager import config
+from common.utils import utcnow_str
 
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
@@ -8,20 +15,52 @@ LOCAL_CLUSTER = LOCAL_ENV
 STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
 
 
-# Function to get the VM name using the metadata server
+def send_heartbeat(job_id: str, user_id: str, status: str, elapsed_time: Optional[float] = None):
+    """
+    Send a heartbeat message to the pipeline-zen-jobs-heartbeats topic.
+
+    :param job_id: The job id
+    :param user_id: The user id
+    :param status: The status of the job
+    :param elapsed_time: The elapsed time of the job in seconds
+    """
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(config.gcp_project, config.heartbeat_topic)
+    msg = {'job_id': job_id, 'user_id': user_id, 'status': status, 'vm_name': get_vm_name_from_metadata(),
+           'timestamp': utcnow_str(),
+           'elapsed_time_s': f'{elapsed_time:.2f}' if elapsed_time else None}
+    msg_str = json.dumps(msg)
+    publisher.publish(topic_path, msg_str.encode("utf-8"))
+
+
 def get_vm_name_from_metadata():
+    """
+    Get the VM name from the metadata server
+    """
+    if config.env_name == LOCAL_ENV:
+        return None
     print('Fetching the VM name from the metadata server...')
+    if config.vm_name:
+        return config.vm_name
     response = requests.get(METADATA_NAME_URL, headers=METADATA_HEADERS)
     vm_name = response.text
+    config.set('vm_name', vm_name)
     print(f'VM name obtained: {vm_name}')
     return vm_name
 
 
-# Function to get the zone of the VM from the metadata server
 def get_zone_from_metadata():
+    """
+    Get the zone of the VM from the metadata server
+    """
+    if config.env_name == LOCAL_ENV:
+        return None
     print('Fetching the zone from the metadata server...')
+    if config.zone:
+        return config.zone
     response = requests.get(METADATA_ZONE_URL, headers=METADATA_HEADERS)
     zone = response.text.split('/')[-1]
+    config.set('zone', zone)
     print(f'Zone obtained: {zone}')
     return zone
 

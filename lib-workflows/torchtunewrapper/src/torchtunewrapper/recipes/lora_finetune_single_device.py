@@ -1,3 +1,4 @@
+from logging import Logger
 from typing import Any, Dict, Optional
 
 from omegaconf import DictConfig
@@ -13,6 +14,7 @@ from torchtune.modules.peft.peft_utils import (
     validate_missing_and_unexpected_for_lora,
 )
 
+from common.agents.model_scores import TorchtunewrapperScoresAgent
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe
 
@@ -22,51 +24,52 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
     """
     Recipe for LoRA fine-tuning on a single device.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, job_id: str, user_id: str,
+                 cfg: DictConfig, dataset: Dataset,
+                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent):
         self.is_lora = True
-        super().__init__(*args, **kwargs)
+        super().__init__(job_id, user_id, cfg, dataset, logger, scores_agent)
 
-    def setup(self):
+    def _setup(self):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
-        self.model = self.setup_model(
+        self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
-            base_model_state_dict=checkpoint_dict[utils.MODEL_KEY],
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
+            model_state_dict=checkpoint_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
-        self.optimizer = self.setup_optimizer(
+        self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
             len(self.dataloader) // self.gradient_accumulation_steps
         )
-        self.lr_scheduler = self.setup_lr_scheduler(
-            cfg_lr_scheduler=self.cfg.lr_scheduler,
+        self.lr_scheduler = self._setup_lr_scheduler(
+            cfg_lr_scheduler=self.lr_scheduler,
             num_training_steps=self.total_epochs * self.steps_per_epoch,
             last_epoch=self.global_step - 1,
         )
 
-    def setup_model(
+    def _setup_model(
         self,
         cfg_model: DictConfig,
         enable_activation_checkpointing: bool,
-        base_model_state_dict: Dict[str, Any],
+        model_state_dict: Dict[str, Any],
         lora_weights_state_dict: Optional[Dict[str, Any]] = None,
     ) -> nn.Module:
         with utils.set_default_dtype(self.dtype), self.device:
             model = config.instantiate(cfg_model)
 
-        self.lora_rank = cfg_model.lora_rank
-        self.lora_alpha = cfg_model.lora_alpha
-        self.lora_attn_modules = list(cfg_model.lora_attn_modules)
-        self.apply_lora_to_mlp = cfg_model.apply_lora_to_mlp
-        self.apply_lora_to_output = getattr(cfg_model, "apply_lora_to_output", False)
+        self.lora_rank = self.lora_rank
+        self.lora_alpha = self.lora_alpha
+        self.lora_attn_modules = list(self.lora_attn_modules)
+        self.apply_lora_to_mlp = self.apply_lora_to_mlp
+        self.apply_lora_to_output = self.apply_lora_to_output
         self.adapter_params = get_adapter_params(model)
         set_trainable_params(model, self.adapter_params)
 
@@ -76,7 +79,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
             )
 
         base_missing, base_unexpected = model.load_state_dict(
-            base_model_state_dict, strict=False
+            model_state_dict, strict=False
         )
         if lora_weights_state_dict:
             lora_missing, lora_unexpected = model.load_state_dict(
@@ -99,7 +102,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
         return model
 
-    def setup_optimizer(
+    def _setup_optimizer(
         self, cfg_optimizer: DictConfig, opt_state_dict: Optional[Dict[str, Any]] = None
     ) -> Optimizer:
         # noinspection PyTypeChecker
@@ -110,7 +113,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         self.logger.info("Optimizer and loss are initialized.")
         return optimizer
 
-    def setup_lr_scheduler(
+    def _setup_lr_scheduler(
         self,
         cfg_lr_scheduler: DictConfig,
         num_training_steps: int,
@@ -125,7 +128,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
         return lr_scheduler
 
-    def save_checkpoint(self):
+    def _save_checkpoint(self):
         ckpt_dict = {}
         # Move to CPU to avoid a copy on GPU
         state_dict = {k: v.cpu() for k, v in self.model.state_dict().items()}
@@ -159,6 +162,6 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
 
 
-def recipe_main(cfg: DictConfig, dataset: Dataset, job_id: str, user_id: str):
+def recipe_main(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
     # Run the recipe
     run_recipe(LoRAFinetuneRecipeSingleDevice, job_id, user_id, cfg, dataset)

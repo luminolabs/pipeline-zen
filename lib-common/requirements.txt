@@ -1,17 +1,17 @@
 # These three are installed separatelly in the Dockerfile
-# but we're including them here to allow installing locally
-torch
-torchvision
-transformers
+# torch
+# torchvision
+# transformers
+# datasets
+# segmentation_models_pytorch
 
 # GCP libs
 google-cloud-bigquery
 google-cloud-storage
+google-cloud-pubsub
 
 # ML libs
 numpy
-datasets
-segmentation_models_pytorch
 
 # Other libs
 xmltodict
