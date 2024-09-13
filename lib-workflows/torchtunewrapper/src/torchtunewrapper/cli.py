@@ -1,6 +1,6 @@
 import argparse
 
-from common.config_manager import is_truthy
+from common.config_manager import is_truthy, config
 from torchtunewrapper.workflow import main
 
 
@@ -12,7 +12,11 @@ def parse_args() -> tuple:
     add_parser_args(parser)
     args = parser.parse_args()
 
-    return (args.job_id, args.job_config_name,
+    # Update the application config so that they can be accessed globally
+    config.set('job_id', args.job_id)
+    config.set('user_id', args.user_id)
+
+    return (args.job_id, args.user_id, args.job_config_name,
             args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
             args.use_lora, args.use_qlora, args.num_gpus,
@@ -31,6 +35,9 @@ def add_parser_args(parser: argparse.ArgumentParser):
                         help="The name of the job config file, without the `.py` extension")
     parser.add_argument('-jid', '--job_id', type=str, required=False,
                         help="The job_id to use for training; "
+                             "logs and other job results and artifacts will be named after this.")
+    parser.add_argument('-uid', '--user_id', type=str, required=False, default='0',
+                        help="The user_id to use for training; "
                              "logs and other job results and artifacts will be named after this.")
 
     parser.add_argument('-ds', '--dataset_id', type=str, required=True,

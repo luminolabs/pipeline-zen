@@ -4,11 +4,11 @@ import logging
 import os
 import sys
 import uuid
+from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
 from os.path import basename
 from typing import Optional, Union
-from datetime import datetime, timezone
 
 from google.cloud import storage
 from google.cloud.storage import Bucket
@@ -17,7 +17,7 @@ from omegaconf import OmegaConf, DictConfig
 from common.config_manager import config
 
 # Timestamp format to use for logs, results, etc
-system_timestamp_format = '%Y-%m-%d-%H-%M-%S'
+system_timestamp_format = '%Y-%m-%d %H:%M:%S'
 
 
 class JsonEnumBase(Enum):
@@ -220,7 +220,7 @@ def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], g
             blob.upload_from_filename(local_file)
 
 
-def load_job_config(job_config_name: str) -> dict:
+def load_job_config(job_config_name: str) -> DictConfig:
     """
     Builds the job configuration dict using the requested config plus values
     inherited from the default templates
@@ -232,8 +232,9 @@ def load_job_config(job_config_name: str) -> dict:
     # Pull the requested configuration file
     job_config = read_job_config_from_file(job_config_name)
 
+    # If the job category is LLM, return the job config as is, no need for other modifications
     if job_config['category'] == JobCategory.LLM:
-        return {**job_config}
+        return DictConfig({**job_config})
 
     # Construct the template configuration file; ex. `image_segmentation_base.yml`
     template_config_name = (job_config['category'].value +
@@ -245,7 +246,7 @@ def load_job_config(job_config_name: str) -> dict:
     template_config = read_job_config_from_file(os.path.join('templates', template_config_name))
 
     # Build final configuration dict
-    return {**base_config, **template_config, **job_config}
+    return DictConfig({**base_config, **template_config, **job_config})
 
 
 def read_job_config_from_file(job_config_name: str,
