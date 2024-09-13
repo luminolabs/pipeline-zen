@@ -139,7 +139,7 @@ class RecipeBase:
     def train(self) -> None:
         utils.cleanup_before_training()
         _, rank = utils.get_world_size_and_rank()
-        if not self.cfg.optimizer_in_bwd:
+        if not self.optimizer_in_bwd:
             self.optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
@@ -187,7 +187,7 @@ class RecipeBase:
 
                 # Step with optimizer
                 if (idx + 1) % self.gradient_accumulation_steps == 0:
-                    if not self.cfg.optimizer_in_bwd:
+                    if not self.optimizer_in_bwd:
                         self.optimizer.step()
                         self.optimizer.zero_grad(set_to_none=True)
                         if self.is_lora:
@@ -206,7 +206,7 @@ class RecipeBase:
                         step_loss=running_loss.item(),
                         step_lr=(
                             self.optim_ckpt_wrapper.get_optim_key("lr")
-                            if self.optim_ckpt_wrapper and self.cfg.optimizer_in_bwd
+                            if self.optim_ckpt_wrapper and self.optimizer_in_bwd
                             else self.optimizer.param_groups[0]["lr"]
                         ),
                         step_tokens_per_second=num_tokens / time_per_step,
