@@ -34,7 +34,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
         self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
             model_state_dict=checkpoint_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
@@ -43,15 +43,14 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
             len(self.dataloader) // self.gradient_accumulation_steps
         )
         self.lr_scheduler = self._setup_lr_scheduler(
-            cfg_lr_scheduler=self.cfg.lr_scheduler,
+            cfg_lr_scheduler=self.lr_scheduler,
             num_training_steps=self.total_epochs * self.steps_per_epoch,
             last_epoch=self.global_step - 1,
         )
@@ -66,11 +65,11 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         with utils.set_default_dtype(self.dtype), self.device:
             model = config.instantiate(cfg_model)
 
-        self.lora_rank = cfg_model.lora_rank
-        self.lora_alpha = cfg_model.lora_alpha
-        self.lora_attn_modules = list(cfg_model.lora_attn_modules)
-        self.apply_lora_to_mlp = cfg_model.apply_lora_to_mlp
-        self.apply_lora_to_output = getattr(cfg_model, "apply_lora_to_output", False)
+        self.lora_rank = self.lora_rank
+        self.lora_alpha = self.lora_alpha
+        self.lora_attn_modules = list(self.lora_attn_modules)
+        self.apply_lora_to_mlp = self.apply_lora_to_mlp
+        self.apply_lora_to_output = self.apply_lora_to_output
         self.adapter_params = get_adapter_params(model)
         set_trainable_params(model, self.adapter_params)
 

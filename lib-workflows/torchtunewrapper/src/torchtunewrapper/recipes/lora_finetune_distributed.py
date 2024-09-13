@@ -43,7 +43,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
         checkpoint_dict = self.load_checkpoint(cfg_checkpointer=self.cfg.checkpointer)
         self.model = self._setup_model(
             cfg_model=self.cfg.model,
-            enable_activation_checkpointing=self.cfg.enable_activation_checkpointing,
+            enable_activation_checkpointing=self.enable_activation_checkpointing,
             model_state_dict=checkpoint_dict[utils.MODEL_KEY],
         )
         self.tokenizer = config.instantiate(self.cfg.tokenizer)
@@ -52,16 +52,15 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
         )
         self.loss_fn = config.instantiate(self.cfg.loss)
         self.sampler, self.dataloader = self.setup_data(
-            cfg_dataset=self.cfg.dataset,
-            shuffle=self.cfg.shuffle,
-            batch_size=self.cfg.batch_size,
+            shuffle=self.shuffle,
+            batch_size=self.batch_size,
         )
         self.steps_per_epoch = (
                 len(self.dataloader) // self.gradient_accumulation_steps
         )
         self.global_step = self.epochs_run * self.steps_per_epoch
         self.lr_scheduler = self._setup_lr_scheduler(
-            cfg_lr_scheduler=self.cfg.lr_scheduler,
+            cfg_lr_scheduler=self.lr_scheduler,
             num_training_steps=self.total_epochs * self.steps_per_epoch,
             last_epoch=self.global_step - 1,
         )
