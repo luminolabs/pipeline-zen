@@ -30,5 +30,10 @@ heartbeat_topic: pipeline-zen-jobs-heartbeats
 huggingface_token:  # Set this in your .env file: `PZ_HUGGINGFACE_TOKEN=.....`
 
 # Customer API
+customer_api_enabled: true  # Setting to false will disable Customer API calls
 customer_api_url:  # This is set in each environment's env files
 customer_api_key:  # Set this in your .env file: `PZ_CUSTOMER_API_KEY=.....`
+
+# Set to true to mock that the user has enough credits
+# to run a job and avoid making the API call (useful for local testing)
+mock_user_has_enough_credits: false

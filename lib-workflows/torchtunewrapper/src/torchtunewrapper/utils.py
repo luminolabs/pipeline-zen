@@ -57,6 +57,11 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: i
     """
     Log the number of tokens in the dataset to the API, and check if the user has enough credits to run the job.
     """
+    # If we're mocking user credits, or calls to Customer API are disabled, return True
+    # This is useful for local testing
+    if config.mock_user_has_enough_credits or not config.customer_api_enabled:
+        return True
+
     api_url = f"{config.customer_api_url}/usage/log-and-check"
     headers = {
         "x-api-key": f"{config.customer_api_key}",
@@ -87,6 +92,7 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     recipe = recipe_class(job_id, user_id, cfg, dataset, logger, scores_agent)
     recipe.setup()
     # Count tokens and check if user has enough credits to run the job
+    # Note: We can only do this after the recipe is set up, because the tokenizer needs to be initialized first
     token_count = _count_dataset_tokens(recipe.model_path, recipe.tokenizer)
     has_enough_credits = _log_tokens_and_check_user_credits(job_id, user_id, token_count)
     if not has_enough_credits:
