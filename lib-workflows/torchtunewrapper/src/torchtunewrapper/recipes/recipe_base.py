@@ -107,7 +107,7 @@ class RecipeBase:
     ) -> Tuple[DistributedSampler, DataLoader]:
         world_size, rank = utils.get_world_size_and_rank()
         ds = self.dataset
-        ds.tokenizer = self.tokenizer
+        ds._tokenizer = self.tokenizer
         sampler = DistributedSampler(
             ds,
             num_replicas=world_size,
@@ -136,7 +136,8 @@ class RecipeBase:
 
     @heartbeat_wrapper('torchtunewrapper', 'train')
     def train(self) -> None:
-        utils.cleanup_before_training()
+        if self.device.type == "cuda":
+            utils.cleanup_before_training()
         _, rank = utils.get_world_size_and_rank()
         if not self.optimizer_in_bwd:
             self.optimizer.zero_grad()
