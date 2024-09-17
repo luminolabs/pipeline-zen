@@ -45,12 +45,11 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Calla
     return getattr(module, 'recipe_main')
 
 
-def _count_dataset_tokens(dataset_path: str, tokenizer: Tokenizers) -> int:
+def _count_dataset_tokens(dataset: Dataset) -> int:
     """
     Count the number of tokens in the dataset.
     """
-    tokens = tokenizer.encode(dataset_path)
-    return len(tokens)
+    return sum([len(record['tokens']) for record in dataset])
 
 
 def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: int) -> bool:
@@ -93,7 +92,7 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     recipe.setup()
     # Count tokens and check if user has enough credits to run the job
     # Note: We can only do this after the recipe is set up, because the tokenizer needs to be initialized first
-    token_count = _count_dataset_tokens(recipe.model_path, recipe.tokenizer)
+    token_count = _count_dataset_tokens(recipe.dataset)
     has_enough_credits = _log_tokens_and_check_user_credits(job_id, user_id, token_count)
     if not has_enough_credits:
         raise PermissionError(f"User does not have enough credits to run the job; "

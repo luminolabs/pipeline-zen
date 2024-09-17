@@ -30,7 +30,6 @@ class RecipeBase:
         self.dataset = dataset
 
         # Initialize objects variables
-        self.model_path = cfg['base_model_path']
         self.dataloader = None
         self.sampler = None
         self.loss_fn = None
