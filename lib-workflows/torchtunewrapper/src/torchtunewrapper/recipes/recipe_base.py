@@ -8,9 +8,11 @@ from typing import Tuple, Dict, Any
 import torch
 from omegaconf import DictConfig
 from torch.utils.data import DistributedSampler, DataLoader, Dataset
-from torchtune import utils, config
+from torchtune import utils, config as tt_config
 
 from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.config_manager import config
+from common.gcp import LOCAL_ENV
 from common.helpers import heartbeat_wrapper
 
 
@@ -28,6 +30,7 @@ class RecipeBase:
         self.dataset = dataset
 
         # Initialize objects variables
+        self.model_path = cfg['base_model_path']
         self.dataloader = None
         self.sampler = None
         self.loss_fn = None
@@ -45,8 +48,13 @@ class RecipeBase:
         self.lora_rank = cfg.model.get('lora_rank', None)
         self.adapter_params = None
         # Other configuration
-        self.device = utils.get_device(cfg.get('device', 'cuda'))
-        self.dtype = utils.get_dtype(cfg.dtype, device=self.device)
+        self.device = utils.get_device(
+            # Use MPS locally since we're all on Apple silicon
+            cfg.get('device', 'cuda') if config.env_name != LOCAL_ENV else "mps")
+        self.dtype = utils.get_dtype(
+            # Use fp32 locally since we're all on Apple silicon, and bf* is not supported
+            cfg.dtype if config.env_name != LOCAL_ENV else "fp32",
+            device=self.device)
         self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
         self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)
         self.memory_efficient_fsdp_wrap = cfg.get('memory_efficient_fsdp_wrap', False)
@@ -128,7 +136,7 @@ class RecipeBase:
         return sampler, dataloader
 
     def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
-        self.checkpointer = config.instantiate(
+        self.checkpointer = tt_config.instantiate(
             cfg_checkpointer,
         )
         checkpoint_dict = self.checkpointer.load_checkpoint()
