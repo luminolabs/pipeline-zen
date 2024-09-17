@@ -153,7 +153,7 @@ def heartbeat_wrapper(workflow_name, task_name):
             send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
             try:
                 result = func(*args, **kwargs)
-                if result != -1:
+                if result is not False:
                     # Function run successfully
                     send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
                 else:
