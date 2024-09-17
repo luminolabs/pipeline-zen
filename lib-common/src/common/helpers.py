@@ -157,7 +157,7 @@ def heartbeat_wrapper(workflow_name, task_name):
                     # Function run successfully
                     send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
                 else:
-                    # Function returned -1, indicating an error, the error is already logged by the function
+                    # Function returned False, indicating an error, the error is already logged by the function
                     send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
             except Exception as e:
                 send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")

@@ -2,3 +2,4 @@
 upload_results: true
 provider_log_scores: true  # insert scores to bigquery?, or any other future remote DB
 customer_api_url: http://34.136.224.209:5100/v1  # API is running on the Scheduler VM at this address
+mock_user_has_enough_credits: True  # Enable till we support this in the Customer API
