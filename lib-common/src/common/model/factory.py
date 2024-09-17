@@ -6,7 +6,7 @@ from transformers import PreTrainedModel
 from common.model import image, nlp, llm
 
 
-def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **kwargs) -> PreTrainedModel:
+def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **kwargs) -> PreTrainedModel | str:
     """
     Factory method for instantiating a pre-trained model.
 

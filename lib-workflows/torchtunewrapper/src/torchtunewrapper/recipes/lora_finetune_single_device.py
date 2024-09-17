@@ -65,11 +65,6 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
         with utils.set_default_dtype(self.dtype), self.device:
             model = config.instantiate(cfg_model)
 
-        self.lora_rank = self.lora_rank
-        self.lora_alpha = self.lora_alpha
-        self.lora_attn_modules = list(self.lora_attn_modules)
-        self.apply_lora_to_mlp = self.apply_lora_to_mlp
-        self.apply_lora_to_output = self.apply_lora_to_output
         self.adapter_params = get_adapter_params(model)
         set_trainable_params(model, self.adapter_params)
 

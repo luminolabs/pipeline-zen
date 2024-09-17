@@ -7,7 +7,6 @@ from typing import Tuple, Dict, Any
 
 import torch
 from omegaconf import DictConfig
-from torch import nn
 from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config
 
@@ -39,14 +38,14 @@ class RecipeBase:
         self.lr_scheduler = None
         # LoRA-specific attributes
         self.is_lora = False
-        self.apply_lora_to_output = None
-        self.apply_lora_to_mlp = None
-        self.lora_attn_modules = None
+        self.apply_lora_to_output = cfg.model.get('apply_lora_to_output', False)
+        self.apply_lora_to_mlp = cfg.model.get('apply_lora_to_mlp', False)
+        self.lora_attn_modules = cfg.model.get('lora_attn_modules', [])
+        self.lora_alpha = cfg.model.get('lora_alpha', None)
+        self.lora_rank = cfg.model.get('lora_rank', None)
         self.adapter_params = None
-        self.lora_alpha = None
-        self.lora_rank = None
         # Other configuration
-        self.device = utils.get_device(device=cfg.get('device', 'cuda'))
+        self.device = utils.get_device(cfg.get('device', 'cuda'))
         self.dtype = utils.get_dtype(cfg.dtype, device=self.device)
         self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
         self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)

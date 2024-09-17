@@ -84,12 +84,6 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
            d. The ``device_id`` param ensures that the FSDP initialization happens on
               the correct device.
         """
-        self.lora_rank = cfg_model.lora_rank
-        self.lora_alpha = cfg_model.lora_alpha
-        self.lora_attn_modules = list(cfg_model.lora_attn_modules)
-        self.apply_lora_to_mlp = cfg_model.apply_lora_to_mlp
-        self.apply_lora_to_output = getattr(cfg_model, "apply_lora_to_output", False)
-
         if self.is_rank_zero:
             with utils.set_default_dtype(self.dtype):
                 model = config.instantiate(cfg_model)
@@ -101,9 +95,9 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
             # This is a good sanity check to prevent silent errors
             # noinspection PyTypeChecker
             validate_state_dict_for_lora(
-                lora_attn_modules=cfg_model.lora_attn_modules,
-                apply_lora_to_mlp=cfg_model.apply_lora_to_mlp,
-                apply_lora_to_output=getattr(cfg_model, "apply_lora_to_output", False),
+                lora_attn_modules=self.lora_attn_modules,
+                apply_lora_to_mlp=self.apply_lora_to_mlp,
+                apply_lora_to_output=self.apply_lora_to_output,
                 full_model_state_dict_keys=model.state_dict().keys(),
                 lora_state_dict_keys=(
                     lora_weights_state_dict.keys()
@@ -125,9 +119,6 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
 
         if self.dtype == torch.bfloat16:
             model = model.to(torch.bfloat16)
-
-        self.lora_rank = cfg_model.lora_rank
-        self.lora_alpha = cfg_model.lora_alpha
 
         self.adapter_params = get_adapter_params(model)
         set_trainable_params(model, self.adapter_params)
