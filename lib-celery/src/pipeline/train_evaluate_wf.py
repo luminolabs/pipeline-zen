@@ -9,9 +9,9 @@ from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, setup_logger
+from evaluate.workflow import main as _evaluate
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
-from evaluate.workflow import main as _evaluate
 
 # Celery logs output to stdout
 # Disable workflow logger output to stdout
@@ -59,7 +59,7 @@ def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`train` task failed with error: {e}\n{traceback.format_exc()}')
-        return None
+        return False
 
 
 @app.task
@@ -67,13 +67,13 @@ def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, n
     logger = setup_logger('celery_train_evaluate_wf', job_id)
     if not train_result:
         logger.warning(f'`train` task failed - will not run `evaluate` task')
-        return None
+        return False
     try:
         return _evaluate(job_id, job_config_name, batch_size, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`evaluate` task failed with error: {e}\n{traceback.format_exc()}')
-        return None
+        return False
 
 
 @app.task
@@ -101,7 +101,7 @@ def mark_finished(evaluate_result, job_id: str):
     if not evaluate_result:
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`evaluate` task failed - will not run `mark_finished` task')
-        return None
+        return False
     path = os.path.join(config.root_path, get_results_path(), config.finished_file)
     with open(path, "w") as f:
         f.write(job_id)

@@ -106,7 +106,7 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
     if not torchtunewrapper_result:
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
-        return None
+        return False
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
         f.write(job_id + "\n")
