@@ -38,9 +38,9 @@ if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
     echo "keep_alive flag is truthy. Skipping VM deletion."
   else
     echo "Initiating VM deletion..."
-    vm_name=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
-    vm_zone=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone | cut -d/ -f4)
-    gcloud compute instances delete $vm_name --zone=vm_zone --quiet
+    vm_name=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
+    vm_zone=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/zone | cut -d/ -f4)
+    gcloud compute instances delete $vm_name --zone=$vm_zone --quiet
   fi
 else
   echo "Running locally. Skipping VM deletion."

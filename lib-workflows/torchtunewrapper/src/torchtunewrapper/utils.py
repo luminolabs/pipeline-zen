@@ -61,7 +61,7 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: i
     if config.mock_user_has_enough_credits or not config.customer_api_enabled:
         return True
 
-    api_url = f"{config.customer_api_url}/usage/log-and-check"
+    api_url = f"{config.customer_api_url}/billing/log-and-check"
     headers = {
         "x-api-key": f"{config.customer_api_key}",
         "Content-Type": "application/json"
