@@ -72,7 +72,7 @@ def torchtunewrapper(_, job_id: str, user_id: str, job_config_name: str,
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`torchtunewrapper` task failed with error: {e}\n{traceback.format_exc()}')
-        return -1
+        return False
 
 
 @app.task
@@ -106,10 +106,10 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
     if not torchtunewrapper_result:
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
-        return None
+        return False
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
-        f.write(job_id)
+        f.write(job_id + "\n")
 
 
 @app.task
@@ -124,7 +124,7 @@ def mark_started(_, job_id: str, user_id: str):
     """
     path = os.path.join(config.root_path, config.results_path, config.started_file)
     with open(path, "w") as f:
-        f.write(job_id)
+        f.write(job_id + "\n")
 
 
 @app.task

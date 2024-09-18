@@ -123,7 +123,7 @@ def main(job_id: str, job_config_name: str,
     logger = setup_logger('evaluate_workflow', job_id)
     # Run the `evaluate` workflow, and handle unexpected exceptions
     try:
-        return run(job_config, logger)
+        return run(dict(job_config), logger)
     except Exception as ex:
         logger.error(f"Exception occurred: {ex}")
         raise ex

@@ -1,6 +1,9 @@
 log_level: DEBUG
 log_stdout: true
 heartbeat_topic: pipeline-zen-jobs-heartbeats-local
+customer_api_url: http://localhost:5100/v1
+customer_api_enabled: false
+mock_user_has_enough_credits: true
 
 # GCP SA key location
 # Temporarily disabled because the local development service account is out of date with required permissions

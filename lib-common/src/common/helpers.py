@@ -15,7 +15,6 @@ from common.dataset.preprocessor.utils import dataset_preprocessor_factory
 from common.dataset.provider.utils import dataset_provider_factory
 from common.gcp import send_heartbeat
 from common.model.factory import model_factory
-from common.model.image import resnet
 from common.tokenizer.utils import tokenizer_factory
 from common.utils import get_model_weights_path, utcnow
 
@@ -154,11 +153,11 @@ def heartbeat_wrapper(workflow_name, task_name):
             send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-start")
             try:
                 result = func(*args, **kwargs)
-                if result != -1:
+                if result is not False:
                     # Function run successfully
                     send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-finish")
                 else:
-                    # Function returned -1, indicating an error, the error is already logged by the function
+                    # Function returned False, indicating an error, the error is already logged by the function
                     send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")
             except Exception as e:
                 send_heartbeat(job_id, user_id, f"wf-{workflow_name}-{task_name}-error")

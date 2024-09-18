@@ -127,7 +127,7 @@ def get_logs_path(job_id: str) -> str:
     return path
 
 
-def setup_logger(name: str, job_id: str, user_id: str,
+def setup_logger(name: str, job_id: str, user_id: str = '0',
                  add_stdout: bool = True,
                  log_level: int = logging.INFO) -> logging.Logger:
     """

@@ -3,22 +3,15 @@
 # Deploys a release to a new VM image and creates templates for different GPU configurations
 # note: this script doesn't create a new release, it only deploys an existing release;
 # the actual release process is implemented in github actions
-# Steps taken by this script:
-# 1. Define variables and configurations needed for the deployment.
-# 2. Start the VM used for creating the new image.
-# 3. Wait for the VM to initialize and start necessary services.
-# 4. Copy necessary files to the VM.
-# 5. Install required Python dependencies on the VM.
-# 6. Remove any older Docker images from the VM.
-# 7. Pull the latest version Docker image onto the VM.
-# 8. Stop the VM after preparations are complete.
-# 9. Create a new VM image from the VM disk.
-# 10. Generate new compute instance templates for each specified GPU/CPU configuration.
-# 11. Indicate completion of the deployment process.
 
 set -e  # Exit immediately if a command fails
 
+# Source utility functions and variables
 source ./scripts/utils.sh
+
+# Parse target environment
+target_env=${1:-dev}  # default to dev if not specified
+echo "Deploying to target environment: $target_env"
 
 # New version Information (pulled from VERSION file locally)
 VERSION=$(cat VERSION)
@@ -32,8 +25,6 @@ JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gservicea
 RESOURCES_PREFIX="pipeline-zen-jobs"
 # Folder where scripts are stored
 SCRIPTS_FOLDER="scripts"
-# Folder where common libraries are stored
-LIB_COMMON_FOLDER="lib-common"
 # Name of the base image to use for the new image
 NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
 # Path to the Docker image containing the ML pipeline, to pull on the VM
@@ -73,26 +64,15 @@ echo "Wait 60s to allow VM to start services..."
 sleep 60
 
 echo "Copying files to VM..."
-# Remove any local python cache files so they don't get copied to the VM
-find . | grep -E "(/__pycache__$|\.pyc$|\.pyo$)" | xargs rm -rf
 # Make sure we have access permissions to the files and folders
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
 # Remove old files and create scripts folder
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
-  --command "rm -rf /$RESOURCES_PREFIX/$SCRIPTS_FOLDER /$RESOURCES_PREFIX/VERSION /$RESOURCES_PREFIX/.__pylibs__ && mkdir -p /$RESOURCES_PREFIX/$SCRIPTS_FOLDER"
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
-  --command "rm -rf /$RESOURCES_PREFIX/$LIB_COMMON_FOLDER && mkdir -p /$RESOURCES_PREFIX/$LIB_COMMON_FOLDER"
+  --command "rm -rf /$RESOURCES_PREFIX/$SCRIPTS_FOLDER /$RESOURCES_PREFIX/VERSION && mkdir -p /$RESOURCES_PREFIX/$SCRIPTS_FOLDER"
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 gcloud compute scp --recurse ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-gcloud compute scp --recurse ./$LIB_COMMON_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-# TODO: Choose the right .env file based on the environment
-gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
-
-# Install python dependencies
-echo "Installing python dependencies..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/$SCRIPTS_FOLDER/requirements.txt"
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "pip install --target=/$RESOURCES_PREFIX/.__pylibs__ -Ur /$RESOURCES_PREFIX/$LIB_COMMON_FOLDER/requirements.txt"
+gcloud compute scp ./deploy-artifacts/$target_env.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
 # Grab older Docker Image ID
 old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
@@ -101,10 +81,6 @@ old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_V
 echo "Pulling new Docker image on VM: $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "gcloud auth configure-docker $DOCKER_IMAGE_HOST --quiet"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
-
-## Remove older Docker Image
-#echo "Deleting older docker image..."
-#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Stop VM
 echo "Stopping VM..."
