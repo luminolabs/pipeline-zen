@@ -11,6 +11,7 @@ from common.config_manager import config
 from common.gcp import get_results_bucket_name
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, get_logs_path, setup_logger
+from common.helpers import heartbeat_wrapper
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -44,25 +45,25 @@ def handle_task_failure(*args, **kwargs):
     If any other task fails, we terminate the workflow as well as the worker, so that the whole
     script execution ends and the worker VM can shut down.
     """
-    # `job_id` is always the second argument passed to a task
-    job_id = kwargs.get('args')[1]
-    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+    job_id = kwargs.get('args')[1]  # `job_id` is always the second argument passed to a task
+    user_id = kwargs.get('args')[2]  # `user_id` is always the third argument passed to a task
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
     # Not raising exception, since it's already raised by the task
     logger.error('Something went wrong during task execution')
     app.control.shutdown()
 
 
 @app.task
-def torchtunewrapper(_, job_id: str, job_config_name: str,
+def torchtunewrapper(_, job_id: str, user_id: str, job_config_name: str,
                      dataset_id: str = Optional[None], train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
                      use_lora: bool = True, use_qlora: bool = False,
                      num_gpus: int = 1,
                      pytorch_cuda_alloc_conf: str = None):
-    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
     try:
         return _torchtunewrapper(
-            job_id, job_config_name,
+            job_id, user_id, job_config_name,
             dataset_id, train_file_path,
             batch_size, shuffle, num_epochs,
             use_lora, use_qlora,
@@ -71,14 +72,16 @@ def torchtunewrapper(_, job_id: str, job_config_name: str,
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`torchtunewrapper` task failed with error: {e}\n{traceback.format_exc()}')
-        return None
+        return False
 
 
 @app.task
-def upload_results(_, job_id: str):
+@heartbeat_wrapper("torchtunewrapper", "upload_weights")
+def upload_results(_, job_id: str, user_id: str):
     """
     Upload results and logs to Google Cloud Storage.
     :param job_id: The job id to associate with the results
+    :param user_id: The user id to associate with the results
     :return:
     """
     results_bucket_name = get_results_bucket_name(config.env_name)
@@ -89,41 +92,43 @@ def upload_results(_, job_id: str):
 
 
 @app.task
-def mark_finished(torchtunewrapper_result, job_id: str):
+def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
     """
     Creates a `.finished` file that serves as a signal to listeners
     that the job finished.
 
     :param torchtunewrapper_result: The result of the torchtunewrapper task
     :param job_id: The job id that finished
+    :param user_id: The user id that finished the job
     :return:
     """
-    logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+    logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
     if not torchtunewrapper_result:
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
-        return None
+        return False
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
-        f.write(job_id)
+        f.write(job_id + "\n")
 
 
 @app.task
-def mark_started(_, job_id: str):
+def mark_started(_, job_id: str, user_id: str):
     """
     Creates a `.started` file that serves as a signal to listeners
     that the job started.
 
     :param job_id: The job id that started
+    :param user_id: The user id that started the job
     :return:
     """
     path = os.path.join(config.root_path, config.results_path, config.started_file)
     with open(path, "w") as f:
-        f.write(job_id)
+        f.write(job_id + "\n")
 
 
 @app.task
-def shutdown_celery_worker(_, job_id: str):
+def shutdown_celery_worker(_, job_id: str, user_id: str):
     """
     Shuts down the celery worker.
     """
@@ -142,27 +147,28 @@ def schedule(*args):
     """
     # Get job id and update it if necessary
     args = list(args)
-    job_config_name = args[1]
+    job_config_name = args[2]
     job_id = args[0]
     job_id = args[0] = get_or_generate_job_id(job_config_name, job_id)
+    user_id = args[1]
 
     # On non-local environments, we require the presence of GPUs
     if config.env_name != 'local':
-        logger = setup_logger('celery_torchtunewrapper_wf', job_id)
+        logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
         system_specs = SystemSpecs(logger)
         if system_specs.get_gpu_spec() is None:
             raise RuntimeError('No GPUs found on this machine')
 
     # Define workflow tasks
-    tasks = [mark_started.s(None, job_id),
+    tasks = [mark_started.s(None, job_id, user_id),
              torchtunewrapper.s(*args),
-             mark_finished.s(job_id)]
+             mark_finished.s(job_id, user_id)]
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
-        tasks.append(upload_results.s(job_id))
+        tasks.append(upload_results.s(job_id, user_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
-    tasks.append(shutdown_celery_worker.s(job_id))
+    tasks.append(shutdown_celery_worker.s(job_id, user_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 

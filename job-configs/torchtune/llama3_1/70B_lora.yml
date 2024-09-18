@@ -78,7 +78,6 @@ loss:
   _component_: torch.nn.CrossEntropyLoss
 
 # Training
-max_steps_per_epoch: null
 gradient_accumulation_steps: 1
 
 # Environment

@@ -60,7 +60,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - name: Bump Version
         run: |
-          PYTHONPATH=$(pwd)/lib-common/src python ./scripts/bump_version.py -p minor
+          ./scripts/bump_version.sh minor
           echo "NEXT_VERSION=$(cat VERSION)" >> $GITHUB_ENV
       - name: Commit new version and push to git repo
         run: |

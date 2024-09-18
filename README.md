@@ -22,8 +22,8 @@ not locally; see the next section for instructions.
 
 ```bash
 ./scripts/runners/single-wf.sh torchtunewrapper \
-  --job_config_name llm_llama3_8b \
-  --job_id llm_llama3_8b-experiment1 \
+  --job_config_name llm_llama3_1_8b \
+  --job_id llm_llama3_1_8b-experiment1 \
   --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true --use_qlora false \
@@ -36,10 +36,10 @@ Send a new job request to the Scheduler with the following command:
 
 ```bash
 curl -X POST http://<scheduler IP>/jobs -H "Content-Type: application/json" -d '{
-  "job_id": "vasilis-protoml1-llama3-8b-lora-4xa100-40gb-run1",
+  "job_id": "vasilis-protoml1-llama3-1-8b-lora-4xa100-40gb-run1",
   "workflow": "torchtunewrapper",
   "args": {
-    "job_config_name": "llm_llama3_8b",
+    "job_config_name": "llm_llama3_1_8b",
     "dataset_id": "gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl",
     "batch_size": 2,
     "shuffle": true,

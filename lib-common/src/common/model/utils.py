@@ -6,7 +6,7 @@ from common.config_manager import config
 def get_model_cache_dir(model_provider: str, model_name: str):
     """
     Where to store the base model locally
-    ex: `.cache/models/huggingface/llama3-8b`
+    ex: `.cache/models/huggingface/llama3-1-8b`
 
     :param model_provider: The model provider
     :param model_name: The model name

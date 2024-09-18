@@ -4,7 +4,7 @@ provider_log_scores: false  # insert scores to bigquery?, or any other future re
 
 # Logging
 log_level: INFO
-log_stdout: true
+log_stdout: false  # In dev and prod we only want to log to files, to avoid generating duplicate logs
 
 # Paths
 root_path: .
@@ -14,8 +14,7 @@ results_path: .results
 secrets_path: .secrets
 job_configs_path: job-configs
 weights_file: weights.pt
-# `finished/started_file`: Its presence signals listeners that a
-# job is finished/started
+# `finished/started_file`: Its presence signals listeners that a job is finished/started
 finished_file: .finished
 started_file: .started
 
@@ -25,6 +24,16 @@ celery_broker_url: memory://localhost/
 # GCP
 gcp_project: neat-airport-407301
 bq_dataset: pipeline_zen
+heartbeat_topic: pipeline-zen-jobs-heartbeats
 
 # Hugging Face
 huggingface_token:  # Set this in your .env file: `PZ_HUGGINGFACE_TOKEN=.....`
+
+# Customer API
+customer_api_enabled: true  # Setting to false will disable Customer API calls
+customer_api_url:  # This is set in each environment's env files
+customer_api_key:  # Set this in your .env file: `PZ_CUSTOMER_API_KEY=.....`
+
+# Set to true to mock that the user has enough credits
+# to run a job and avoid making the API call (useful for local testing)
+mock_user_has_enough_credits: false

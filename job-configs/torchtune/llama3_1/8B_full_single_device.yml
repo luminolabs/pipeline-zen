@@ -41,10 +41,8 @@ optimizer:
   lr: 2e-5
 loss:
   _component_: torch.nn.CrossEntropyLoss
-max_steps_per_epoch: null
 gradient_accumulation_steps: 1
 optimizer_in_bwd: True
-compile: False
 
 # Training environment
 device: cuda

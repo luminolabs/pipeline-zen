@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
 from logging import Logger
 from typing import Optional, Union
 import json
@@ -8,9 +7,8 @@ from google.cloud import bigquery
 
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
-from common.utils import AutoJSONEncoder, system_timestamp_format
+from common.utils import AutoJSONEncoder, utcnow, utcnow_str
 
-datetime_format = '%Y-%m-%d %H:%M:%S'
 bq_table_train = f'{config.gcp_project}.{config.bq_dataset}.train'
 bq_table_evaluate = f'{config.gcp_project}.{config.bq_dataset}.evaluate'
 bq_table_torchtunewrapper = f'{config.gcp_project}.{config.bq_dataset}.torchtunewrapper'
@@ -43,18 +41,16 @@ class BaseScoresAgent(ABC):
         """
         Mark, and log the start time of the training job
         """
-        self.time_start = datetime.now()
-        str_time = self.time_start.strftime(system_timestamp_format)
-        self.logger.info(f'Process started at: {str_time}')
+        self.time_start = utcnow()
+        self.logger.info(f'Process started at: {utcnow_str()}')
         self.bq_insert(operation='mark_time_start')
 
     def mark_time_end(self):
         """
         Mark, and log the end time of the training job
         """
-        self.time_end = datetime.now()
-        str_time = self.time_end.strftime(system_timestamp_format)
-        self.logger.info(f'Process ended at: {str_time}')
+        self.time_end = utcnow()
+        self.logger.info(f'Process ended at: {utcnow_str()}')
         self.bq_insert(operation='mark_time_end')
 
     def log_time_elapsed(self):
@@ -112,7 +108,7 @@ class BaseScoresAgent(ABC):
             # Create a new dict from the dicts below;
             # the new dict represents the target table structure
             **{'job_id': self.job_id,
-               'create_ts': str(datetime.now()),
+               'create_ts': utcnow_str(),
                'operation': operation,
                'result': result_json},
             **self.bq_table_defaults,
@@ -245,15 +241,15 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
         }
 
     def log_step(self, gpu_rank: int,
-                  step_num: int, step_len: int, step_loss: float, step_lr: float,
-                  step_tokens_per_second: float, step_tokens: int,
-                  step_peak_memory_active: int, step_peak_memory_alloc: int, step_peak_memory_reserved: int,
-                  step_time_elapsed_s: int,
-                  epoch_num: int, epoch_len: int):
+                 step_num: int, step_len: int, step_loss: float, step_lr: float,
+                 step_tokens_per_second: float, step_tokens: int,
+                 step_peak_memory_active: int, step_peak_memory_alloc: int, step_peak_memory_reserved: int,
+                 step_time_elapsed_s: float,
+                 epoch_num: int, epoch_len: int):
         """
         Log the fine-tuning step scores
 
-        :param gpu_rank: The GPU rank (ie. the GPU number)
+        :param gpu_rank: The GPU rank (i.e. the GPU number)
         :param step_num: The step number
         :param step_len: The step length
         :param step_loss: The step loss
@@ -293,11 +289,11 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_len': epoch_len,
         })
 
-    def log_epoch(self, gpu_rank: int, epoch_num: int, epoch_len: int, epoch_time_elapsed_s: int):
+    def log_epoch(self, gpu_rank: int, epoch_num: int, epoch_len: int, epoch_time_elapsed_s: float):
         """
         Log the fine-tuning epochs
 
-        :param gpu_rank: The GPU rank (ie. the GPU number)
+        :param gpu_rank: The GPU rank (i.e. the GPU number)
         :param epoch_num: The epoch number
         :param epoch_len: The epoch length
         :param epoch_time_elapsed_s: The epoch time elapsed in seconds
