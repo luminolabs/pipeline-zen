@@ -9,6 +9,10 @@ set -e  # Exit immediately if a command fails
 # Source utility functions and variables
 source ./scripts/utils.sh
 
+# Parse target environment
+target_env=${1:-dev}  # default to dev if not specified
+echo "Deploying to target environment: $target_env"
+
 # New version Information (pulled from VERSION file locally)
 VERSION=$(cat VERSION)
 VERSION_FOR_IMAGE=$(echo "$VERSION" | tr '.' '-') # Replace dots with underscores
@@ -68,8 +72,7 @@ gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
 # Copy files to VM
 gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 gcloud compute scp --recurse ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-# TODO: Choose the right .env file based on the environment
-gcloud compute scp ./deploy-artifacts/dev.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute scp ./deploy-artifacts/$target_env.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
 
 # Grab older Docker Image ID
 old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
