@@ -61,6 +61,7 @@ docker run $gpus \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$PZ_ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
+-e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
 $image_use python pipeline/$1_wf.py "${@:2}"
 
 # Log after Docker container finishes

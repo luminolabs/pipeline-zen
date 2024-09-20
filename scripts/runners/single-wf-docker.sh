@@ -27,4 +27,5 @@ docker run $gpus \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$PZ_ENV \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
+-e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
 $1-workflow:local python $1/cli.py "${@:2}"
