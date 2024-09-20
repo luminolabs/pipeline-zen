@@ -67,10 +67,11 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: i
         "Content-Type": "application/json"
     }
     payload = {
-        "job_id": job_id,
         "user_id": user_id,
+        "fine_tuning_job_id": job_id,
         "usage_amount": token_count,
-        "service_name": "fine_tuning_job",
+        "usage_unit": "TOKEN",
+        "service_name": "FINE_TUNING_JOB",
     }
     response = requests.post(api_url, json=payload, headers=headers)
     response.raise_for_status()
