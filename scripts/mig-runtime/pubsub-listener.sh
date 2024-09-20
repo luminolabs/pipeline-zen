@@ -55,7 +55,17 @@ run_workflow() {
   job=$(echo "$message_data" | jq -r '.')
   job_id=$(echo "$job" | jq -r '.job_id')
   workflow=$(echo "$job" | jq -r '.workflow')
+  override_env=$(echo "$job" | jq -r '.override_env')  # Override the environment if specified in the message
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
+
+  # Override the environment if specified in the message
+  if [[ "$override_env" != "null" ]]; then
+    # Copy the override environment file to .env
+    echo "Overriding environment variables with $override_env.env"
+    cp $override_env.env .env
+    # Reload the environment variables
+    source ./scripts/utils.sh
+  fi
 
   # Save job_id to a file
   echo "$job_id" > .results/.job_id

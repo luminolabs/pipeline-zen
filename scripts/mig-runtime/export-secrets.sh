@@ -10,6 +10,7 @@ source ./scripts/utils.sh
 # Define the list of secrets to be imported
 SECRETS_TO_IMPORT=(
   "huggingface_token"
+  "customer_api_key"
   # Add more secret names as needed
 )
 
