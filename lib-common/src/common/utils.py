@@ -7,7 +7,6 @@ import uuid
 from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
-from os.path import basename
 from typing import Optional, Union
 
 from google.cloud import storage
@@ -97,37 +96,40 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 
-def get_results_path(job_id: str = '') -> str:
+def get_results_path(job_id: str = '', user_id: str = '') -> str:
     """
     :param job_id: Job id to use as part of the results path, can be left empty to get the root results folder
+    :param user_id: User id to use as part of the results path
     :return: Returns the path to the results directory
     """
-    path = os.path.join(config.root_path, config.results_path, job_id)
+    path = os.path.join(config.root_path, config.results_path, user_id, job_id)
     os.makedirs(path, exist_ok=True)
     return path
 
 
-def get_model_weights_path(job_id: str) -> str:
+def get_model_weights_path(job_id: str, user_id: str) -> str:
     """
     :param job_id: Job id to use as part of the model weights path
+    :param user_id: User id to user as part of the path
     :return: Returns the path to the model weights file
     """
-    path = os.path.join(get_results_path(job_id), config.weights_file)
+    path = os.path.join(get_results_path(job_id, user_id), config.weights_file)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
 
-def get_logs_path(job_id: str) -> str:
+def get_logs_path(job_id: str, user_id: str) -> str:
     """
     :param job_id: Job id to use as part of the logs path
+    :param user_id: User id to use as part of the logs path
     :return: Returns the path to the logs directory
     """
-    path = os.path.join(config.root_path, config.logs_path, job_id)
+    path = os.path.join(config.root_path, config.logs_path, user_id, job_id)
     os.makedirs(path, exist_ok=True)
     return path
 
 
-def setup_logger(name: str, job_id: str, user_id: str = '0',
+def setup_logger(name: str, job_id: str, user_id: str,
                  add_stdout: bool = True,
                  log_level: int = logging.INFO) -> logging.Logger:
     """
@@ -152,7 +154,7 @@ def setup_logger(name: str, job_id: str, user_id: str = '0',
 
     # Log to stdout and to file
     stdout_handler = logging.StreamHandler(sys.stdout)
-    file_handler = logging.FileHandler(os.path.join(get_logs_path(job_id), f'{name}.log'))
+    file_handler = logging.FileHandler(os.path.join(get_logs_path(job_id, user_id), f'{name}.log'))
 
     # Set the logger formats
     stdout_handler.setFormatter(log_format)
@@ -182,16 +184,17 @@ def get_or_generate_job_id(job_config_name: str, job_id: Optional[str] = None) -
     return job_id
 
 
-def save_job_results(job_id: str, results: dict, job_name: str) -> None:
+def save_job_results(job_id: str, user_id: str, results: dict, job_name: str) -> None:
     """
     Saves the results of a job to a file
 
     :param job_id: The job id
+    :param user_id: The user id
     :param results: The results to save
     :param job_name: Name of the job
     :return:
     """
-    path = os.path.join(get_results_path(job_id), job_name + '.json')
+    path = os.path.join(get_results_path(job_id, user_id), job_name + '.json')
     with open(path, 'w') as f:
         f.write(json.dumps(results))
 
@@ -208,7 +211,10 @@ def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], g
     client = storage.Client(project=config.gcp_project)
     if isinstance(bucket, str):
         bucket = client.get_bucket(bucket)
-    gcs_path = gcs_path or basename(local_path)
+
+    # If the GCS path is not set, use the last two directories of the local path
+    # i.e. go from ./.results/user_id/job_id to user_id/job_id
+    gcs_path = gcs_path or '/'.join(local_path.split('/')[-2:])
 
     assert os.path.isdir(local_path)
     for local_file in glob.glob(local_path + '/**'):

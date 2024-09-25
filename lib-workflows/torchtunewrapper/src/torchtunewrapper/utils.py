@@ -3,7 +3,6 @@ from logging import Logger
 from typing import Callable, Type
 
 import requests
-from mpmath import log10
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 from torchtune.models.llama3 import Llama3Tokenizer
@@ -54,7 +53,8 @@ def _count_dataset_tokens(dataset: Dataset) -> int:
     return sum([len(record['tokens']) for record in dataset])
 
 
-def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: int, logger: Logger) -> bool:
+def _log_tokens_and_check_user_credits(job_id: str, user_id: str,
+                                       token_count: int, num_epochs: int, logger: Logger) -> bool:
     """
     Log the number of tokens in the dataset to the API, and check if the user has enough credits to run the job.
     """
@@ -71,7 +71,7 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str, token_count: i
     payload = {
         "user_id": user_id,
         "fine_tuning_job_id": job_id,
-        "usage_amount": token_count,
+        "usage_amount": token_count * num_epochs,
         "usage_unit": "TOKEN",
         "service_name": "FINE_TUNING_JOB",
     }
@@ -97,7 +97,8 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     # Count tokens and check if user has enough credits to run the job
     # Note: We can only do this after the recipe is set up, because the tokenizer needs to be initialized first
     token_count = _count_dataset_tokens(recipe.dataset)
-    has_enough_credits = _log_tokens_and_check_user_credits(job_id, user_id, token_count, logger)
+    has_enough_credits = _log_tokens_and_check_user_credits(
+        job_id, user_id, token_count, recipe.total_epochs, logger)
     if not has_enough_credits:
         raise PermissionError(f"User does not have enough credits to run the job; "
                               f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")

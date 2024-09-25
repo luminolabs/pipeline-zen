@@ -43,19 +43,20 @@ def handle_task_failure(*args, **kwargs):
     If any other task fails, we terminate the workflow as well as the worker, so that the whole
     script execution ends and the worker VM can shut down.
     """
-    # `job_id` is always the second argument passed to a task
+    # `job_id` and `user_id` are passed as arguments to the task
     job_id = kwargs.get('args')[1]
-    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    user_id = kwargs.get('args')[2]
+    logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     # Not raising exception, since it's already raised by the task
     logger.error('Something went wrong during task execution')
     app.control.shutdown()
 
 
 @app.task
-def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int, num_batches: int):
-    logger = setup_logger('celery_train_evaluate_wf', job_id)
+def train(_, job_id: str, user_id: str, job_config_name: str, batch_size: int, num_epochs: int, num_batches: int):
+    logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     try:
-        return _train(job_id, job_config_name, batch_size, num_epochs, num_batches)
+        return _train(job_id, user_id, job_config_name, batch_size, num_epochs, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`train` task failed with error: {e}\n{traceback.format_exc()}')
@@ -63,13 +64,13 @@ def train(_, job_id: str, job_config_name: str, batch_size: int, num_epochs: int
 
 
 @app.task
-def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, num_batches: int):
-    logger = setup_logger('celery_train_evaluate_wf', job_id)
+def evaluate(train_result, job_id: str, user_id: str, job_config_name: str, batch_size: int, num_batches: int):
+    logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     if not train_result:
         logger.warning(f'`train` task failed - will not run `evaluate` task')
         return False
     try:
-        return _evaluate(job_id, job_config_name, batch_size, num_batches)
+        return _evaluate(job_id, user_id, job_config_name, batch_size, num_batches)
     except Exception as e:
         # Not raising exception, so that workflow can run `upload_results` task later on
         logger.error(f'`evaluate` task failed with error: {e}\n{traceback.format_exc()}')
@@ -77,27 +78,29 @@ def evaluate(train_result, job_id: str, job_config_name: str, batch_size: int, n
 
 
 @app.task
-def upload_results(_, job_id: str):
+def upload_results(_, job_id: str, user_id: str):
     """
     Upload results to Google Cloud Storage.
     :param job_id: The job id to associate with the results
+    :param user_id: The user id to associate with the results
     :return:
     """
     results_bucket_name = get_results_bucket_name(config.env_name)
-    upload_local_directory_to_gcs(get_results_path(job_id), results_bucket_name)
+    upload_local_directory_to_gcs(get_results_path(job_id, user_id), results_bucket_name)
 
 
 @app.task
-def mark_finished(evaluate_result, job_id: str):
+def mark_finished(evaluate_result, job_id: str, user_id: str):
     """
     Creates a `.finished` file that serves as a signal to listeners
     that the job finished.
 
     :param evaluate_result: Result of the evaluation task
     :param job_id: The job id that finished
+    :param user_id: The user id that started the job
     :return:
     """
-    logger = setup_logger('celery_train_evaluate_wf', job_id)
+    logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     if not evaluate_result:
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`evaluate` task failed - will not run `mark_finished` task')
@@ -108,12 +111,13 @@ def mark_finished(evaluate_result, job_id: str):
 
 
 @app.task
-def mark_started(_, job_id: str):
+def mark_started(_, job_id: str, user_id: str):
     """
     Creates a `.started` file that serves as a signal to listeners
     that the job started.
 
     :param job_id: The job id that started
+    :param user_id: The user id that started the job
     :return:
     """
     path = os.path.join(config.root_path, get_results_path(), config.started_file)
@@ -122,7 +126,7 @@ def mark_started(_, job_id: str):
 
 
 @app.task
-def shutdown_celery_worker(_, job_id: str):
+def shutdown_celery_worker(_, job_id: str, user_id: str):
     """
     Shuts down the celery worker.
     """
@@ -139,22 +143,22 @@ def schedule(*args):
     :param args: Arguments passed to the train and evaluate functions
     :return:
     """
-    job_id, job_config_name, batch_size, num_epochs, num_batches = args
+    job_id, user_id, job_config_name, batch_size, num_epochs, num_batches = args
     job_id = get_or_generate_job_id(job_config_name, job_id)
 
-    train_args = (job_id, job_config_name, batch_size, num_epochs, num_batches)
-    evaluate_args = (job_id, job_config_name, batch_size, num_batches)
+    train_args = (job_id, user_id, job_config_name, batch_size, num_epochs, num_batches)
+    evaluate_args = (job_id, user_id, job_config_name, batch_size, num_batches)
 
     # Define workflow tasks: `train` -> `evaluate`
-    tasks = [mark_started.s(None, job_id),
+    tasks = [mark_started.s(None, job_id, user_id),
              train.s(*train_args), evaluate.s(*evaluate_args),
-             mark_finished.s(job_id)]
+             mark_finished.s(job_id, user_id)]
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
-        tasks.append(upload_results.s(job_id))
+        tasks.append(upload_results.s(job_id, user_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
-    tasks.append(shutdown_celery_worker.s(job_id))
+    tasks.append(shutdown_celery_worker.s(job_id, user_id))
     # Send task chain to celery scheduler
     chain(*tasks)()
 

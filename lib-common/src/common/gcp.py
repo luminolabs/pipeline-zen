@@ -24,13 +24,26 @@ def send_heartbeat(job_id: str, user_id: str, status: str, elapsed_time: Optiona
     :param status: The status of the job
     :param elapsed_time: The elapsed time of the job in seconds
     """
-    publisher = pubsub_v1.PublisherClient()
-    topic_path = publisher.topic_path(config.gcp_project, config.heartbeat_topic)
-    msg = {'job_id': job_id, 'user_id': user_id, 'status': status, 'vm_name': get_vm_name_from_metadata(),
+    msg = {'status': status, 'vm_name': get_vm_name_from_metadata(),
            'timestamp': utcnow_str(),
            'elapsed_time_s': f'{elapsed_time:.2f}' if elapsed_time else None}
-    msg_str = json.dumps(msg)
-    publisher.publish(topic_path, msg_str.encode("utf-8"))
+    send_message_to_pubsub(job_id, user_id, config.heartbeat_topic, msg)
+
+
+def send_message_to_pubsub(job_id: str, user_id: str, topic_name: str, message: dict):
+    """
+    Send a message to a Pub/Sub topic.
+
+    :param job_id: The job id
+    :param user_id: The user id
+    :param topic_name: The name of the topic
+    :param message: The message to send
+    """
+    message.update({'job_id': job_id, 'user_id': user_id})
+    publisher = pubsub_v1.PublisherClient()
+    topic_path = publisher.topic_path(config.gcp_project, topic_name)
+    message_str = json.dumps(message)
+    publisher.publish(topic_path, message_str.encode("utf-8"))
 
 
 def get_vm_name_from_metadata():
