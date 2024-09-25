@@ -128,7 +128,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
 
     # Save and return the results
     results = {'see logs': 'see logs for results'}
-    save_job_results(job_id, results, 'torchtunewrapper')
+    save_job_results(job_id, user_id, results, 'torchtunewrapper')
     logger.info('The job id was: ' + job_id)
     return results
 
