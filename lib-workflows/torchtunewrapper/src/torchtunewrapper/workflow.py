@@ -190,8 +190,8 @@ def main(job_id: str, user_id: str, job_config_name: str,
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={
-            'logs_path': get_logs_path(job_config['job_id']),
-            'output_dir': get_results_path(job_config['job_id']),
+            'logs_path': get_logs_path(job_id, user_id),
+            'output_dir': get_results_path(job_id, user_id),
             'epochs': job_config['num_epochs'],
             'shuffle': job_config['shuffle'],
             'batch_size': job_config['batch_size'],

@@ -8,10 +8,10 @@ from celery.signals import task_failure
 
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
-from common.gcp import get_results_bucket_name
+from common.gcp import get_results_bucket_name, send_message_to_pubsub
+from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, get_logs_path, setup_logger
-from common.helpers import heartbeat_wrapper
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -86,9 +86,19 @@ def upload_results(_, job_id: str, user_id: str):
     """
     results_bucket_name = get_results_bucket_name(config.env_name)
     # Upload results
-    upload_local_directory_to_gcs(get_results_path(job_id), results_bucket_name)
+    results_path = get_results_path(job_id, user_id)
+    upload_local_directory_to_gcs(results_path, results_bucket_name)
     # Upload logs
-    upload_local_directory_to_gcs(get_logs_path(job_id), results_bucket_name)
+    upload_local_directory_to_gcs(get_logs_path(job_id, user_id), results_bucket_name)
+    # Notify API of generated artifacts
+    weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
+    other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
+    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, {
+        'action': 'job_artifacts',
+        'base_url': f'https://storage.cloud.google.com/{results_bucket_name}/{results_path}',
+        'weight_files': weight_files,
+        'other_files': other_files
+    })
 
 
 @app.task

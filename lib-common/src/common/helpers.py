@@ -53,7 +53,7 @@ def configure_model_and_dataloader(
     :return: Configured objects to be used in the workflow
     """
     if for_inference:
-        model_weights_path = get_model_weights_path(job_config['job_id'])
+        model_weights_path = get_model_weights_path(job_config['job_id'], job_config['user_id'])
         if not os.path.isfile(model_weights_path):
             raise FileNotFoundError(f'model_weights not found; looked at: {model_weights_path}')
 

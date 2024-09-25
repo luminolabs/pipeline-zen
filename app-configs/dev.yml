@@ -1,3 +1,1 @@
-upload_results: true
-provider_log_scores: true
-mock_user_has_enough_credits: true
+customer_api_url: http://localhost:5100/v1

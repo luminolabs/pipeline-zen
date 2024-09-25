@@ -66,7 +66,7 @@ if [ -n "$MIG_PREFIX" ]; then
 else
     echo "Updating all MIGs with new templates..."
     # Get the list of all MIGs
-    migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)")
+    migs=$(gcloud compute instance-groups managed list --format="csv[no-heading](name)" --filter="name~^pipeline-zen-jobs-")
 fi
 
 # Loop through each MIG and update it with the new template

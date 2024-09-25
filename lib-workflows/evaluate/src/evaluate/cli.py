@@ -11,7 +11,7 @@ def parse_args() -> tuple:
     add_parser_args(parser)
     args = parser.parse_args()
 
-    return args.job_id, args.job_config_name, args.batch_size, args.num_batches
+    return args.job_id, args.user_id, args.job_config_name, args.batch_size, args.num_batches
 
 
 def add_parser_args(parser: argparse.ArgumentParser):
@@ -27,6 +27,9 @@ def add_parser_args(parser: argparse.ArgumentParser):
     parser.add_argument('-jid', '--job_id', type=str, required=False,
                         help='The job_id to use for evaluation; '
                              'logs and other job results and artifacts will be named after this.')
+    parser.add_argument('-uid', '--user_id', type=str, required=False, default='0',
+                        help="The user_id to use for training; "
+                             "logs and other job results and artifacts will be named after this.")
 
     parser.add_argument('-bs', '--batch_size', type=int, required=False,
                         help='The batch size to use for training ')
