@@ -8,7 +8,7 @@ from celery.signals import task_failure
 
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
-from common.gcp import get_results_bucket_name, send_message_to_pubsub
+from common.gcp import get_results_bucket_name, send_message_to_pubsub, make_gcs_object_public
 from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, get_logs_path, setup_logger
@@ -95,11 +95,14 @@ def upload_results(_, job_id: str, user_id: str):
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
     send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, {
         'action': 'job_artifacts',
-        'base_url': f'https://storage.cloud.google.com/'
+        'base_url': f'https://storage.googleapis.com/'
                     f'{results_bucket_name}/{user_id}/{job_id}',
         'weight_files': weight_files,
         'other_files': other_files
     })
+    # Make files public in GCS
+    for f in weight_files + other_files:
+        make_gcs_object_public(results_bucket_name, f'{user_id}/{job_id}/{f}')
 
 
 @app.task

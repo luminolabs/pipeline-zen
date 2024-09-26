@@ -2,7 +2,7 @@ import json
 from typing import Optional
 
 import requests
-from google.cloud import pubsub_v1
+from google.cloud import pubsub_v1, storage
 
 from common.config_manager import config
 from common.utils import utcnow_str
@@ -155,3 +155,22 @@ def get_results_bucket_name(env_name: str) -> str:
     if multi_region == 'me':
         return f'{STORAGE_BUCKET_PREFIX}-{region}'  # regional bucket; ie. 'pipeline-zen-jobs-me-west1'
     return f'{STORAGE_BUCKET_PREFIX}-{multi_region}'  # multi-region bucket; ie. 'pipeline-zen-jobs-us'
+
+
+def make_gcs_object_public(bucket_name, object_name):
+    """
+    Makes a specific object in a Google Cloud Storage bucket public and returns its public URL.
+
+    Args:
+        bucket_name (str): The name of the GCS bucket.
+        object_name (str): The name of the object (file) in the GCS bucket.
+
+    Returns:
+        str: The public URL of the object.
+    """
+    client = storage.Client()
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(object_name)
+    blob.make_public()
+    public_url = blob.public_url
+    return public_url
