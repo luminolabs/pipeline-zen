@@ -95,7 +95,8 @@ def upload_results(_, job_id: str, user_id: str):
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
     send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, {
         'action': 'job_artifacts',
-        'base_url': f'https://storage.cloud.google.com/{results_bucket_name}/{results_path}',
+        'base_url': f'https://storage.cloud.google.com/'
+                    f'{results_bucket_name}/{user_id}/{job_id}',
         'weight_files': weight_files,
         'other_files': other_files
     })
