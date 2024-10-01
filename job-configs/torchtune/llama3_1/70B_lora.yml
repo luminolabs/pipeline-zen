@@ -6,6 +6,8 @@ output_dir:
 shuffle:
 batch_size:
 epochs:
+lr:
+seed:
 
 # Model Arguments
 model:
@@ -63,16 +65,15 @@ resume_from_checkpoint: False
 # Dataset and Sampler
 dataset:
   _component_:  # leave empty, this is injected by the job launcher
-seed: null
 
 # Optimizer and Scheduler
 optimizer:
   _component_: torch.optim.AdamW
   weight_decay: 0.01
-  lr: 3e-4
+  lr: ${lr}
 lr_scheduler:
   _component_: torchtune.modules.get_cosine_schedule_with_warmup
-  num_warmup_steps: 10
+  num_warmup_steps: 2
 
 loss:
   _component_: torch.nn.CrossEntropyLoss

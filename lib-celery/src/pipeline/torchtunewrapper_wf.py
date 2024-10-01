@@ -55,9 +55,10 @@ def handle_task_failure(*args, **kwargs):
 
 @app.task
 def torchtunewrapper(_, job_id: str, user_id: str, job_config_name: str,
-                     dataset_id: str = Optional[None], train_file_path: str = None,
+                     dataset_id: Optional[str] = None, train_file_path: str = None,
                      batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
                      use_lora: bool = True, use_qlora: bool = False,
+                     lr: float = 3e-4, seed: Optional[int] = None,
                      num_gpus: int = 1,
                      pytorch_cuda_alloc_conf: str = None):
     logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
@@ -67,6 +68,7 @@ def torchtunewrapper(_, job_id: str, user_id: str, job_config_name: str,
             dataset_id, train_file_path,
             batch_size, shuffle, num_epochs,
             use_lora, use_qlora,
+            lr, seed,
             num_gpus,
             pytorch_cuda_alloc_conf)
     except Exception as e:

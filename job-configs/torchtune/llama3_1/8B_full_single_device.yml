@@ -6,6 +6,8 @@ output_dir:
 shuffle:
 batch_size:
 epochs:
+lr:
+seed:
 
 # Tokenizer
 tokenizer:
@@ -15,7 +17,6 @@ tokenizer:
 # Dataset
 dataset:
   _component_:  # leave empty, this is injected by the job launcher
-seed: null
 
 # Model Arguments
 model:
@@ -38,7 +39,7 @@ resume_from_checkpoint: False
 # Fine-tuning arguments
 optimizer:
   _component_: bitsandbytes.optim.PagedAdamW8bit
-  lr: 2e-5
+  lr: ${lr}
 loss:
   _component_: torch.nn.CrossEntropyLoss
 gradient_accumulation_steps: 1

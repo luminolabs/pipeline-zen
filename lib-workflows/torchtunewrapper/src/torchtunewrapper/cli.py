@@ -19,7 +19,9 @@ def parse_args() -> tuple:
     return (args.job_id, args.user_id, args.job_config_name,
             args.dataset_id, args.train_file_path,
             args.batch_size, args.shuffle, args.num_epochs,
-            args.use_lora, args.use_qlora, args.num_gpus,
+            args.use_lora, args.use_qlora,
+            args.lr, args.seed,
+            args.num_gpus,
             args.pytorch_cuda_alloc_conf)
 
 
@@ -56,6 +58,11 @@ def add_parser_args(parser: argparse.ArgumentParser):
                         help="Whether to use the LoRA; default is True")
     parser.add_argument('-ql', '--use_qlora', type=is_truthy, required=False, default=False,
                         help="Whether to use the QLoRA; default is False and only used if `use_lora` is True")
+
+    parser.add_argument('-lr', '--lr', type=float, required=False, default=3e-4,
+                        help="The learning rate to use for training; default is 3e-4")
+    parser.add_argument('-sd', '--seed', type=int, required=False,
+                        help="The random seed to use for training")
 
     parser.add_argument('-gpus', '--num_gpus', type=int, required=True, default=1,
                         help="The number of GPUs to use for training; default is 1")

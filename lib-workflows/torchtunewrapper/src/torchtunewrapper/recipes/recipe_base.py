@@ -75,7 +75,7 @@ class RecipeBase:
         self.global_step = 0
         self.steps_per_epoch = None
         # Set the seed for reproducibility
-        self.seed = utils.set_seed(seed=cfg.get('seed', None))
+        self.seed = utils.set_seed(seed=cfg.get('seed'))
 
         # Set the PyTorch CUDA allocation configuration
         # This is useful for memory management on GPUs and can be used to prevent OOM errors

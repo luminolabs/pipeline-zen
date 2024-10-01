@@ -137,6 +137,7 @@ def main(job_id: str, user_id: str, job_config_name: str,
          dataset_id: str = Optional[None], train_file_path: str = None,
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
          use_lora: bool = True, use_qlora: bool = False,
+         lr: float = 3e-4, seed: Optional[int] = None,
          num_gpus: int = 1,
          pytorch_cuda_alloc_conf: str = None):
     """
@@ -152,6 +153,8 @@ def main(job_id: str, user_id: str, job_config_name: str,
     :param num_epochs: Number of epochs to train
     :param use_lora: Whether to train with LoRA or do full training
     :param use_qlora: Whether to use QLoRA or not
+    :param lr: The learning rate to use for training
+    :param seed: The random seed to use for training
     :param num_gpus: The number of GPUs to use for training
     :param pytorch_cuda_alloc_conf: The PyTorch CUDA allocation configuration
     :return: The path to the fine-tuned model weights; which is the input to the evaluate workflow
@@ -169,6 +172,8 @@ def main(job_id: str, user_id: str, job_config_name: str,
     job_config.setdefault('num_epochs', num_epochs)
     job_config.setdefault('use_lora', use_lora)
     job_config.setdefault('use_qlora', use_qlora)
+    job_config.setdefault('lr', lr)
+    job_config.setdefault('seed', seed)
     job_config.setdefault('num_gpus', num_gpus)
     job_config.setdefault('pytorch_cuda_alloc_conf', pytorch_cuda_alloc_conf)
 
@@ -196,6 +201,8 @@ def main(job_id: str, user_id: str, job_config_name: str,
             'shuffle': job_config['shuffle'],
             'batch_size': job_config['batch_size'],
             'pytorch_cuda_alloc_conf': job_config['pytorch_cuda_alloc_conf'],
+            'lr': job_config['lr'],
+            'seed': job_config['seed'],
         },
         is_torchtune=True)
 

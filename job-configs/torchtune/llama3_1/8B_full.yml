@@ -6,6 +6,8 @@ output_dir:
 shuffle:
 batch_size:
 epochs:
+lr:
+seed:
 
 # Tokenizer
 tokenizer:
@@ -15,7 +17,6 @@ tokenizer:
 # Dataset
 dataset:
   _component_:  # leave empty, this is injected by the job launcher
-seed: null
 
 # Model Arguments
 model:
@@ -37,7 +38,7 @@ resume_from_checkpoint: False
 
 optimizer:
   _component_: torch.optim.AdamW
-  lr: 2e-5
+  lr: ${lr}
   foreach: False
 
 loss:
