@@ -80,7 +80,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     # A logger for logging scores; also propagates to main logger
     scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, user_id, add_stdout=False)
     # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+    scores_agent = TorchtunewrapperScoresAgent(job_id, user_id, scores_logger)
 
     # Log a few things about this job
     scores_logger.info('The job id is: ' + job_id)

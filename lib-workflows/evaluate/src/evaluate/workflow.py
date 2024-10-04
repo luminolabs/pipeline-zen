@@ -27,7 +27,7 @@ def run(job_config: dict, logger: Logger) -> dict:
     scores_logger = setup_logger('evaluate_workflow.metrics', job_id, user_id, add_stdout=False)
 
     # Setup logging and bigquery agent for scores
-    scores_agent = EvaluateScoresAgent(job_id, scores_logger)
+    scores_agent = EvaluateScoresAgent(job_id, user_id, scores_logger)
 
     # Log a few things about this job
     scores_logger.info('The job id is: ' + job_id)

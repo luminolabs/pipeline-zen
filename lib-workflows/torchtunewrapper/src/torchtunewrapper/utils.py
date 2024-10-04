@@ -90,7 +90,7 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     # A logger for logging scores; also propagates to main logger
     scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
     # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, scores_logger)
+    scores_agent = TorchtunewrapperScoresAgent(job_id, user_id, scores_logger)
     # Initialize the recipe and start training
     recipe = recipe_class(job_id, user_id, cfg, dataset, logger, scores_agent)
     recipe.setup()

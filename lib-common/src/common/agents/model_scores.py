@@ -7,6 +7,7 @@ from google.cloud import bigquery
 
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
+from common.gcp import send_message_to_pubsub
 from common.utils import AutoJSONEncoder, utcnow, utcnow_str
 
 bq_table_train = f'{config.gcp_project}.{config.bq_dataset}.train'
@@ -18,13 +19,15 @@ class BaseScoresAgent(ABC):
     """
     Base class for capturing model related scores
     """
-    def __init__(self, job_id: str, logger: Logger):
+    def __init__(self, job_id: str, user_id: str, logger: Logger):
         """
         :param job_id: The id of the job
+        :param user_id: The id of the user
         :param logger: The logger to use
         :return:
         """
         self.job_id = job_id
+        self.user_id = user_id
         self.logger = logger
         self.time_start = None
         self.time_end = None
@@ -288,6 +291,15 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
         })
+        send_message_to_pubsub(self.job_id, self.user_id, config.jobs_meta_topic, {
+            'action': 'job_progress',
+            'job_id': self.job_id,
+            'user_id': self.user_id,
+            'current_step': step_num,
+            'total_steps': step_len,
+            'current_epoch': epoch_num,
+            'total_epochs': epoch_len,
+        })
 
     def log_epoch(self, gpu_rank: int, epoch_num: int, epoch_len: int, epoch_time_elapsed_s: float):
         """
@@ -306,4 +318,13 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
             'epoch_time_elapsed_s': epoch_time_elapsed_s,
+        })
+        send_message_to_pubsub(self.job_id, self.user_id, config.jobs_meta_topic, {
+            'action': 'job_progress',
+            'job_id': self.job_id,
+            'user_id': self.user_id,
+            'current_step': None,
+            'total_steps': None,
+            'current_epoch': epoch_num,
+            'total_epochs': epoch_len,
         })
