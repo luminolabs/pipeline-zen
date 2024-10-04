@@ -61,6 +61,14 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str,
     # If we're mocking user credits, or calls to Customer API are disabled, return True
     # This is useful for local testing
     if config.mock_user_has_enough_credits or not config.customer_api_enabled:
+        logger.info("Skipping credit check due to config settings")
+        return True
+
+    # If user_id is 0, skip the credit check;
+    # user_id=0 is used for jobs that didn't originate from the
+    # customer API, and we don't want to block those jobs
+    if user_id == "0":
+        logger.info("Skipping credit check for user_id=0")
         return True
 
     api_url = f"{config.customer_api_url}/billing/credits-deduct"
