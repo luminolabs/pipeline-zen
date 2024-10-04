@@ -79,9 +79,10 @@ def torchtunewrapper(_, job_id: str, user_id: str, job_config_name: str,
 
 @app.task
 @heartbeat_wrapper("torchtunewrapper", "upload_weights")
-def upload_results(_, job_id: str, user_id: str):
+def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
     """
     Upload results and logs to Google Cloud Storage.
+    :param mark_finished_result: The result of the `mark_finished` task
     :param job_id: The job id to associate with the results
     :param user_id: The user id to associate with the results
     :return:
@@ -92,6 +93,11 @@ def upload_results(_, job_id: str, user_id: str):
     upload_local_directory_to_gcs(results_path, results_bucket_name)
     # Upload logs
     upload_local_directory_to_gcs(get_logs_path(job_id, user_id), results_bucket_name)
+
+    # If `mark_finished` task failed, we don't do anything else
+    if not mark_finished_result:
+        return
+
     # Notify API of generated artifacts
     weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
@@ -126,6 +132,7 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
         f.write(job_id + "\n")
+    return True
 
 
 @app.task
