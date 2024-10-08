@@ -5,7 +5,7 @@ import requests
 from google.cloud import pubsub_v1, storage
 
 from common.config_manager import config
-from common.utils import utcnow_str
+from common.utils import utcnow_str, setup_logger
 
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
@@ -39,10 +39,12 @@ def send_message_to_pubsub(job_id: str, user_id: str, topic_name: str, message: 
     :param topic_name: The name of the topic
     :param message: The message to send
     """
+    logger = setup_logger(f'send_message_to_pubsub', job_id, user_id)
     message.update({'job_id': job_id, 'user_id': user_id})
     publisher = pubsub_v1.PublisherClient()
     topic_path = publisher.topic_path(config.gcp_project, topic_name)
     message_str = json.dumps(message)
+    logger.info(f'Sending message to Pub/Sub topic {topic_name}: {message_str}')
     publisher.publish(topic_path, message_str.encode("utf-8"))
 
 

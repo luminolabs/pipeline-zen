@@ -85,8 +85,9 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str,
     }
     logger.info(f"Logging token count to API: {payload}")
     response = requests.post(api_url, json=payload, headers=headers)
-    response.raise_for_status()
-    return response.json().get("has_enough_credits", False)
+    if response.status_code != 200:
+        return False
+    return True
 
 
 def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset) -> None:
