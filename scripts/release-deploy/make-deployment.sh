@@ -30,7 +30,8 @@ NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
 # Path to the Docker image containing the ML pipeline, to pull on the VM
 DOCKER_IMAGE_REGION="us-central1"
 DOCKER_IMAGE_HOST="$DOCKER_IMAGE_REGION-docker.pkg.dev"
-DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/celery-workflow:${VERSION}"
+DOCKER_IMAGE_NAME="celery-workflow"
+DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/$DOCKER_IMAGE_NAME:${VERSION}"
 # Name of the VM that we will use to create the new image
 IMAGE_CREATOR_VM_NAME="gha-jobs-vm-image-creator"
 IMAGE_CREATOR_VM_ZONE="us-central1-a"
@@ -75,12 +76,21 @@ gcloud compute scp ./deploy-artifacts/$target_env.env $IMAGE_CREATOR_VM_NAME:/$R
 gcloud compute scp ./deploy-artifacts/*.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 gcloud compute scp --recurse ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 
-# Grab older Docker Image ID
+# Grab older Docker Image IDs
 old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
+
+# Build, tag, and push the Docker image
+echo "Building the Docker image; version $VERSION..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker build -f celery.Dockerfile -t $DOCKER_IMAGE_NAME:local ."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
+
+# Remove old Docker Images
+echo "Removing old Docker images..."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id"
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "gcloud auth configure-docker $DOCKER_IMAGE_HOST --quiet"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
 
 # Stop VM
