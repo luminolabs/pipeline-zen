@@ -27,7 +27,7 @@ not locally; see the next section for instructions.
   --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true --use_qlora false \
-  --lr 1e-5 --seed 42 \
+  --lr 3e-4 --seed 42 \
   --num_gpus 1
 ```
 
