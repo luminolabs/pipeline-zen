@@ -1,5 +1,6 @@
 import argparse
 
+from common.config_manager import config
 from train.workflow import main
 
 
@@ -10,6 +11,10 @@ def parse_args() -> tuple:
     parser = argparse.ArgumentParser(description="Run the model training workflow")
     add_parser_args(parser)
     args = parser.parse_args()
+
+    # Update the application config so that they can be accessed globally
+    config.set('job_id', args.job_id)
+    config.set('user_id', args.user_id)
 
     return args.job_id, args.user_id, args.job_config_name, args.batch_size, args.num_epochs, args.num_batches
 

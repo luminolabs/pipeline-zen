@@ -7,6 +7,7 @@ from celery.signals import task_failure
 
 from common.config_manager import config
 from common.gcp import get_results_bucket_name
+from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
     upload_local_directory_to_gcs, setup_logger
 from evaluate.workflow import main as _evaluate
@@ -53,6 +54,7 @@ def handle_task_failure(*args, **kwargs):
 
 
 @app.task
+@heartbeat_wrapper("train_evaluate", "train")
 def train(_, job_id: str, user_id: str, job_config_name: str, batch_size: int, num_epochs: int, num_batches: int):
     logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     try:
@@ -64,6 +66,7 @@ def train(_, job_id: str, user_id: str, job_config_name: str, batch_size: int, n
 
 
 @app.task
+@heartbeat_wrapper("train_evaluate", "evaluate")
 def evaluate(train_result, job_id: str, user_id: str, job_config_name: str, batch_size: int, num_batches: int):
     logger = setup_logger('celery_train_evaluate_wf', job_id, user_id)
     if not train_result:
@@ -78,6 +81,7 @@ def evaluate(train_result, job_id: str, user_id: str, job_config_name: str, batc
 
 
 @app.task
+@heartbeat_wrapper("train_evaluate", "upload_weights")
 def upload_results(_, job_id: str, user_id: str):
     """
     Upload results to Google Cloud Storage.

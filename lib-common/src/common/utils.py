@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
@@ -116,6 +117,47 @@ def get_model_weights_path(job_id: str, user_id: str) -> str:
     path = os.path.join(get_results_path(job_id, user_id), config.weights_file)
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
+
+
+def read_job_meta_from_file(job_id: str, user_id: str) -> dict:
+    """
+    Reads the job meta dictionary from a file
+
+    :param job_id: Job id to use as part of the meta path
+    :param user_id: User id to use as part of the meta path
+    :return: Returns the job meta dictionary
+    """
+    path = os.path.join(get_results_path(job_id, user_id), config.job_meta_file)
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {}
+
+
+def write_job_meta_to_file(job_id: str, user_id: str, job_meta: dict) -> None:
+    """
+    Writes the job meta dictionary to a file
+
+    :param job_id: Job id to use as part of the meta path
+    :param user_id: User id to use as part of the meta path
+    :param job_meta: The job meta dictionary to write
+    """
+    path = os.path.join(get_results_path(job_id, user_id), config.job_meta_file)
+    with open(path, 'w') as f:
+        f.write(json.dumps(job_meta))
+
+
+@contextmanager
+def job_meta_context(job_id: str, user_id: str):
+    """
+    Context manager to read and write job metadata to a file
+    Usage:
+        with job_meta_context(job_id, user_id) as job_meta:
+            job_meta['key'] = 'value'
+    """
+    job_meta = read_job_meta_from_file(job_id, user_id)
+    yield job_meta
+    write_job_meta_to_file(job_id, user_id, job_meta)
 
 
 def get_logs_path(job_id: str, user_id: str) -> str:

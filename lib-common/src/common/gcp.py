@@ -5,7 +5,7 @@ import requests
 from google.cloud import pubsub_v1, storage
 
 from common.config_manager import config
-from common.utils import utcnow_str, setup_logger
+from common.utils import utcnow_str, setup_logger, job_meta_context
 
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
@@ -27,6 +27,8 @@ def send_heartbeat(job_id: str, user_id: str, status: str, elapsed_time: Optiona
     msg = {'status': status, 'vm_name': get_vm_name_from_metadata(),
            'timestamp': utcnow_str(),
            'elapsed_time_s': f'{elapsed_time:.2f}' if elapsed_time else None}
+    with job_meta_context(job_id, user_id) as job_meta:
+        job_meta.setdefault('heartbeats', []).append(msg)
     send_message_to_pubsub(job_id, user_id, config.heartbeat_topic, msg)
 
 
@@ -39,6 +41,9 @@ def send_message_to_pubsub(job_id: str, user_id: str, topic_name: str, message: 
     :param topic_name: The name of the topic
     :param message: The message to send
     """
+    if not config.send_to_pubsub:
+        return
+
     logger = setup_logger(f'send_message_to_pubsub', job_id, user_id)
     message.update({'job_id': job_id, 'user_id': user_id})
     publisher = pubsub_v1.PublisherClient()

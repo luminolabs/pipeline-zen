@@ -11,7 +11,7 @@ from common.config_manager import config
 from common.gcp import get_results_bucket_name, send_message_to_pubsub, make_gcs_object_public
 from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, get_logs_path, setup_logger
+    upload_local_directory_to_gcs, get_logs_path, setup_logger, job_meta_context
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -98,16 +98,21 @@ def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
     if not mark_finished_result:
         return
 
-    # Notify API of generated artifacts
+    # Notify for generated artifacts
     weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
-    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, {
+    weights_data = {
         'action': 'job_artifacts',
         'base_url': f'https://storage.googleapis.com/'
                     f'{results_bucket_name}/{user_id}/{job_id}',
         'weight_files': weight_files,
         'other_files': other_files
-    })
+    }
+    # Send message to Pub/Sub
+    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
+    # Write job metadata to file
+    with job_meta_context(job_id, user_id) as job_meta:
+        job_meta['weights'] = weights_data
     # Make files public in GCS
     for f in weight_files + other_files:
         make_gcs_object_public(results_bucket_name, f'{user_id}/{job_id}/{f}')

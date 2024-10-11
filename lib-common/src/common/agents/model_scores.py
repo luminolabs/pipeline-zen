@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from logging import Logger
 from typing import Optional, Union
 import json
@@ -8,7 +9,7 @@ from google.cloud import bigquery
 from common.agents.system_metrics import SystemSpecs
 from common.config_manager import config
 from common.gcp import send_message_to_pubsub
-from common.utils import AutoJSONEncoder, utcnow, utcnow_str
+from common.utils import AutoJSONEncoder, utcnow, utcnow_str, job_meta_context
 
 bq_table_train = f'{config.gcp_project}.{config.bq_dataset}.train'
 bq_table_evaluate = f'{config.gcp_project}.{config.bq_dataset}.evaluate'
@@ -35,7 +36,7 @@ class BaseScoresAgent(ABC):
         # Configure bigquery
         self.bq_table = self._get_bq_table()
         self.bq = bigquery.Client(config.gcp_project) \
-            if config.provider_log_scores else None
+            if config.send_to_bq else None
         self.bq_table_defaults = self._get_bq_table_defaults()
         # Get a copy of the system specs
         self.system_specs = SystemSpecs(logger)
@@ -46,7 +47,7 @@ class BaseScoresAgent(ABC):
         """
         self.time_start = utcnow()
         self.logger.info(f'Process started at: {utcnow_str()}')
-        self.bq_insert(operation='mark_time_start')
+        self.log_data(operation='mark_time_start')
 
     def mark_time_end(self):
         """
@@ -54,7 +55,7 @@ class BaseScoresAgent(ABC):
         """
         self.time_end = utcnow()
         self.logger.info(f'Process ended at: {utcnow_str()}')
-        self.bq_insert(operation='mark_time_end')
+        self.log_data(operation='mark_time_end')
 
     def log_time_elapsed(self):
         """
@@ -63,7 +64,7 @@ class BaseScoresAgent(ABC):
         """
         time_delta_m = f'{(self.time_end - self.time_start).total_seconds() / 60:.2f} minutes'
         self.logger.info(f'Elapsed time: {time_delta_m}')
-        self.bq_insert(operation='log_time_elapsed', result=time_delta_m)
+        self.log_data(operation='log_time_elapsed', result=time_delta_m)
 
     def log_system_specs(self):
         """
@@ -72,7 +73,7 @@ class BaseScoresAgent(ABC):
         """
         system_specs = self.system_specs.get_specs()
         self.logger.info(f'System specs: {system_specs}')
-        self.bq_insert(operation='log_system_specs', result=system_specs)
+        self.log_data(operation='log_system_specs', result=system_specs)
 
     def log_job_config(self, job_config: dict):
         """
@@ -83,28 +84,17 @@ class BaseScoresAgent(ABC):
         """
         self.logger.info(f'Training job type: `{job_config["category"]}` - `{job_config["type"]}`')
         self.logger.info(f'Job configuration: {job_config}')
-        self.bq_insert(operation='log_job_config', result=job_config)
+        self.log_data(operation='log_job_config', result=job_config)
 
-    def bq_insert(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
+    def log_data(self, operation: str, result: Optional[Union[dict, str]] = None, **kwargs):
         """
-        Insert scores into BigQuery table
+        Log data
 
         :param operation: The operation name of the score to be inserted
         :param result: The value of the score to be inserted (optional)
         :param kwargs: Dict with scores to be inserted (see `row` contents below)
         :return:
         """
-
-        # Sending scores to BigQuery is disabled
-        if not config.provider_log_scores:
-            return
-
-        # Normalize result
-        result_json = None
-        if result:
-            if not isinstance(result, dict):
-                result = {'value': result}
-            result_json = json.dumps(result, cls=AutoJSONEncoder)
 
         # Construct row
         row = {
@@ -113,12 +103,54 @@ class BaseScoresAgent(ABC):
             **{'job_id': self.job_id,
                'create_ts': utcnow_str(),
                'operation': operation,
-               'result': result_json},
+               'result': result},
             **self.bq_table_defaults,
             **kwargs}
 
-        # Handle errors
+        # JSON the result if it's a dict
+        row = deepcopy(row)
+        result = row.get('result')
+        if result:
+            if not isinstance(result, dict):
+                result = {'value': result}
+            result_json = json.dumps(result, cls=AutoJSONEncoder)
+            row['result'] = result_json
+
+        self.bq_insert(row)
+        self.pubsub_send(row)
+        self.file_write(row)
+
+    def file_write(self, row: dict):
+        """
+        Write scores to a file
+
+        :param row: The row to write
+        """
+        with job_meta_context(self.job_id, self.user_id) as job_meta:
+            job_meta.setdefault('scores', []).append(row)
+
+    def pubsub_send(self, row: dict):
+        """
+        Send scores to Pub/Sub
+
+        :param row: The row to send
+        """
+        send_message_to_pubsub(self.job_id, self.user_id,
+                               topic_name=config.jobs_meta_topic,
+                               message={'action': 'job_progress', **row})
+
+    def bq_insert(self, row: dict):
+        """
+        Insert scores into BigQuery table
+
+        :param row: The row to insert
+        """
+        # If sending scores to BigQuery is disabled
+        if not config.send_to_bq:
+            return
+
         errors = self.bq.insert_rows_json(self.bq_table, [row])
+        # Handle errors
         if errors:
             raise SystemError('Encountered errors while inserting rows: {}'.format(errors))
 
@@ -161,7 +193,7 @@ class TrainScoresAgent(BaseScoresAgent):
         :return:
         """
         self.logger.info(f'Batch #{batch_num}/{batch_len}, Loss: {batch_loss:.4f}')
-        self.bq_insert(operation='log_batch', **{
+        self.log_data(operation='log_batch', **{
             'batch_num': batch_num,
             'batch_len': batch_len,
             'batch_loss': batch_loss,
@@ -179,7 +211,7 @@ class TrainScoresAgent(BaseScoresAgent):
         :return:
         """
         self.logger.info(f'Epoch #{epoch_num}/{epoch_len}, Loss: {epoch_loss:.4f}')
-        self.bq_insert(operation='log_epoch', **{
+        self.log_data(operation='log_epoch', **{
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
             'epoch_loss': epoch_loss
@@ -211,7 +243,7 @@ class EvaluateScoresAgent(BaseScoresAgent):
             f'Precision: {precision:.4f}, \n' +
             f'Recall: {recall:.4f}, \n' +
             f'F1: {f1:.4f}')
-        self.bq_insert(operation='log_scores', **{
+        self.log_data(operation='log_scores', **{
             'accuracy': accuracy,
             'precision': precision,
             'recall': recall,
@@ -276,7 +308,7 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
                          f'Peak memory reserved: {step_peak_memory_reserved}, '
                          f'Time elapsed (seconds): {step_time_elapsed_s}, '
                          f'Epoch #{epoch_num}/{epoch_len}')
-        self.bq_insert(operation='log_step', **{
+        self.log_data(operation='log_step', **{
             'gpu_rank': gpu_rank,
             'step_num': step_num,
             'step_len': step_len,
@@ -291,15 +323,6 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
         })
-        send_message_to_pubsub(self.job_id, self.user_id, config.jobs_meta_topic, {
-            'action': 'job_progress',
-            'job_id': self.job_id,
-            'user_id': self.user_id,
-            'current_step': step_num,
-            'total_steps': step_len,
-            'current_epoch': epoch_num,
-            'total_epochs': epoch_len,
-        })
 
     def log_epoch(self, gpu_rank: int, epoch_num: int, epoch_len: int, epoch_time_elapsed_s: float):
         """
@@ -313,18 +336,9 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
         """
         self.logger.info(f'GPU #{gpu_rank}, '
                          f'Epoch #{epoch_num}/{epoch_len}')
-        self.bq_insert(operation='log_epoch', **{
+        self.log_data(operation='log_epoch', **{
             'gpu_rank': gpu_rank,
             'epoch_num': epoch_num,
             'epoch_len': epoch_len,
             'epoch_time_elapsed_s': epoch_time_elapsed_s,
-        })
-        send_message_to_pubsub(self.job_id, self.user_id, config.jobs_meta_topic, {
-            'action': 'job_progress',
-            'job_id': self.job_id,
-            'user_id': self.user_id,
-            'current_step': None,
-            'total_steps': None,
-            'current_epoch': epoch_num,
-            'total_epochs': epoch_len,
         })
