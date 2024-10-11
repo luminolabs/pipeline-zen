@@ -3,6 +3,9 @@ upload_results: true
 send_to_bq: true  # enable/disable BigQuery
 send_to_pubsub: true  # enable/disable PubSub
 
+# Environment management
+delete_results: false  # Set to true to delete results after uploading
+
 # Logging
 log_level: INFO
 log_stdout: false  # In dev and prod we only want to log to files, to avoid generating duplicate logs
