@@ -163,6 +163,9 @@ def main(job_id: str, user_id: str, job_config_name: str,
     # Load job configuration
     job_config = load_job_config(job_config_name)
 
+    # Set the user_id
+    job_config['user_id'] = user_id
+
     # Overwrite job config values with values from input, if any
     job_config['job_id'] = job_id = get_or_generate_job_id(job_config_name, job_id)
     job_config.setdefault('dataset_id', dataset_id)

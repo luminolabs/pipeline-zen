@@ -62,7 +62,7 @@ run_workflow() {
   if [[ "$override_env" != "null" ]]; then
     # Copy the override environment file to .env
     echo "Overriding environment variables with $override_env.env"
-    cp $override_env.env .env
+    cp ./deploy-artifacts/$override_env.env .env
     # Reload the environment variables
     source ./scripts/utils.sh
   fi

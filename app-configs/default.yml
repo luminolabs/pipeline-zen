@@ -1,6 +1,10 @@
 # Workflows
 upload_results: true
-provider_log_scores: true  # insert scores to bigquery?, or any other future remote DB
+send_to_bq: true  # enable/disable BigQuery
+send_to_pubsub: true  # enable/disable PubSub
+
+# Environment management
+delete_results: false  # Set to true to delete results after uploading
 
 # Logging
 log_level: INFO
@@ -17,6 +21,7 @@ weights_file: weights.pt
 # `finished/started_file`: Its presence signals listeners that a job is finished/started
 finished_file: .finished
 started_file: .started
+job_meta_file: job-meta.json
 
 # Celery
 celery_broker_url: memory://localhost/

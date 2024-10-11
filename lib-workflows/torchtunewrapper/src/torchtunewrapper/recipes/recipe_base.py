@@ -208,7 +208,7 @@ class RecipeBase:
                     mem_stats = utils.get_memory_stats(device=self.device)
                     self.scores_agent.log_step(
                         gpu_rank=rank,
-                        step_num=self.global_step,
+                        step_num=self.global_step % self.steps_per_epoch,  # global_step counts across epochs
                         step_len=self.steps_per_epoch,
                         step_loss=running_loss.item(),
                         step_lr=(

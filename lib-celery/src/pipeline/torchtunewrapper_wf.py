@@ -11,7 +11,7 @@ from common.config_manager import config
 from common.gcp import get_results_bucket_name, send_message_to_pubsub, make_gcs_object_public
 from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, get_logs_path, setup_logger
+    upload_local_directory_to_gcs, get_logs_path, setup_logger, job_meta_context
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -87,30 +87,39 @@ def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
     :param user_id: The user id to associate with the results
     :return:
     """
-    results_bucket_name = get_results_bucket_name(config.env_name)
     # Upload results
     results_path = get_results_path(job_id, user_id)
+    results_bucket_name = get_results_bucket_name(config.env_name)
     upload_local_directory_to_gcs(results_path, results_bucket_name)
     # Upload logs
-    upload_local_directory_to_gcs(get_logs_path(job_id, user_id), results_bucket_name)
+    logs_path = get_logs_path(job_id, user_id)
+    upload_local_directory_to_gcs(logs_path, results_bucket_name)
 
     # If `mark_finished` task failed, we don't do anything else
     if not mark_finished_result:
         return
 
-    # Notify API of generated artifacts
+    # Gather weight files and other files
     weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
-    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, {
-        'action': 'job_artifacts',
-        'base_url': f'https://storage.googleapis.com/'
-                    f'{results_bucket_name}/{user_id}/{job_id}',
-        'weight_files': weight_files,
-        'other_files': other_files
-    })
     # Make files public in GCS
     for f in weight_files + other_files:
         make_gcs_object_public(results_bucket_name, f'{user_id}/{job_id}/{f}')
+
+
+@app.task
+def delete_results(_, job_id: str, user_id: str):
+    """
+    Deletes the job results and logs directories.
+
+    :param job_id: The job id to delete
+    :param user_id: The user id to delete
+    :return:
+    """
+    results_path = get_results_path(job_id, user_id)
+    logs_path = get_logs_path(job_id, user_id)
+    os.system(f'rm -rf {results_path}')
+    os.system(f'rm -rf {logs_path}')
 
 
 @app.task
@@ -129,6 +138,26 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
         return False
+
+    # Write job metadata to file and publish to Pub/Sub
+    results_path = get_results_path(job_id, user_id)
+    results_bucket_name = get_results_bucket_name(config.env_name)
+    weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
+    other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
+    weights_data = {
+        'action': 'job_artifacts',
+        'base_url': f'https://storage.googleapis.com/'
+                    f'{results_bucket_name}/{user_id}/{job_id}',
+        'weight_files': weight_files,
+        'other_files': other_files
+    }
+    # Send message to Pub/Sub
+    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
+    # Write job metadata to file
+    with job_meta_context(job_id, user_id) as job_meta:
+        del weights_data['action']
+        job_meta['weights'] = weights_data
+
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
         f.write(job_id + "\n")
@@ -189,6 +218,9 @@ def schedule(*args):
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id, user_id))
+    # Add task to delete job results if in non-ephemeral environment
+    if config.delete_results:
+        tasks.append(delete_results.s(job_id, user_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
     tasks.append(shutdown_celery_worker.s(job_id, user_id))
