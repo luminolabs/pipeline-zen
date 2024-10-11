@@ -9,7 +9,7 @@ from common.config_manager import config
 from common.gcp import get_results_bucket_name, send_message_to_pubsub
 from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, setup_logger, job_meta_context
+    upload_local_directory_to_gcs, setup_logger, job_meta_context, get_logs_path
 from evaluate.workflow import main as _evaluate
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
@@ -89,8 +89,28 @@ def upload_results(_, job_id: str, user_id: str):
     :param user_id: The user id to associate with the results
     :return:
     """
+    # Upload results
+    results_path = get_results_path(job_id, user_id)
     results_bucket_name = get_results_bucket_name(config.env_name)
-    upload_local_directory_to_gcs(get_results_path(job_id, user_id), results_bucket_name)
+    upload_local_directory_to_gcs(results_path, results_bucket_name)
+    # Upload logs
+    logs_path = get_logs_path(job_id, user_id)
+    upload_local_directory_to_gcs(logs_path, results_bucket_name)
+
+
+@app.task
+def delete_results(_, job_id: str, user_id: str):
+    """
+    Deletes the job results and logs directories.
+
+    :param job_id: The job id to delete
+    :param user_id: The user id to delete
+    :return:
+    """
+    results_path = get_results_path(job_id, user_id)
+    logs_path = get_logs_path(job_id, user_id)
+    os.system(f'rm -rf {results_path}')
+    os.system(f'rm -rf {logs_path}')
 
 
 @app.task
@@ -180,6 +200,9 @@ def schedule(*args):
     # Add task to upload job results (when not on a local or test environment)
     if config.upload_results:
         tasks.append(upload_results.s(job_id, user_id))
+    # Add task to delete job results if in non-ephemeral environment
+    if config.delete_results:
+        tasks.append(delete_results.s(job_id, user_id))
     # Shut down worker, since we aren't using a
     # distributed job queue yet in any environment
     tasks.append(shutdown_celery_worker.s(job_id, user_id))
