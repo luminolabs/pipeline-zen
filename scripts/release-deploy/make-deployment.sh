@@ -62,19 +62,16 @@ gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_Z
 
 # Wait for machine to be ready, give it a few seconds
 echo "Wait 60s to allow VM to start services..."
-sleep 60
+#sleep 60
 
-echo "Copying files to VM..."
-# Make sure we have access permissions to the files and folders
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "sudo chown -R $(whoami):$(whoami) /$RESOURCES_PREFIX"
-# Remove old files and create scripts folder
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE \
-  --command "rm -rf /$RESOURCES_PREFIX/$SCRIPTS_FOLDER /$RESOURCES_PREFIX/VERSION && mkdir -p /$RESOURCES_PREFIX/$SCRIPTS_FOLDER"
-# Copy files to VM
-gcloud compute scp VERSION $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
+echo "Pull latest code from git..."
+stty -echo  # Hide the user input, so the password is not displayed
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command="git config --global --add safe.directory /$RESOURCES_PREFIX"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command="cd /$RESOURCES_PREFIX && ssh-agent bash -c \"ssh-add ~/.ssh/id_rsa; git -c core.sshCommand='ssh -o StrictHostKeyChecking=no' pull\""
+stty echo  # Restore the user input
+
+echo "Copying .env file to VM..."
 gcloud compute scp ./deploy-artifacts/$target_env.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX/.env --zone $IMAGE_CREATOR_VM_ZONE
-gcloud compute scp ./deploy-artifacts/*.env $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
-gcloud compute scp --recurse ./$SCRIPTS_FOLDER $IMAGE_CREATOR_VM_NAME:/$RESOURCES_PREFIX --zone $IMAGE_CREATOR_VM_ZONE
 
 # Grab older Docker Image IDs
 old_image_id=$(gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image ls -q")
@@ -86,8 +83,8 @@ gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --comman
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
 
 # Remove old Docker Images
-echo "Removing old Docker images..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id"
+#echo "Removing old Docker images..."
+#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Pull Docker Image on VM
 echo "Pulling new Docker image on VM: $VERSION..."
