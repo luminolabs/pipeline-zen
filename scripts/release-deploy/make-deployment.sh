@@ -62,7 +62,7 @@ gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_Z
 
 # Wait for machine to be ready, give it a few seconds
 echo "Wait 60s to allow VM to start services..."
-#sleep 60
+sleep 60
 
 echo "Pull latest code from git..."
 stty -echo  # Hide the user input, so the password is not displayed
@@ -87,8 +87,8 @@ gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --comman
 #gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker image rm -f $old_image_id || true"
 
 # Pull Docker Image on VM
-echo "Pulling new Docker image on VM: $VERSION..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
+#echo "Pulling new Docker image on VM: $VERSION..."
+#gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "docker pull $DOCKER_IMAGE_PATH"
 
 # Stop VM
 echo "Stopping VM..."
