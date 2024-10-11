@@ -6,10 +6,10 @@ from celery import Celery, chain
 from celery.signals import task_failure
 
 from common.config_manager import config
-from common.gcp import get_results_bucket_name
+from common.gcp import get_results_bucket_name, send_message_to_pubsub
 from common.helpers import heartbeat_wrapper
 from common.utils import get_or_generate_job_id, get_results_path, \
-    upload_local_directory_to_gcs, setup_logger
+    upload_local_directory_to_gcs, setup_logger, job_meta_context
 from evaluate.workflow import main as _evaluate
 from train.cli import parse_args as train_parse_args
 from train.workflow import main as _train
@@ -109,6 +109,26 @@ def mark_finished(evaluate_result, job_id: str, user_id: str):
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`evaluate` task failed - will not run `mark_finished` task')
         return False
+
+    # Write job metadata to file and publish to Pub/Sub
+    results_path = get_results_path(job_id, user_id)
+    results_bucket_name = get_results_bucket_name(config.env_name)
+    weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
+    other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
+    weights_data = {
+        'action': 'job_artifacts',
+        'base_url': f'https://storage.googleapis.com/'
+                    f'{results_bucket_name}/{user_id}/{job_id}',
+        'weight_files': weight_files,
+        'other_files': other_files
+    }
+    # Send message to Pub/Sub
+    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
+    # Write job metadata to file
+    with job_meta_context(job_id, user_id) as job_meta:
+        del weights_data['action']
+        job_meta['weights'] = weights_data
+
     path = os.path.join(config.root_path, get_results_path(), config.finished_file)
     with open(path, "w") as f:
         f.write(job_id)

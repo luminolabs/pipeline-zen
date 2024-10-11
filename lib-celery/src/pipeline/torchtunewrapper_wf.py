@@ -87,9 +87,9 @@ def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
     :param user_id: The user id to associate with the results
     :return:
     """
-    results_bucket_name = get_results_bucket_name(config.env_name)
     # Upload results
     results_path = get_results_path(job_id, user_id)
+    results_bucket_name = get_results_bucket_name(config.env_name)
     upload_local_directory_to_gcs(results_path, results_bucket_name)
     # Upload logs
     upload_local_directory_to_gcs(get_logs_path(job_id, user_id), results_bucket_name)
@@ -98,21 +98,9 @@ def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
     if not mark_finished_result:
         return
 
-    # Notify for generated artifacts
+    # Gather weight files and other files
     weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
-    weights_data = {
-        'action': 'job_artifacts',
-        'base_url': f'https://storage.googleapis.com/'
-                    f'{results_bucket_name}/{user_id}/{job_id}',
-        'weight_files': weight_files,
-        'other_files': other_files
-    }
-    # Send message to Pub/Sub
-    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
-    # Write job metadata to file
-    with job_meta_context(job_id, user_id) as job_meta:
-        job_meta['weights'] = weights_data
     # Make files public in GCS
     for f in weight_files + other_files:
         make_gcs_object_public(results_bucket_name, f'{user_id}/{job_id}/{f}')
@@ -134,6 +122,26 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
         # Not touching this file allows the startup script to mark job as failed
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
         return False
+
+    # Write job metadata to file and publish to Pub/Sub
+    results_path = get_results_path(job_id, user_id)
+    results_bucket_name = get_results_bucket_name(config.env_name)
+    weight_files = [f for f in os.listdir(results_path) if f.endswith('.pt')]
+    other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
+    weights_data = {
+        'action': 'job_artifacts',
+        'base_url': f'https://storage.googleapis.com/'
+                    f'{results_bucket_name}/{user_id}/{job_id}',
+        'weight_files': weight_files,
+        'other_files': other_files
+    }
+    # Send message to Pub/Sub
+    send_message_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
+    # Write job metadata to file
+    with job_meta_context(job_id, user_id) as job_meta:
+        del weights_data['action']
+        job_meta['weights'] = weights_data
+
     path = os.path.join(config.root_path, config.results_path, config.finished_file)
     with open(path, "w") as f:
         f.write(job_id + "\n")
