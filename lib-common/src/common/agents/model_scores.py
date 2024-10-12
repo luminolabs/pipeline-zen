@@ -41,6 +41,11 @@ class BaseScoresAgent(ABC):
         # Get a copy of the system specs
         self.system_specs = SystemSpecs(logger)
 
+    @abstractmethod
+    @property
+    def workflow_name(self) -> str:
+        pass
+
     def mark_time_start(self):
         """
         Mark, and log the start time of the training job
@@ -137,7 +142,9 @@ class BaseScoresAgent(ABC):
         """
         send_message_to_pubsub(self.job_id, self.user_id,
                                topic_name=config.jobs_meta_topic,
-                               message={'action': 'job_progress', **row})
+                               message={'action': 'job_progress',
+                                        'workflow': self.workflow_name,
+                                        **row})
 
     def bq_insert(self, row: dict):
         """
@@ -167,6 +174,10 @@ class TrainScoresAgent(BaseScoresAgent):
     """
     An agent used to log training scores on the filesystem and on bigquery
     """
+
+    @property
+    def workflow_name(self) -> str:
+        return 'train'
 
     def _get_bq_table(self) -> str:
         return bq_table_train
@@ -223,6 +234,10 @@ class EvaluateScoresAgent(BaseScoresAgent):
     An agent used to log evaluate scores on the filesystem and on bigquery
     """
 
+    @property
+    def workflow_name(self) -> str:
+        return 'evaluate'
+
     def _get_bq_table(self) -> str:
         return bq_table_evaluate
 
@@ -255,6 +270,10 @@ class TorchtunewrapperScoresAgent(BaseScoresAgent):
     """
     An agent used to log fine-tuning scores on the filesystem and on bigquery
     """
+
+    @property
+    def workflow_name(self) -> str:
+        return 'torchtunewrapper'
 
     def _get_bq_table(self) -> str:
         return bq_table_torchtunewrapper

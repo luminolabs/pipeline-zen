@@ -137,6 +137,7 @@ def mark_finished(evaluate_result, job_id: str, user_id: str):
     other_files = [f for f in os.listdir(results_path) if f in ['config.json']]
     weights_data = {
         'action': 'job_artifacts',
+        'workflow': 'train_evaluate',
         'base_url': f'https://storage.googleapis.com/'
                     f'{results_bucket_name}/{user_id}/{job_id}',
         'weight_files': weight_files,
