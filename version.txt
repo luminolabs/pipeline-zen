@@ -1,1 +1,0 @@
-Invalid part specified. Must be one of 'major', 'minor', or 'patch'.
