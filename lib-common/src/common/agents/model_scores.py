@@ -41,8 +41,8 @@ class BaseScoresAgent(ABC):
         # Get a copy of the system specs
         self.system_specs = SystemSpecs(logger)
 
-    @abstractmethod
     @property
+    @abstractmethod
     def workflow_name(self) -> str:
         pass
 
