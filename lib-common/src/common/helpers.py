@@ -2,12 +2,10 @@ import functools
 import math
 import os
 from logging import Logger
-from typing import Tuple
 
 import torch
 from torch import nn
 from torch.utils.data import DataLoader
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from common.config_manager import config
 from common.dataset.kind.utils import dataset_kind_factory
@@ -42,8 +40,7 @@ def get_device(logger: Logger):
 
 
 def configure_model_and_dataloader(
-        job_config: dict, logger: Logger, for_inference: bool = False) \
-        -> Tuple[PreTrainedModel, DataLoader, PreTrainedTokenizerBase, str]:
+        job_config: dict, logger: Logger, for_inference: bool = False):
     """
     Configure model and dataloader from a job configuration.
 

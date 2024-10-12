@@ -1,13 +1,11 @@
 from logging import Logger
 
-from transformers import PreTrainedTokenizerBase, TensorType
+from transformers import TensorType
 from transformers.tokenization_utils_base import TruncationStrategy
 from transformers.utils import PaddingStrategy
 
-from common.tokenizer import nlp
 
-
-def tokenizer_factory(tokenizer_id: str, logger: Logger) -> PreTrainedTokenizerBase:
+def tokenizer_factory(tokenizer_id: str, logger: Logger):
     """
     Factory method for tokenizers.
 
@@ -17,12 +15,13 @@ def tokenizer_factory(tokenizer_id: str, logger: Logger) -> PreTrainedTokenizerB
     """
     logger.info(f'Using `{tokenizer_id}` tokenizer')
     if any(x in tokenizer_id for x in ('bert', 't5')):
-        return nlp.auto(tokenizer_id)
+        # return nlp.auto(tokenizer_id)
+        pass
     else:
         raise TypeError(f'tokenizer_id: {tokenizer_id} is not a valid option')
 
 
-def tokenize_inputs(inputs, tokenizer: PreTrainedTokenizerBase, model_args: dict,
+def tokenize_inputs(inputs, tokenizer, model_args: dict,
                     device: str, **kwargs):
     """
     Tokenize inputs using the tokenizer, and place attention masks on device.

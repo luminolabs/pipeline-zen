@@ -1,12 +1,11 @@
 from logging import Logger
 from typing import Optional
 
-from transformers import PreTrainedModel
+from common.model import llm
+# from common.model import nlp, image
 
-from common.model import image, nlp, llm
 
-
-def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **kwargs) -> PreTrainedModel | str:
+def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **kwargs):
     """
     Factory method for instantiating a pre-trained model.
 
@@ -19,11 +18,14 @@ def model_factory(model_kind: Optional[str], model_base: str, logger: Logger, **
     logger.info(f'Using `{model_kind}.{model_base}` model')
     if model_kind == 'single_label':
         if 'resnet' in model_base:
-            return image.resnet(model_base, **kwargs)
+            # return image.resnet(model_base, **kwargs)
+            pass
         elif any(x in model_base for x in ('bert', 't5',)):
-            return nlp.auto(model_base, **kwargs)
+            # return nlp.auto(model_base, **kwargs)
+            pass
         elif 'unet' == model_base:
-            return image.unet(model_base, **kwargs)
+            # return image.unet(model_base, **kwargs)
+            pass
         else:
             raise TypeError(f'model_base: {model_base} is not a valid option '
                             f'for model_kind: {model_kind}')
