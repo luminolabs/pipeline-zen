@@ -108,7 +108,8 @@ class RecipeBase:
             )
 
     def setup_tokenizer(self) -> None:
-        self.tokenizer = config.instantiate(self.cfg.tokenizer)
+        self.tokenizer = tt_config.instantiate(self.cfg.tokenizer)
+        self.dataset._tokenizer = self.tokenizer
 
     def setup_data(
             self,
