@@ -7,7 +7,7 @@ mock_user_has_enough_credits: true
 
 # No need to do these unless we're testing the
 # actual sending of data to BQ and PubSub
-upload_results: false
+send_to_gcs: false
 send_to_bq: false
 send_to_pubsub: false
 

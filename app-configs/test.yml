@@ -1,4 +1,1 @@
 log_level: DEBUG
-
-# Used in unit tests
-test_config: test_config

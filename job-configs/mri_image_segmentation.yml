@@ -1,6 +1,0 @@
-job_id: mri_image_segmentation
-category: IMAGE
-type: SEGMENTATION
-dataset_id: rainerberger/Mri_segmentation
-model_base_args:
-  classes: 1

@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+#########################
+### Environment Setup ###
+#########################
+
+
 LOCAL_ENV="local"
 PROJECT_ID="neat-airport-407301"
 
@@ -12,6 +18,12 @@ fi
 # so we can't cd to /pipeline-zen-jobs conditionally above
 eval $(cat ./.env | grep -v '^#' | tr -d '\r')
 echo "PZ_ENV set to $PZ_ENV"
+
+
+########################
+### Helper Functions ###
+########################
+
 
 is_truthy() {
   local value=$1

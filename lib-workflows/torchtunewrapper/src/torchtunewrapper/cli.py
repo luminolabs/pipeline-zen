@@ -8,7 +8,7 @@ def parse_args() -> tuple:
     """
     :return: Parsed command line arguments
     """
-    parser = argparse.ArgumentParser(description="The model training workflow")
+    parser = argparse.ArgumentParser(description="The LLM fine-tuning workflow")
     add_parser_args(parser)
     args = parser.parse_args()
 
@@ -17,7 +17,7 @@ def parse_args() -> tuple:
     config.set('user_id', args.user_id)
 
     return (args.job_id, args.user_id, args.job_config_name,
-            args.dataset_id, args.train_file_path,
+            args.dataset_id,
             args.batch_size, args.shuffle, args.num_epochs,
             args.use_lora, args.use_qlora,
             args.lr, args.seed,
@@ -44,8 +44,6 @@ def add_parser_args(parser: argparse.ArgumentParser):
 
     parser.add_argument('-ds', '--dataset_id', type=str, required=True,
                         help="The dataset repo to use for training; e.g. `tatsu-lab/alpaca`")
-    parser.add_argument('-tfp', '--train_file_path', type=str, required=False,
-                        help="The path to the train file in the repo to use for training; e.g. `train.jsonl`")
     parser.add_argument('-bs', '--batch_size', type=int, required=False, default=1,
                         help="The batch size to use for training; default is 1")
     parser.add_argument('-s', '--shuffle', type=is_truthy, required=False, default=True,

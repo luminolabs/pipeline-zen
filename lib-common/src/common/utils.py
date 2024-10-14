@@ -1,4 +1,3 @@
-import glob
 import json
 import logging
 import os
@@ -8,16 +7,47 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
-from typing import Optional, Union
+from typing import Optional
 
-from google.cloud import storage
-from google.cloud.storage import Bucket
 from omegaconf import OmegaConf, DictConfig
 
 from common.config_manager import config
 
+#################
+### CONSTANTS ###
+#################
+
+
+# insert constants here
+# ...
+
+
+##################
+### TIME UTILS ###
+##################
+
+
 # Timestamp format to use for logs, results, etc
-system_timestamp_format = '%Y-%m-%d %H:%M:%S'
+system_timestamp_format = '%Y-%m-%dT%H:%M:%SZ'
+
+
+def utcnow() -> datetime:
+    """
+    :return: The current UTC time
+    """
+    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
+
+
+def utcnow_str() -> str:
+    """
+    :return: The current UTC time as a string
+    """
+    return utcnow().strftime(system_timestamp_format)
+
+
+#####################
+### LOGGING UTILS ###
+#####################
 
 
 class JsonEnumBase(Enum):
@@ -25,20 +55,8 @@ class JsonEnumBase(Enum):
     Base class for JSON serializable enums.
     """
 
-    def _json(self):
+    def json(self):
         return str(self.value)
-
-
-class JobCategory(JsonEnumBase):
-    NLP = 'nlp'
-    IMAGE = 'image'
-    LLM = 'llm'
-
-
-class JobType(JsonEnumBase):
-    CLASSIFICATION = 'classification'
-    SEGMENTATION = 'segmentation'
-    INSTRUCTION = 'instruction'
 
 
 class AutoJSONEncoder(JSONEncoder):
@@ -46,16 +64,15 @@ class AutoJSONEncoder(JSONEncoder):
     A JSON encoder that automatically serializes objects with a `_json()` method,
     such as `Enums` that implement the `_json()` method.
     """
-
     def default(self, obj):
         # Convert OmegaConf objects to dictionaries
         # before serializing them to JSON strings to avoid errors
         if isinstance(obj, DictConfig):
             obj = dict(obj)
         try:
-            # If the object has a `_json()` method, use it;
-            # it means it's an object (ex. Enum) that implements the `_json()` method
-            return obj._json()
+            # If the object has a `json()` method, use it;
+            # it means it's an object (ex. Enum) that implements the `json()` method
+            return obj.json()
         except AttributeError:
             # Otherwise, return the JSON serialized object
             return json.dumps(obj)
@@ -68,7 +85,6 @@ class JsonFormatter(logging.Formatter):
         :param user_id: The user id to use in the log record
         """
         super(JsonFormatter, self).__init__()
-
         # Set the JSON encoder to use for the log records
         self.json_encoder = AutoJSONEncoder()
         self.job_id = job_id
@@ -97,85 +113,11 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_record)
 
 
-def get_results_path(job_id: str = '', user_id: str = '') -> str:
-    """
-    :param job_id: Job id to use as part of the results path, can be left empty to get the root results folder
-    :param user_id: User id to use as part of the results path
-    :return: Returns the path to the results directory
-    """
-    path = os.path.join(config.root_path, config.results_path, user_id, job_id)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
-def get_model_weights_path(job_id: str, user_id: str) -> str:
-    """
-    :param job_id: Job id to use as part of the model weights path
-    :param user_id: User id to user as part of the path
-    :return: Returns the path to the model weights file
-    """
-    path = os.path.join(get_results_path(job_id, user_id), config.weights_file)
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    return path
-
-
-def read_job_meta_from_file(job_id: str, user_id: str) -> dict:
-    """
-    Reads the job meta dictionary from a file
-
-    :param job_id: Job id to use as part of the meta path
-    :param user_id: User id to use as part of the meta path
-    :return: Returns the job meta dictionary
-    """
-    path = os.path.join(get_results_path(job_id, user_id), config.job_meta_file)
-    if os.path.exists(path):
-        with open(path, 'r') as f:
-            return json.load(f)
-    return {}
-
-
-def write_job_meta_to_file(job_id: str, user_id: str, job_meta: dict) -> None:
-    """
-    Writes the job meta dictionary to a file
-
-    :param job_id: Job id to use as part of the meta path
-    :param user_id: User id to use as part of the meta path
-    :param job_meta: The job meta dictionary to write
-    """
-    path = os.path.join(get_results_path(job_id, user_id), config.job_meta_file)
-    with open(path, 'w') as f:
-        f.write(json.dumps(job_meta))
-
-
-@contextmanager
-def job_meta_context(job_id: str, user_id: str):
-    """
-    Context manager to read and write job metadata to a file
-    Usage:
-        with job_meta_context(job_id, user_id) as job_meta:
-            job_meta['key'] = 'value'
-    """
-    job_meta = read_job_meta_from_file(job_id, user_id)
-    yield job_meta
-    write_job_meta_to_file(job_id, user_id, job_meta)
-
-
-def get_logs_path(job_id: str, user_id: str) -> str:
-    """
-    :param job_id: Job id to use as part of the logs path
-    :param user_id: User id to use as part of the logs path
-    :return: Returns the path to the logs directory
-    """
-    path = os.path.join(config.root_path, config.logs_path, user_id, job_id)
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
 def setup_logger(name: str, job_id: str, user_id: str,
                  add_stdout: bool = True,
                  log_level: int = logging.INFO) -> logging.Logger:
     """
-    Sets up a logger
+    Sets up the logger
 
     :param name: The name of the logger
     :param job_id: Job id to use as part of the logger path
@@ -188,20 +130,18 @@ def setup_logger(name: str, job_id: str, user_id: str,
 
     # Set the logger format for stdout
     log_format = logging.Formatter(
-        f'{config.env_name} - %(name)s - %(levelname)s - %(asctime)s - %(message)s - job_id: {job_id} - user_id: {user_id}',
+        f'{config.env_name} - %(name)s - %(levelname)s - %(asctime)s - %(message)s - '
+        f'job_id: {job_id} - user_id: {user_id}',
         datefmt=system_timestamp_format
     )
     # Set the logger format to use the current UTC time
     log_format.converter = lambda *args: utcnow().timetuple()
-
     # Log to stdout and to file
     stdout_handler = logging.StreamHandler(sys.stdout)
-    file_handler = logging.FileHandler(os.path.join(get_logs_path(job_id, user_id), f'{name}.log'))
-
+    file_handler = logging.FileHandler(os.path.join(get_work_dir(job_id, user_id), f'{name}.log'))
     # Set the logger formats
     stdout_handler.setFormatter(log_format)
     file_handler.setFormatter(JsonFormatter(job_id, user_id))
-
     # Configure logger
     pg_logger = logging.getLogger(name)
     pg_logger.setLevel(log_level)
@@ -211,19 +151,59 @@ def setup_logger(name: str, job_id: str, user_id: str,
     return pg_logger
 
 
-def get_or_generate_job_id(job_config_name: str, job_id: Optional[str] = None) -> str:
-    """
-    Returns the job id if set -
-    Otherwise generates a new job id, in this form `<default job id from the job configuration>-<UUID>`
+##################
+### FILE UTILS ###
+##################
 
-    :param job_config_name: The name of the job configuration
-    :param job_id: Job id to use, or if empty, generates a new job id
-    :return: The input job id, or the generated job id
+
+def get_work_dir(job_id: str, user_id: str) -> str:
     """
-    if not job_id:
-        job_config = load_job_config(job_config_name)
-        job_id = job_config['job_id'] + '-' + str(uuid.uuid4())
-    return job_id
+    :return: Returns the path to the results directory for a given job and user
+    """
+    path = os.path.join(config.root_path, config.work_dir, user_id, job_id)
+    os.makedirs(path, exist_ok=True)
+    return str(path)
+
+
+def _read_job_meta_from_file(job_id: str, user_id: str) -> dict:
+    """
+    :return: Returns the job meta dictionary for a given job and user
+    """
+    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    if os.path.exists(path):
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {}
+
+
+def _write_job_meta_to_file(job_id: str, user_id: str, job_meta: dict) -> None:
+    """
+    :return: Writes the job meta dictionary to a file for a given job and user
+    """
+    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    with open(path, 'w') as f:
+        f.write(json.dumps(job_meta))
+
+
+@contextmanager
+def job_meta_context(job_id: str, user_id: str):
+    """
+    This context manager fully manages reading and writing the job metadata to a file
+
+    Usage:
+        # file contents are loaded into job_meta, on `with` block entry
+        with job_meta_context(job_id, user_id) as job_meta:
+            job_meta['key'] = 'value'
+        # job_meta is written back to the file, on `with` block exit
+    """
+    job_meta = _read_job_meta_from_file(job_id, user_id)
+    yield job_meta
+    _write_job_meta_to_file(job_id, user_id, job_meta)
+
+
+#################
+### JOB UTILS ###
+#################
 
 
 def save_job_results(job_id: str, user_id: str, results: dict, job_name: str) -> None:
@@ -236,36 +216,21 @@ def save_job_results(job_id: str, user_id: str, results: dict, job_name: str) ->
     :param job_name: Name of the job
     :return:
     """
-    path = os.path.join(get_results_path(job_id, user_id), job_name + '.json')
+    path = os.path.join(get_work_dir(job_id, user_id), job_name + '.json')
     with open(path, 'w') as f:
         f.write(json.dumps(results))
 
 
-def upload_local_directory_to_gcs(local_path: str, bucket: Union[str, Bucket], gcs_path: Optional[str] = None):
+####################
+### CONFIG UTILS ###
+####################
+
+
+def is_local_env() -> bool:
     """
-    Upload a local directory to Google Cloud Storage.
-
-    :param local_path: Local path to upload
-    :param bucket: Bucket to upload to
-    :param gcs_path:
-    :return:
+    :return: True if the environment is local, False otherwise
     """
-    client = storage.Client(project=config.gcp_project)
-    if isinstance(bucket, str):
-        bucket = client.get_bucket(bucket)
-
-    # If the GCS path is not set, use the last two directories of the local path
-    # i.e. go from ./.results/user_id/job_id to user_id/job_id
-    gcs_path = gcs_path or '/'.join(local_path.split('/')[-2:])
-
-    assert os.path.isdir(local_path)
-    for local_file in glob.glob(local_path + '/**'):
-        if not os.path.isfile(local_file):
-            upload_local_directory_to_gcs(local_file, bucket, gcs_path + "/" + os.path.basename(local_file))
-        else:
-            remote_path = os.path.join(gcs_path, local_file[1 + len(local_path):])
-            blob = bucket.blob(remote_path)
-            blob.upload_from_filename(local_file)
+    return config.env_name == config.local_env_name
 
 
 def load_job_config(job_config_name: str) -> DictConfig:
@@ -276,71 +241,30 @@ def load_job_config(job_config_name: str) -> DictConfig:
     :param job_config_name: Name of the job configuration
     :return: Final job configuration dict
     """
-
     # Pull the requested configuration file
     job_config = read_job_config_from_file(job_config_name)
-
     # If the job category is LLM, return the job config as is, no need for other modifications
-    if job_config['category'] == JobCategory.LLM:
-        return DictConfig({**job_config})
-
-    # Construct the template configuration file; ex. `image_segmentation_base.yml`
-    template_config_name = (job_config['category'].value +
-                            '_' + job_config['type'].value +
-                            '_base.yml')
-
-    # Pull the base and template configuration files
-    base_config = read_job_config_from_file(os.path.join('templates', 'base.yml'))
-    template_config = read_job_config_from_file(os.path.join('templates', template_config_name))
-
-    # Build final configuration dict
-    return DictConfig({**base_config, **template_config, **job_config})
+    return DictConfig({**job_config})
 
 
 def read_job_config_from_file(job_config_name: str,
-                              overrides: Optional[dict] = None, is_torchtune: bool = False) -> DictConfig:
+                              overrides: Optional[dict] = None, sub_dir: Optional[str] = '') -> DictConfig:
     """
     Reads the job config from a YAML file
 
     :param job_config_name: Name of the job configuration
     :param overrides: Overrides to apply to the job config
-    :param is_torchtune: Whether the job config is a torchtune config file or not
+    :param sub_dir: Sub-directory to look for the job config
     :return: The job config dictionary
     """
     # Normalize filename
     if not job_config_name.endswith('.yml'):
         job_config_name += '.yml'
-
-    # Open and read YAML into dictionary
-    path = os.path.join(
-        config.root_path, config.job_configs_path,
-        'torchtune' if is_torchtune else '',
-        job_config_name)
+    # Open and read YAML
+    path = str(os.path.join(config.root_path, config.job_configs_path, sub_dir, job_config_name))
     try:
         job_config = OmegaConf.merge(OmegaConf.load(path), overrides or {})
+        return job_config
     except FileNotFoundError:
         # User friendly error
         raise FileNotFoundError(f'job_config_name: {job_config_name} not found under {path}')
-
-    if not is_torchtune:
-        # Resolve these two into the Enum class; ex. `IMAGE` -> `JobCategory.IMAGE`
-        if job_config.get('type'):
-            job_config['type'] = getattr(JobType, job_config['type'])
-        if job_config.get('category'):
-            job_config['category'] = getattr(JobCategory, job_config['category'])
-
-    return job_config
-
-
-def utcnow() -> datetime:
-    """
-    :return: The current UTC time
-    """
-    return datetime.now(tz=timezone.utc).replace(tzinfo=None)
-
-
-def utcnow_str() -> str:
-    """
-    :return: The current UTC time as a string
-    """
-    return utcnow().strftime(system_timestamp_format)

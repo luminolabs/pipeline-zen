@@ -14,7 +14,7 @@ from torchtune.modules.peft.peft_utils import (
     validate_missing_and_unexpected_for_lora,
 )
 
-from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.agent.model_scores import TorchtunewrapperMetricsAgent
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe
 
@@ -26,7 +26,7 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
     """
     def __init__(self, job_id: str, user_id: str,
                  cfg: DictConfig, dataset: Dataset,
-                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent):
+                 logger: Logger, scores_agent: TorchtunewrapperMetricsAgent):
         self.is_lora = True
         super().__init__(job_id, user_id, cfg, dataset, logger, scores_agent)
 
@@ -37,7 +37,6 @@ class LoRAFinetuneRecipeSingleDevice(RecipeBase):
             enable_activation_checkpointing=self.enable_activation_checkpointing,
             model_state_dict=checkpoint_dict[utils.MODEL_KEY],
         )
-        self.tokenizer = config.instantiate(self.cfg.tokenizer)
         self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )

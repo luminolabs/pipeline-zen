@@ -2,18 +2,17 @@ from functools import partial
 from logging import Logger
 from typing import Optional
 
+from celery.utils import worker_direct
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torch.utils.data import Dataset
 from torchtune.datasets import chat_dataset
 
-from common.agents.model_scores import TorchtunewrapperScoresAgent
-from common.dataset.provider.huggingface import HuggingFace
-from common.dataset.provider.utils import dataset_provider_factory
-from common.helpers import heartbeat_wrapper
-from common.model.factory import model_factory
-from common.utils import load_job_config, get_or_generate_job_id, setup_logger, read_job_config_from_file, \
-    get_logs_path, get_results_path, save_job_results
+from common.agent.model_scores import TorchtunewrapperMetricsAgent
+from common.comms import heartbeat_wrapper
+from common.dataset.base import dataset_provider_factory
+from common.model.base import model_provider_factory
+from common.utils import load_job_config, setup_logger, read_job_config_from_file, get_work_dir, save_job_results
 from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
 
@@ -42,28 +41,21 @@ def _download_dataset(job_config: DictConfig, logger: Logger) -> Dataset:
         train_on_input=job_config.get('train_on_input', False),
         packed=job_config.get('packed', False))
 
-    if job_config['dataset_id'].startswith('gs://'):
-        # Download the dataset from GCS
-        gcp_bucket_ds = dataset_provider_factory('gcp_bucket', job_config['dataset_id'], None, logger)
-        gcp_bucket_ds.fetch(logger)
-        # Instantiate the chat dataset to use the downloaded dataset
-        dataset = chat_dataset_partial(
-            source="json",
-            data_files=gcp_bucket_ds.dataset
-        )
-    else:
-        # Instantiate the chat dataset to pull from HuggingFace
-        dataset = chat_dataset_partial(
-            source=job_config['dataset_id'],
-            data_files={'train': job_config.get('train_file_path', 'train.jsonl')},
-            cache_dir=HuggingFace.get_dataset_cache_dir(),
-        )
+    # Instantiate the dataset provider and download the dataset
+    dataset_path = dataset_provider_factory(url=job_config['dataset_id'],
+                                                job_id=job_config['job_id'], user_id=job_config['user_id'],
+                                                logger=logger)()
+    # Instantiate the chat dataset to use the downloaded dataset
+    dataset = chat_dataset_partial(
+        source="json",
+        data_files=dataset_path
+    )
     return dataset
 
 
 @heartbeat_wrapper('torchtunewrapper', 'download_model')
-def _download_model(job_config: DictConfig, logger: Logger) -> str:
-    return model_factory(model_kind='llm', model_base=job_config['model_base'], logger=logger)
+def _download_model(model_base: str, logger: Logger) -> str:
+    return model_provider_factory(url=model_base, logger=logger)()
 
 
 def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
@@ -80,7 +72,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     # A logger for logging scores; also propagates to main logger
     scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, user_id, add_stdout=False)
     # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, user_id, scores_logger)
+    scores_agent = TorchtunewrapperMetricsAgent(job_id, user_id, scores_logger)
 
     # Log a few things about this job
     scores_logger.info('The job id is: ' + job_id)
@@ -94,7 +86,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     is_single_device = job_config['num_gpus'] == 1
 
     # Fetch and load the base model
-    model_path = _download_model(job_config, logger)
+    model_path = _download_model(job_config['model_base'], logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': model_path})  # path, not name
 
@@ -134,7 +126,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
 
 
 def main(job_id: str, user_id: str, job_config_name: str,
-         dataset_id: str = Optional[None], train_file_path: str = None,
+         dataset_id: str = Optional[None],
          batch_size: int = 1, shuffle: bool = True, num_epochs: int = 1,
          use_lora: bool = True, use_qlora: bool = False,
          lr: float = 3e-4, seed: Optional[int] = None,
@@ -147,7 +139,6 @@ def main(job_id: str, user_id: str, job_config_name: str,
     :param user_id: The user id for the job
     :param job_config_name: The job configuration id; configuration files are found under `job-configs`
     :param dataset_id: The dataset identifier, ex: `tatsu-lab/alpaca`
-    :param train_file_path: The path to the training file in the dataset, ex: `train.jsonl`
     :param batch_size: The training batch size, default is 1
     :param shuffle: Whether to shuffle the dataset or not, default is True
     :param num_epochs: Number of epochs to train
@@ -163,13 +154,12 @@ def main(job_id: str, user_id: str, job_config_name: str,
     # Load job configuration
     job_config = load_job_config(job_config_name)
 
-    # Set the user_id
+    # Set the job_id and user_id
+    job_config['job_id'] = job_id
     job_config['user_id'] = user_id
 
     # Overwrite job config values with values from input, if any
-    job_config['job_id'] = job_id = get_or_generate_job_id(job_config_name, job_id)
     job_config.setdefault('dataset_id', dataset_id)
-    job_config.setdefault('train_file_path', train_file_path)
     job_config.setdefault('batch_size', batch_size)
     job_config.setdefault('shuffle', shuffle)
     job_config.setdefault('num_epochs', num_epochs)
@@ -190,6 +180,9 @@ def main(job_id: str, user_id: str, job_config_name: str,
     if not job_config['use_lora']:
         job_config['use_qlora'] = False
 
+    # Set the work directory, to save logs, results, etc.
+    work_dir = get_work_dir(job_id, user_id)
+
     # Load torchtune configuration
     tt_config_file = get_torchtune_config_filename(
         job_config['model_base'],
@@ -198,8 +191,8 @@ def main(job_id: str, user_id: str, job_config_name: str,
     tt_config = read_job_config_from_file(
         tt_config_file,
         overrides={
-            'logs_path': get_logs_path(job_id, user_id),
-            'output_dir': get_results_path(job_id, user_id),
+            'logs_path': work_dir,
+            'output_dir': work_dir,
             'epochs': job_config['num_epochs'],
             'shuffle': job_config['shuffle'],
             'batch_size': job_config['batch_size'],
@@ -207,7 +200,7 @@ def main(job_id: str, user_id: str, job_config_name: str,
             'lr': job_config['lr'],
             'seed': job_config['seed'],
         },
-        is_torchtune=True)
+        sub_dir='torchtune')
 
     # Run the `torchtune` workflow, and handle unexpected exceptions
     try:

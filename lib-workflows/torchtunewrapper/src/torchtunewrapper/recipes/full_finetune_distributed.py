@@ -36,7 +36,6 @@ class FullFinetuneRecipeDistributed(RecipeBase):
             ac_mode=self.cfg.get("ac_mode", None),
             ac_option=self.cfg.get("ac_option", None),
         )
-        self.tokenizer = config.instantiate(self.cfg.tokenizer)
         self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
         )

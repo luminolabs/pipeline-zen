@@ -1,5 +1,9 @@
+# Local development environment
+local_env_name: local
+secrets_dir: .secrets
+
 # Workflows
-upload_results: true
+send_to_gcs: true
 send_to_bq: true  # enable/disable BigQuery
 send_to_pubsub: true  # enable/disable PubSub
 
@@ -12,13 +16,9 @@ log_stdout: false  # In dev and prod we only want to log to files, to avoid gene
 
 # Paths
 root_path: .
-cache_path: .cache
-logs_path: .logs
-results_path: .results
-secrets_path: .secrets
+cache_dir: .cache
+work_dir: .results
 job_configs_path: job-configs
-weights_file: weights.pt
-# `finished/started_file`: Its presence signals listeners that a job is finished/started
 finished_file: .finished
 started_file: .started
 job_meta_file: job-meta.json
@@ -39,6 +39,7 @@ huggingface_token:  # Set this in your .env file: `PZ_HUGGINGFACE_TOKEN=.....`
 customer_api_enabled: true  # Setting to false will disable Customer API calls
 customer_api_url:  # This is set in each environment's env files
 customer_api_key:  # Set this in your .env file: `PZ_CUSTOMER_API_KEY=.....`
+customer_api_credits_deduct_endpoint: /billing/credits-deduct
 
 # Set to true to mock that the user has enough credits
 # to run a job and avoid making the API call (useful for local testing)

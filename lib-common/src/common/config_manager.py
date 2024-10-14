@@ -8,7 +8,6 @@ class ConfigManager:
     Manages loading application configurations from YAML files, with support for
     separate environments and overrides using environment variables.
     """
-
     def __init__(self):
         """
         Initializes the configuration manager.
