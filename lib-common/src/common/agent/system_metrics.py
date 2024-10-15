@@ -13,7 +13,6 @@ class SystemSpecs:
 
     Note: these commands aren't supported on OSX, but they are on Ubuntu.
     """
-
     def __init__(self, logger: Logger):
         self.logger = logger
 
@@ -34,7 +33,8 @@ class SystemSpecs:
         try:
             j = xmltodict.parse(r.stdout.decode('utf-8'))
         except Exception as e:
-            self.logger.error(f'Could not parse nvidia-smi output "{r.stdout.decode("utf-8")}": {e}\n{traceback.format_exc()}')
+            self.logger.error(f'Could not parse nvidia-smi output "'
+                              f'{r.stdout.decode("utf-8")}": {e}\n{traceback.format_exc()}')
             return None
 
         nvidia_smi_specs = j['nvidia_smi_log']['gpu']
@@ -54,7 +54,8 @@ class SystemSpecs:
     def get_cpu_spec(self) -> Optional[dict]:
         """
         :return: CPU specs,
-        ex. {'architecture': 'x86_64', 'cpus': '16', 'model_name': '11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz', 'threads_per_core': '2'}
+        ex. {'architecture': 'x86_64', 'cpus': '16',
+             'model_name': '11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz', 'threads_per_core': '2'}
         """
         def clean_key(key: str) -> str:
             return key.lower().replace(' ', '_').replace('(', '').replace(')', '').replace(':', '')
@@ -67,9 +68,9 @@ class SystemSpecs:
 
         j = json.loads(r.stdout.decode('utf-8'))
         o = {clean_key(x['field']): x for x in j.get('lscpu')}
-        l = ('architecture', 'cpus', 'model_name', 'threads_per_core')
+        x = ('architecture', 'cpus', 'model_name', 'threads_per_core')
         try:
-            return {x: o[x]['data'] for x in l}
+            return {x: o[x]['data'] for x in x}
         except KeyError:
             self.logger.error('`lscpu -J` return value is not as expected`')
             return None
@@ -102,4 +103,4 @@ class SystemSpecs:
         return {
             'gpu': self.get_gpu_spec(),
             'cpu': self.get_cpu_spec(),
-            'mem': self.get_mem_spec(),}
+            'mem': self.get_mem_spec()}

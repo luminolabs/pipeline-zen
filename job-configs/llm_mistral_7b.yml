@@ -1,6 +1,4 @@
 # Don't change this file, instead use the CLI interface to set options for the job
 
-job_id: llm_mistral_7b
-category: LLM
-type: INSTRUCTION
-model_base: mistralai/Mistral-7B-Instruct-v0.1
+name: llm_mistral_7b
+model_base: hf://mistralai/Mistral-7B-Instruct-v0.1

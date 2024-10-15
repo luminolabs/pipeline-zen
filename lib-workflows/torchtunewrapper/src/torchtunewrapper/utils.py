@@ -5,36 +5,16 @@ from typing import Callable, Type
 import requests
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
-from torchtune.models.llama3 import Llama3Tokenizer
-from torchtune.models.mistral import MistralTokenizer
 
-from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.agent.model_scores import TorchtunewrapperMetricsAgent
 from common.config_manager import config
-from common.gcp import send_heartbeat as _send_heartbeat
 from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
-
-# Supported tokenizers - this is a union of all tokenizers used in the recipes that we support
-Tokenizers = Llama3Tokenizer | MistralTokenizer
-
-
-def send_heartbeat(job_id: str, user_id: str, task: str, status: str) -> None:
-    """
-    Send a heartbeat message to the pipeline-zen-jobs-heartbeats topic.
-
-    :param job_id: The job id
-    :param user_id: The user id
-    :param task: The task name
-    :param status: The status of the job
-    """
-    status = f"wf-torchtune-{task}-{status}"
-    _send_heartbeat(job_id, user_id, status)
-    pass
 
 
 def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Callable:
     """
-    :return: The imported torchtune recipe function
+    Magic function to import the torchtune recipe function dynamically.
     """
     # Build recipe name
     finetune_type = 'lora' if use_lora else 'full'
@@ -48,13 +28,13 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Calla
 
 def _count_dataset_tokens(dataset: Dataset) -> int:
     """
-    Count the number of tokens in the dataset.
+    Count the number of tokens in a dataset.
     """
     return sum([len(record['tokens']) for record in dataset])
 
 
-def _log_tokens_and_check_user_credits(job_id: str, user_id: str,
-                                       token_count: int, num_epochs: int, logger: Logger) -> bool:
+def _deduct_api_user_credits(job_id: str, user_id: str,
+                             token_count: int, num_epochs: int, logger: Logger) -> bool:
     """
     Log the number of tokens in the dataset to the API, and check if the user has enough credits to run the job.
     """
@@ -64,14 +44,14 @@ def _log_tokens_and_check_user_credits(job_id: str, user_id: str,
         logger.info("Skipping credit check due to config settings")
         return True
 
-    # If user_id is 0, skip the credit check;
-    # user_id=0 is used for jobs that didn't originate from the
-    # customer API, and we don't want to block those jobs
-    if user_id == "0":
-        logger.info("Skipping credit check for user_id=0")
+    # If user_id is 0 or -1, skip the credit check;
+    # user_id=0|-1 is used for jobs that didn't originate from the
+    # customer API, and were created internally
+    if user_id in ("0", "-1"):
+        logger.info(f"Skipping credit check for user_id={user_id}")
         return True
 
-    api_url = f"{config.customer_api_url}/billing/credits-deduct"
+    api_url = f"{config.customer_api_url}{config.customer_api_credits_deduct_endpoint}"
     headers = {
         "x-api-key": f"{config.customer_api_key}",
         "Content-Type": "application/json"
@@ -96,25 +76,26 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     """
     # Set up the main logger
     logger = setup_logger("torchtunewrapper_recipe", job_id, user_id)
-    # A logger for logging scores; also propagates to main logger
-    scores_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
+    # A logger for logging metrics; also propagates to main logger
+    metrics_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
     # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperScoresAgent(job_id, user_id, scores_logger)
-    # Initialize the recipe and start training
-    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, scores_agent)
-    recipe.setup()
+    metrics_agent = TorchtunewrapperMetricsAgent(job_id, user_id, metrics_logger)
+    # Initialize and set up the recipe
+    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, metrics_agent)
+    # Set up the tokenizer now so that we can count the tokens in the dataset
+    recipe.setup_tokenizer()
     # Count tokens and check if user has enough credits to run the job
-    # Note: We can only do this after the recipe is set up, because the tokenizer needs to be initialized first
     token_count = _count_dataset_tokens(recipe.dataset)
-    has_enough_credits = _log_tokens_and_check_user_credits(
-        job_id, user_id, token_count, recipe.total_epochs, logger)
+    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count, recipe.total_epochs, logger)
     if not has_enough_credits:
         raise PermissionError(f"User does not have enough credits to run the job; "
                               f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")
+    recipe.setup()
     # Begin training
     recipe.train()
-    # Save the checkpoint and cleanup
+    # Save weights
     recipe.save_checkpoint()
+    # Destroy multi-GPU and multi-node process groups
     recipe.cleanup()
 
 
@@ -128,19 +109,10 @@ def get_torchtune_config_filename(model_base: str,
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
         # Llama 3.1 Instruct
-        'meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
-        'meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
-        # Llama 3.1 base
-        'meta-llama/Meta-Llama-3.1-8B': 'llama3_1/8B',
-        'meta-llama/Meta-Llama-3.1-70B': 'llama3_1/70B',
+        'hf://meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
+        'hf://meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
         # Mistral v0.1 Instruct
-        'mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
-        'mistralai/Mixtral-8x7B-Instruct-v0.1': 'mistral/8x7B',  # yes, `Mixtral` is intentional
-        # Mistral v0.1 base
-        'mistralai/Mistral-7B-v0.1': 'mistral/7B',
-        'mistralai/Mistral-7B-Instruct-v0.3': 'mistral/7B',
-        # Mistral v0.3 base
-        'mistralai/Mistral-7B-v0.3': 'mistral/7B',
+        'hf://mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
     }
     # Raise error if model base is not supported
     if model_base not in model_base_to_config_prefix:

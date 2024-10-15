@@ -22,7 +22,6 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             enable_activation_checkpointing=self.enable_activation_checkpointing,
             model_state_dict=ckpt_dict[utils.MODEL_KEY],
         )
-        self.tokenizer = config.instantiate(self.cfg.tokenizer)
         self.optimizer = self._setup_optimizer(
             cfg_optimizer=self.cfg.optimizer,
             optimizer_in_bwd=self.optimizer_in_bwd,

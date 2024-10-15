@@ -10,10 +10,10 @@ from omegaconf import DictConfig
 from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config as tt_config
 
-from common.agents.model_scores import TorchtunewrapperScoresAgent
+from common.agent.model_scores import TorchtunewrapperMetricsAgent
+from common.comms import heartbeat_wrapper
 from common.config_manager import config
-from common.gcp import LOCAL_ENV
-from common.helpers import heartbeat_wrapper
+from common.utils import is_local_env
 
 
 # noinspection PyProtocol
@@ -21,7 +21,7 @@ class RecipeBase:
     def __init__(self,
                  job_id: str, user_id: str,
                  cfg: DictConfig, dataset: Dataset,
-                 logger: Logger, scores_agent: TorchtunewrapperScoresAgent):
+                 logger: Logger, scores_agent: TorchtunewrapperMetricsAgent):
         self.job_id = job_id
         self.user_id = user_id
         self.cfg = cfg
@@ -49,10 +49,10 @@ class RecipeBase:
         # Other configuration
         self.device = utils.get_device(
             # Use MPS locally since we're all on Apple silicon
-            cfg.get('device', 'cuda') if config.env_name != LOCAL_ENV else "mps")
+            cfg.get('device', 'cuda') if not is_local_env() else "mps")
         self.dtype = utils.get_dtype(
             # Use fp32 locally since we're all on Apple silicon, and bf* is not supported
-            cfg.dtype if config.env_name != LOCAL_ENV else "fp32",
+            cfg.dtype if not is_local_env() else "fp32",
             device=self.device)
         self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
         self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)
@@ -106,6 +106,10 @@ class RecipeBase:
                 "Gradient accumulation is not supported with optimizer in bwd."
                 "Please set gradient_accumulation_steps=1, or optimizer_in_bwd=False."
             )
+
+    def setup_tokenizer(self) -> None:
+        self.tokenizer = tt_config.instantiate(self.cfg.tokenizer)
+        self.dataset._tokenizer = self.tokenizer
 
     def setup_data(
             self,
@@ -216,8 +220,6 @@ class RecipeBase:
                             if self.optim_ckpt_wrapper and self.optimizer_in_bwd
                             else self.optimizer.param_groups[0]["lr"]
                         ),
-                        step_tokens_per_second=num_tokens / time_per_step,
-                        step_tokens=num_tokens,
                         step_peak_memory_active=mem_stats.get("peak_memory_active"),
                         step_peak_memory_alloc=mem_stats.get("peak_memory_alloc"),
                         step_peak_memory_reserved=mem_stats.get("peak_memory_reserved"),
@@ -243,6 +245,10 @@ class RecipeBase:
 
     @heartbeat_wrapper('torchtunewrapper', 'setup')
     def setup(self):
+        # Common setup
+        if not self.tokenizer:
+            self.setup_tokenizer()
+        # Recipe-specific setup
         return self._setup()
 
     @staticmethod

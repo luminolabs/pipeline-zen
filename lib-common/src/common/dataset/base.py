@@ -1,44 +1,54 @@
-from abc import abstractmethod, ABC
+import os
+from abc import abstractmethod
+from logging import Logger
 
-from torch.utils.data import Dataset
+from common.utils import get_work_dir
 
 
-class BaseDataset(Dataset, ABC):
-    """
-    Abstract base class for all datasets
-    """
-
-    def __getitem__(self, item: int):
+class BaseDatasetProvider:
+    def __init__(self, url: str,
+                 job_id: str, user_id: str,
+                 logger: Logger):
         """
-        Get an item from the dataset.
+        Initialize the BaseDataset.
 
-        :param item: The index of the item
-        :return: Returns the item from the dataset
+        :param url: The dataset uniform resource location
+        :param job_id: The job ID
+        :param user_id: The user ID
+        :param logger: The logger instance
         """
-        return self._getitem(item)
+        self.url = url
+        self.job_id = job_id
+        self.user_id = user_id
+        self.logger = logger
+        self.local_path = str(os.path.join(get_work_dir(job_id, user_id), 'dataset.jsonl'))
 
-    def __len__(self) -> int:
+    def __call__(self, *args, **kwargs):
         """
-        :return: Returns the length of the dataset
+        Allows the dataset provider to be called as a function.
+
+        i.e.: dataset_provider = GcpBucketProvider(url, job_id, user_id, logger)()
         """
-        r = self._len()
-        # Validate result is of type `int`
-        if isinstance(r, int):
-            return r
-        raise TypeError('`Invalid `_len()` implementation. '
-                        'The function must return an `int` value')
+        return self.fetch(**kwargs)
 
     @abstractmethod
-    def _getitem(self, item: int):
+    def fetch(self, **kwargs) -> str:
         """
-        :param item: The index of the item
-        :return: A tuple of the input data and the label data
+        Downloads the dataset.
+
+        :param kwargs: Additional keyword arguments
         """
         pass
 
-    @abstractmethod
-    def _len(self) -> int:
-        """
-        :return: Returns the number of elements in the dataset
-        """
-        pass
+
+def dataset_provider_factory(url: str,
+                             job_id: str, user_id: str,
+                             logger: Logger) -> BaseDatasetProvider:
+    """
+    Factory function to create a dataset provider.
+    """
+    if url.startswith('gs://'):
+        from common.dataset.gcp_bucket import GcpBucketProvider
+        return GcpBucketProvider(url, job_id, user_id, logger)
+    else:
+        raise ValueError(f'Unknown dataset provider: {url}')
