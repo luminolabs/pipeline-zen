@@ -1,0 +1,62 @@
+# Use with lora_finetune_single_device.py
+
+# These are set by the job launcher, don't set them manually
+base_model_path:
+output_dir:
+shuffle:
+batch_size:
+epochs:
+lr:
+seed:
+
+# Tokenizer
+tokenizer:
+  _component_: torchtune.models.llama3.llama3_tokenizer
+  path: ${base_model_path}/tokenizer.model
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3_1.lora_llama3_1_8b
+  lora_attn_modules: ['q_proj', 'v_proj']
+  apply_lora_to_mlp: False
+  apply_lora_to_output: False
+  lora_rank: 8
+  lora_alpha: 16
+
+checkpointer:
+  _component_: torchtune.utils.FullModelHFCheckpointer
+  checkpoint_dir: ${base_model_path}
+  checkpoint_files: [
+    model-00001-of-00004.safetensors,
+    model-00002-of-00004.safetensors,
+    model-00003-of-00004.safetensors,
+    model-00004-of-00004.safetensors,
+  ]
+  recipe_checkpoint: null
+  output_dir: ${output_dir}
+  model_type: LLAMA3
+resume_from_checkpoint: False
+
+# Dataset and Sampler
+dataset:
+  _component_:  # leave empty, this is injected by the job launcher
+
+# Optimizer and Scheduler
+optimizer:
+  _component_: torch.optim.AdamW
+  weight_decay: 0.01
+  lr: ${lr}
+lr_scheduler:
+  _component_: torchtune.modules.get_cosine_schedule_with_warmup
+  num_warmup_steps: 2
+
+loss:
+  _component_: torch.nn.CrossEntropyLoss
+
+# Training
+gradient_accumulation_steps: 64
+
+# Environment
+device: cuda
+dtype: bf16
+enable_activation_checkpointing: True

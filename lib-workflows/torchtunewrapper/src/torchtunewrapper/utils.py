@@ -12,10 +12,15 @@ from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 
 
-def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool) -> Callable:
+def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool, job_config_id: str) -> Callable:
     """
     Magic function to import the torchtune recipe function dynamically.
     """
+    # If job_config_id is 'llm_dummy', return the Dummy recipe
+    if job_config_id == 'llm_dummy':
+        module = importlib.import_module('torchtunewrapper.recipes.dummy')
+        return getattr(module, 'recipe_main')
+
     # Build recipe name
     finetune_type = 'lora' if use_lora else 'full'
     device_type = 'single_device' if use_single_device else 'distributed'
@@ -113,6 +118,8 @@ def get_torchtune_config_filename(model_base: str,
         'hf://meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
         # Mistral v0.1 Instruct
         'hf://mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
+        # Dummy
+        'hf://crumb/nano-mistral': 'dummy/nano_mistral',
     }
     # Raise error if model base is not supported
     if model_base not in model_base_to_config_prefix:

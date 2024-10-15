@@ -1,0 +1,4 @@
+# Don't change this file, instead use the CLI interface to set options for the job
+
+name: llm_dummy
+model_base: hf://crumb/nano-mistral
