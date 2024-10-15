@@ -22,6 +22,9 @@ STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
 bigquery_client = bigquery.Client(config.gcp_project)
 pubsub_publisher_client = pubsub_v1.PublisherClient()
 
+# BigQuery timestamp format
+bigquery_timestamp_format = '%Y-%m-%d %H:%M:%S'
+
 
 def insert_to_biqquery(table: str, row: dict):
     """
