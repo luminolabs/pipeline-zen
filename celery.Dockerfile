@@ -20,7 +20,7 @@ WORKDIR /project
 
 # Install these python libs outside of requirements.txt since they are large libraries
 # and we don't want them to be build every time we add a new entry in requirements.txt
-RUN pip install torch torchvision transformers datasets segmentation_models_pytorch
+RUN pip install torch transformers datasets
 
 # Install python libraries needed by the lib-common
 COPY lib-common/requirements.txt ./requirements-lib-common.txt
@@ -31,15 +31,8 @@ COPY lib-celery/requirements.txt ./requirements-lib-celery.txt
 RUN pip install -r requirements-lib-celery.txt
 
 # Install python libraries needed by the workflows
-COPY lib-workflows/train/requirements.txt requirements-train.txt
-RUN pip install -r requirements-train.txt
-COPY lib-workflows/evaluate/requirements.txt requirements-evaluate.txt
-RUN pip install -r requirements-evaluate.txt
 COPY lib-workflows/torchtunewrapper/requirements.txt requirements-torchtunewrapper.txt
 RUN pip install -r requirements-torchtunewrapper.txt
-
-# Copy scripts, needed to allow deleting VMs
-COPY scripts scripts
 
 # Copy lib-common source code
 COPY lib-common/src .
@@ -48,8 +41,6 @@ COPY lib-common/src .
 COPY lib-celery/src .
 
 # Copy workflow source code
-COPY lib-workflows/train/src .
-COPY lib-workflows/evaluate/src .
 COPY lib-workflows/torchtunewrapper/src .
 
 # Copy application configuration folder
