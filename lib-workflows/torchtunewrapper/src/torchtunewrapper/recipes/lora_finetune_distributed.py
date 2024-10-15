@@ -234,8 +234,7 @@ class LoRAFinetuneRecipeDistributed(RecipeBase):
                 epoch=self.epochs_run,
             )
 
-    @staticmethod
-    def cleanup():
+    def cleanup(self):
         destroy_process_group()
 
 

@@ -251,8 +251,7 @@ class RecipeBase:
         # Recipe-specific setup
         return self._setup()
 
-    @staticmethod
-    def cleanup():
+    def cleanup(self):
         pass
 
     @abstractmethod
