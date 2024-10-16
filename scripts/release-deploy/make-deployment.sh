@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Deploys a release to a new VM image and creates templates for different GPU configurations
-# note: this script doesn't create a new release, it only deploys an existing release;
-# the actual release process is implemented in github actions
+# Creates a deployment to a new VM image and creates templates for different GPU configurations
+# note: this won't deploy the deployment, it will only create the deployment - you need to run deploy-to-migs.sh to deploy it
 
 set -e  # Exit immediately if a command fails
 

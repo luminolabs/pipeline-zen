@@ -47,6 +47,6 @@ else
 fi
 
 # Cleanup the temporary files
-rm -f .results/.keep_alive .results/.job_id
+rm -f .results/.keep_alive
 
 echo "MIG startup script ended."

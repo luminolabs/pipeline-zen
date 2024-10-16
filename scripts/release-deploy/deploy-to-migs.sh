@@ -4,7 +4,7 @@
 #
 # We keep this process outside of the `make-deployment.sh` script to ensure that:
 # - live MIGs are not affected during the deployment process.
-# - updating MIGs requires a lot of permissions, so it's better to run this process manually.
+# - updating MIGs requires a lot of permissions, so it's better to run this process separately.
 
 set -e  # Exit immediately if a command fails
 
