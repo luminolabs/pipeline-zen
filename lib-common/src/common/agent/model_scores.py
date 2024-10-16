@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 from common.agent.system_metrics import SystemSpecs
 from common.config_manager import config
-from common.gcp import publish_to_pubsub, insert_to_biqquery
+from common.gcp import publish_to_pubsub, insert_to_biqquery, bigquery_timestamp_format
 from common.utils import AutoJSONEncoder, utcnow, utcnow_str, job_meta_context
 
 
@@ -93,7 +93,7 @@ class BaseScoresAgent(ABC):
             # Create a new dict from the dicts below;
             # the new dict represents the target table structure
             **{'job_id': self.job_id,
-               'create_ts': utcnow_str(),
+               'create_ts': utcnow_str(fmt=bigquery_timestamp_format),
                'operation': operation,
                'result': result},
             **self.default_attributes,

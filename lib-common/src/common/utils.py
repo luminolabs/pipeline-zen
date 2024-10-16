@@ -38,11 +38,12 @@ def utcnow() -> datetime:
     return datetime.now(tz=timezone.utc).replace(tzinfo=None)
 
 
-def utcnow_str() -> str:
+def utcnow_str(fmt: str = system_timestamp_format) -> str:
     """
+    :param fmt: The format to use for the timestamp
     :return: The current UTC time as a string
     """
-    return utcnow().strftime(system_timestamp_format)
+    return utcnow().strftime(fmt)
 
 
 #####################
