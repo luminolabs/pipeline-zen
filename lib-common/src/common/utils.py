@@ -2,13 +2,13 @@ import json
 import logging
 import os
 import sys
-import uuid
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
 from typing import Optional
 
+from filelock import FileLock
 from omegaconf import OmegaConf, DictConfig
 
 from common.config_manager import config
@@ -166,24 +166,23 @@ def get_work_dir(job_id: str, user_id: str) -> str:
     return str(path)
 
 
-def _read_job_meta_from_file(job_id: str, user_id: str) -> dict:
+def _read_job_meta_from_file(path: str) -> dict:
     """
     :return: Returns the job meta dictionary for a given job and user
     """
-    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+
     if os.path.exists(path):
         with open(path, 'r') as f:
             return json.load(f)
     return {}
 
 
-def _write_job_meta_to_file(job_id: str, user_id: str, job_meta: dict) -> None:
+def _write_job_meta_to_file(path: str, job_meta: dict) -> None:
     """
     :return: Writes the job meta dictionary to a file for a given job and user
     """
-    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
     with open(path, 'w') as f:
-        f.write(json.dumps(job_meta))
+        json.dump(job_meta, f, indent=4)
 
 
 @contextmanager
@@ -197,9 +196,11 @@ def job_meta_context(job_id: str, user_id: str):
             job_meta['key'] = 'value'
         # job_meta is written back to the file, on `with` block exit
     """
-    job_meta = _read_job_meta_from_file(job_id, user_id)
-    yield job_meta
-    _write_job_meta_to_file(job_id, user_id, job_meta)
+    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    with FileLock(path + '.lock', thread_local=False):
+        job_meta = _read_job_meta_from_file(path)
+        yield job_meta
+        _write_job_meta_to_file(path, job_meta)
 
 
 #################

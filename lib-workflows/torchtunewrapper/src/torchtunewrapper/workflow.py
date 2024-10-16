@@ -91,7 +91,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': model_path})  # path, not name
 
     # Get the torchtune recipe function
-    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device)
+    tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device, job_config['name'])
     tt_recipe_fn = partial(tt_recipe_fn_orig, job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
 
     # Run the torchtune recipe, which will fine-tune the model

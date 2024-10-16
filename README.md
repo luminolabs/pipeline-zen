@@ -27,6 +27,21 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
+### Run the dummy torchtunewrapper workflow
+
+This will run the pipeline with a dummy dataset and dummy model, but it won't actually train anything. 
+It's useful for testing the pipeline and making sure everything is set up correctly, or when you want to test
+integration with the scheduler or the protocol.
+
+All you have to do is set the `--job_config_name` to `llm_dummy`.
+
+```bash
+./scripts/runners/celery-wf.sh torchtunewrapper --job_config_name llm_dummy --job_id -1 \
+  --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
+  --batch_size 2 --shuffle true --num_epochs 1 --use_lora false \
+  --num_gpus 1 --user_id -1 --lr 1e-2 --seed 1234 
+````
+
 ### Run the torchtunewrapper workflow
 
 Note: Unless you have a beefy machine, you probably want to run this workflow remotely, 

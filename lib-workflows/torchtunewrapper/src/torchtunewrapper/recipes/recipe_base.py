@@ -22,12 +22,17 @@ class RecipeBase:
                  job_id: str, user_id: str,
                  cfg: DictConfig, dataset: Dataset,
                  logger: Logger, scores_agent: TorchtunewrapperMetricsAgent):
+
         self.job_id = job_id
         self.user_id = user_id
         self.cfg = cfg
         self.logger = logger
         self.scores_agent = scores_agent
         self.dataset = dataset
+
+        # Update the application config so that they can be accessed within the thread
+        config.set('job_id', job_id)
+        config.set('user_id', user_id)
 
         # Initialize objects variables
         self.dataloader = None

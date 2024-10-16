@@ -152,7 +152,9 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
         del weights_data['action']
         job_meta['weights'] = weights_data
 
-    path = os.path.join(config.root_path, config.work_dir, config.finished_file)
+    # Write `.finished` file to signal job completion
+    work_dir = get_work_dir(job_id, user_id)
+    path = os.path.join(work_dir, config.finished_file)
     with open(path, "w") as f:
         f.write(job_id + "\n")
     return True
