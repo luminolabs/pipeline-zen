@@ -2,7 +2,7 @@
 
 ## Development
 Notes:
-- There is support for single-node and multi-node training but not multi-node multi-gpu training yet.
+- There is support for single-node and multi-gpu training but not multi-node multi-gpu training yet.
 - Training recipes are under `lib-workflows/torchtunewrapper/recipes/` and are copied, modified, and simplified from the official `torchtune` repo.
 - Check out [DEPLOY.md](DEPLOY.md) for instructions on how to deploy the pipeline.
 
