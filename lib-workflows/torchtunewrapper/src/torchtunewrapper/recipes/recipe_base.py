@@ -239,14 +239,14 @@ class RecipeBase:
                     num_tokens = 0
                     t_step_start = time.perf_counter()
 
-            # Update the epoch count
-            self.epochs_run += 1
-
             # Log per-epoch timestamps
             time_per_epoch = time.perf_counter() - t_epoch_start
-            self.scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch,
+            self.scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch + 1,
                                         epoch_len=self.total_epochs,
                                         epoch_time_elapsed_s=time_per_epoch)
+
+            # Update the epoch count
+            self.epochs_run += 1
 
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:
