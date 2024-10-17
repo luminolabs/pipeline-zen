@@ -54,7 +54,7 @@ run_workflow() {
   # Decode the message data
   job=$(echo "$message_data" | jq -r '.')
   job_id=$(echo "$job" | jq -r '.job_id')
-  user_id=$(echo "$job" | jq -r '.job_id')
+  user_id=$(echo "$job" | jq -r '.user_id')
   workflow=$(echo "$job" | jq -r '.workflow')
   override_env=$(echo "$job" | jq -r '.override_env')  # Override the environment if specified in the message
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
