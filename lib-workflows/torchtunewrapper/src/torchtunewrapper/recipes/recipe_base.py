@@ -170,6 +170,7 @@ class RecipeBase:
 
             # Log per-epoch timestamps
             t_epoch_start = time.perf_counter()
+            epoch_step = 0
 
             for idx, batch in enumerate(self.dataloader):
                 # Both are shape [b, s]
@@ -211,13 +212,14 @@ class RecipeBase:
 
                     # Update the number of steps when the weights are updated
                     self.global_step += 1
+                    epoch_step += 1
 
                     # Log per-step metrics and timestamps
                     time_per_step = time.perf_counter() - t_step_start
                     mem_stats = utils.get_memory_stats(device=self.device)
                     self.scores_agent.log_step(
                         gpu_rank=rank,
-                        step_num=self.global_step % self.steps_per_epoch,  # global_step counts across epochs
+                        step_num=epoch_step,
                         step_len=self.steps_per_epoch,
                         step_loss=running_loss.item(),
                         step_lr=(
@@ -237,12 +239,14 @@ class RecipeBase:
                     num_tokens = 0
                     t_step_start = time.perf_counter()
 
+            # Update the epoch count
+            self.epochs_run += 1
+
             # Log per-epoch timestamps
             time_per_epoch = time.perf_counter() - t_epoch_start
-            self.scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch + 1,
+            self.scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch,
                                         epoch_len=self.total_epochs,
                                         epoch_time_elapsed_s=time_per_epoch)
-            self.epochs_run += 1
 
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:

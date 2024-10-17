@@ -2,7 +2,6 @@ from functools import partial
 from logging import Logger
 from typing import Optional
 
-from celery.utils import worker_direct
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torch.utils.data import Dataset
@@ -13,11 +12,7 @@ from common.comms import heartbeat_wrapper
 from common.dataset.base import dataset_provider_factory
 from common.model.base import model_provider_factory
 from common.utils import load_job_config, setup_logger, read_job_config_from_file, get_work_dir, save_job_results
-from torchtunewrapper.recipes.mixtral_8x7b_fix import update_convert_weights_from_hf
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
-
-# Update the convert weights function to support the Mixtral-8x7B model
-update_convert_weights_from_hf()
 
 
 @heartbeat_wrapper('torchtunewrapper', 'download_dataset')
