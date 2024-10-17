@@ -1,5 +1,11 @@
 # Fine-tuning LLMs with Torchtune
 
+## Development
+Notes:
+- There is support for single-node and multi-node training but not multi-node multi-gpu training yet.
+- Training recipes are under `lib-workflows/torchtunewrapper/recipes/` and are copied, modified, and simplified from the official `torchtune` repo.
+- Check out [DEPLOY.md](DEPLOY.md) for instructions on how to deploy the pipeline.
+
 ## Running remotely on a VM
 
 ### Postman
@@ -45,7 +51,7 @@ All you have to do is set the `--job_config_name` to `llm_dummy`.
 ### Run the torchtunewrapper workflow
 
 Note: Unless you have a beefy machine, you probably want to run this workflow remotely, 
-not locally; see the next section for instructions.
+not locally; see top of this doc for instructions.
 
 ```bash
 ./scripts/runners/celery-wf.sh torchtunewrapper \
