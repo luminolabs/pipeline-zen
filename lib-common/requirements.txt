@@ -1,4 +1,4 @@
-# These three are installed separatelly in the Dockerfile
+# The following are installed separately in the Dockerfile
 # torch
 # torchvision
 # transformers
