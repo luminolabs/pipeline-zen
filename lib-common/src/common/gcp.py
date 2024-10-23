@@ -1,14 +1,14 @@
 import glob
 import json
 import os
-from typing import Union, Optional
+from typing import Optional
 
 import requests
+from filelock import FileLock
 from google.cloud import pubsub_v1, storage, bigquery
-from google.cloud.storage import Bucket
 
 from common.config_manager import config
-from common.utils import setup_logger, is_local_env
+from common.utils import setup_logger, is_local_env, get_work_dir
 
 # GCP Metadata URLs and headers; only used in GCP VMs
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
@@ -21,6 +21,7 @@ STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
 # Initialize the BigQuery and Pub/Sub clients to be used across this module
 bigquery_client = bigquery.Client(config.gcp_project)
 pubsub_publisher_client = pubsub_v1.PublisherClient()
+storage_client = storage.Client(project=config.gcp_project)
 
 # BigQuery timestamp format
 bigquery_timestamp_format = '%Y-%m-%d %H:%M:%S'
@@ -91,18 +92,19 @@ def get_results_bucket() -> str:
     return f'{STORAGE_BUCKET_PREFIX}-{multi_region}'  # multi-region bucket; ie. 'pipeline-zen-jobs-us'
 
 
-def upload_directory(local_path: str, bucket: Union[str, Bucket], gcs_path: Optional[str] = None):
+def upload_directory(local_path: str, bucket: Optional[str] = None, gcs_path: Optional[str] = None):
     """
     Upload a local directory to Google Cloud Storage.
 
     :param local_path: Local path to upload
     :param bucket: Bucket to upload to
-    :param gcs_path:
+    :param gcs_path: GCS folder to upload to
     :return:
     """
-    client = storage.Client(project=config.gcp_project)
-    if isinstance(bucket, str):
-        bucket = client.get_bucket(bucket)
+    # Set the bucket to the default results bucket if not provided
+    bucket = bucket or get_results_bucket()
+    # Instantiate the bucket object
+    bucket = storage_client.get_bucket(bucket)
 
     # If the GCS path is not set, use the last two directories of the local path
     # i.e. go from ./.results/user_id/job_id to user_id/job_id
@@ -116,6 +118,44 @@ def upload_directory(local_path: str, bucket: Union[str, Bucket], gcs_path: Opti
             remote_path = os.path.join(gcs_path, local_file[1 + len(local_path):])
             blob = bucket.blob(remote_path)
             blob.upload_from_filename(local_file)
+
+
+def upload_file(local_path: str, bucket: Optional[str] = None, gcs_path: Optional[str] = None):
+    """
+    Upload a local file to Google Cloud Storage.
+
+    :param local_path: Local path to upload
+    :param bucket: Bucket to upload to
+    :param gcs_path: GCS folder to upload to
+    :return:
+    """
+    # Set the bucket to the default results bucket if not provided
+    bucket = bucket or get_results_bucket()
+    # Instantiate the bucket object
+    bucket = storage_client.get_bucket(bucket)
+
+    # If the GCS path is not set, use the last two directories of the local path
+    # i.e. go from ./.results/user_id/job_id to user_id/job_id
+    gcs_path = gcs_path or '/'.join(local_path.split('/')[-2:])
+
+    assert os.path.isfile(local_path)
+    remote_path = os.path.join(gcs_path, os.path.basename(local_path))
+    blob = bucket.blob(remote_path)
+    blob.upload_from_filename(local_path)
+
+
+def upload_jobs_meta(job_id: str, user_id: str):
+    """
+    Upload the job metadata to Google Cloud Storage.
+
+    :param job_id: The job id
+    :param user_id: The user id
+    """
+    # Get the local path to the job metadata
+    path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    with FileLock(path + '.lock', thread_local=False):
+        # Upload the job metadata to GCS
+        upload_file(path)
 
 
 def make_object_public(bucket_name, object_name):
@@ -146,8 +186,6 @@ def download_object(bucket_name: str, source_blob_name: str, destination_file_na
         source_blob_name: The name of the source blob
         destination_file_name: The name of the destination file
     """
-    # Initialize a client
-    storage_client = storage.Client()
     # Get the bucket
     bucket = storage_client.bucket(bucket_name)
     # Get the blob
