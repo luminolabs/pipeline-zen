@@ -6,7 +6,7 @@ import requests
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
 
-from common.agent.model_scores import TorchtunewrapperMetricsAgent
+from common.agent.job_logger import TorchtunewrapperLoggerAgent
 from common.config_manager import config
 from common.utils import setup_logger
 from torchtunewrapper.recipes.recipe_base import RecipeBase
@@ -81,12 +81,13 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     """
     # Set up the main logger
     logger = setup_logger("torchtunewrapper_recipe", job_id, user_id)
-    # A logger for logging metrics; also propagates to main logger
-    metrics_logger = setup_logger('torchtunewrapper_recipe.metrics', job_id, user_id, add_stdout=False)
-    # Setup logging and bigquery agent for scores
-    metrics_agent = TorchtunewrapperMetricsAgent(job_id, user_id, metrics_logger)
+    # Setup job logger agent for streaming to multiple channels
+    job_logger_agent = TorchtunewrapperLoggerAgent(
+        job_id, user_id,
+        agent_logger=setup_logger('torchtunewrapper_logger', job_id, user_id),
+        main_logger=logger)
     # Initialize and set up the recipe
-    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, metrics_agent)
+    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, job_logger_agent)
     # Set up the tokenizer now so that we can count the tokens in the dataset
     recipe.setup_tokenizer()
     # Count tokens and check if user has enough credits to run the job

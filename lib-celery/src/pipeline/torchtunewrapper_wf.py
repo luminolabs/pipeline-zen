@@ -6,13 +6,12 @@ from typing import Optional
 from celery import Celery, chain
 from celery.signals import task_failure
 
-from common.agent.system_metrics import SystemSpecs
+from common.agent.system_specs import SystemSpecsAgent
 from common.comms import heartbeat_wrapper
 from common.config_manager import config
-from common.gcp import get_results_bucket, publish_to_pubsub, make_object_public, \
+from common.gcp import get_results_bucket, make_object_public, \
     upload_directory
-from common.utils import get_work_dir, setup_logger, job_meta_context
-from pipeline.utils import get_artifacts
+from common.utils import get_work_dir, setup_logger, get_artifacts
 from torchtunewrapper.cli import parse_args as torchtunewrapper_parse_args
 from torchtunewrapper.workflow import main as _torchtunewrapper
 
@@ -134,24 +133,6 @@ def mark_finished(torchtunewrapper_result, job_id: str, user_id: str):
         logger.warning(f'`torchtunewrapper` task failed - will not run `mark_finished` task')
         return False
 
-    # Write job metadata to file and publish to Pub/Sub
-    results_bucket_name = get_results_bucket()
-    weight_files, other_files = get_artifacts(job_id, user_id)
-    weights_data = {
-        'action': 'job_artifacts',
-        'workflow': 'torchtunewrapper',
-        'base_url': f'https://storage.googleapis.com/'
-                    f'{results_bucket_name}/{user_id}/{job_id}',
-        'weight_files': weight_files,
-        'other_files': other_files
-    }
-    # Send message to Pub/Sub
-    publish_to_pubsub(job_id, user_id, config.jobs_meta_topic, weights_data)
-    # Write job metadata to file
-    with job_meta_context(job_id, user_id) as job_meta:
-        del weights_data['action']
-        job_meta['weights'] = weights_data
-
     # Write `.finished` file to signal job completion
     work_dir = get_work_dir(job_id, user_id)
     path = os.path.join(work_dir, config.finished_file)
@@ -201,9 +182,11 @@ def schedule(*args):
     # On non-local environments, we require the presence of GPUs
     if config.env_name != 'local':
         logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
-        system_specs = SystemSpecs(logger)
+        system_specs = SystemSpecsAgent(logger)
         if system_specs.get_gpu_spec() is None:
-            raise RuntimeError('No GPUs found on this machine')
+            msg = 'No GPUs found on this machine'
+            logger.error(msg)
+            raise RuntimeError(msg)
 
     # Define workflow tasks
     tasks = [mark_started.s(None, job_id, user_id),

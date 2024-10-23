@@ -7,7 +7,7 @@ from typing import List, Optional
 import xmltodict
 
 
-class SystemSpecs:
+class SystemSpecsAgent:
     """
     Helpers for pulling system specs, such as cpu, memory, gpu, etc
 
