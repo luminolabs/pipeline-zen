@@ -6,7 +6,7 @@ from torch.utils.data import DistributedSampler, DataLoader
 from torchtune.data import Message
 from torchtune.modules.tokenizers import ModelTokenizer
 
-from common.comms import heartbeat_wrapper
+from common.heartbeats import heartbeat_wrapper
 from common.utils import get_work_dir
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe

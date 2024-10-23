@@ -17,14 +17,13 @@ METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
 # The prefix for the storage buckets;
 # the full bucket name will be the prefix + the multi-region
 STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
+# BigQuery timestamp format
+BIGQUERY_TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
 
 # Initialize the BigQuery and Pub/Sub clients to be used across this module
 bigquery_client = bigquery.Client(config.gcp_project)
 pubsub_publisher_client = pubsub_v1.PublisherClient()
 storage_client = storage.Client(project=config.gcp_project)
-
-# BigQuery timestamp format
-bigquery_timestamp_format = '%Y-%m-%d %H:%M:%S'
 
 
 def insert_to_biqquery(table: str, row: dict):
@@ -123,11 +122,11 @@ def upload_directory(local_path: str, bucket: Optional[str] = None, gcs_path: Op
             blob.upload_from_filename(local_file)
 
 
-def upload_file(local_path: str, bucket: Optional[str] = None, gcs_path: Optional[str] = None):
+def upload_file(local_file: str, bucket: Optional[str] = None, gcs_path: Optional[str] = None):
     """
     Upload a local file to Google Cloud Storage.
 
-    :param local_path: Local path to upload
+    :param local_file: Local path to upload
     :param bucket: Bucket to upload to
     :param gcs_path: GCS folder to upload to
     :return:
@@ -142,12 +141,12 @@ def upload_file(local_path: str, bucket: Optional[str] = None, gcs_path: Optiona
 
     # If the GCS path is not set, use the last two directories of the local path
     # i.e. go from ./.results/user_id/job_id/file to user_id/job_id
-    gcs_path = gcs_path or '/'.join(local_path.split('/')[-3:-1])
+    gcs_path = gcs_path or '/'.join(local_file.split('/')[-3:-1])
 
-    assert os.path.isfile(local_path)
-    remote_path = os.path.join(gcs_path, os.path.basename(local_path))
+    assert os.path.isfile(local_file)
+    remote_path = os.path.join(gcs_path, os.path.basename(local_file))
     blob = bucket.blob(remote_path)
-    blob.upload_from_filename(local_path)
+    blob.upload_from_filename(local_file)
 
 
 def upload_jobs_meta(job_id: str, user_id: str):

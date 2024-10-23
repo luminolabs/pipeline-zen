@@ -7,7 +7,7 @@ from celery import Celery, chain
 from celery.signals import task_failure
 
 from common.agent.system_specs import SystemSpecsAgent
-from common.comms import heartbeat_wrapper
+from common.heartbeats import heartbeat_wrapper
 from common.config_manager import config
 from common.gcp import get_results_bucket, make_object_public, upload_directory
 from common.utils import get_work_dir, setup_logger, get_artifacts

@@ -11,7 +11,7 @@ from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config as tt_config
 
 from common.agent.job_logger import TorchtunewrapperLoggerAgent
-from common.comms import heartbeat_wrapper
+from common.heartbeats import heartbeat_wrapper
 from common.config_manager import config
 from common.gcp import upload_jobs_meta
 from common.utils import is_local_env, get_artifacts

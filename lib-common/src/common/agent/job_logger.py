@@ -6,7 +6,7 @@ from typing import Optional, Union
 
 from common.agent.system_specs import SystemSpecsAgent
 from common.config_manager import config
-from common.gcp import publish_to_pubsub, insert_to_biqquery, bigquery_timestamp_format, get_results_bucket
+from common.gcp import publish_to_pubsub, insert_to_biqquery, BIGQUERY_TIMESTAMP_FORMAT, get_results_bucket
 from common.utils import AutoJSONEncoder, utcnow, utcnow_str, job_meta_context
 
 
@@ -122,7 +122,7 @@ class BaseJobLoggerAgent:
         # Make a deep copy of the row so that we don't modify the original
         row = deepcopy(row)
         # Set create_ts to the bigquery timestamp format
-        row['create_ts'] = utcnow_str(fmt=bigquery_timestamp_format)
+        row['create_ts'] = utcnow_str(fmt=BIGQUERY_TIMESTAMP_FORMAT)
         # JSON fields in BigQuery must be inserted as JSON strings... makes sense
         data = row.get('data')
         if data:
@@ -203,6 +203,7 @@ class TorchtunewrapperLoggerAgent(BaseJobLoggerAgent):
     def log_weights(self, weight_files: list, other_files: list):
         """
         Log the fine-tuning results (e.g. weight files, other files)
+
         :param weight_files: The fine-tuning weight files
         :param other_files: Other fine-tuning files, such as weights configuration files
         :return:
