@@ -1,4 +1,5 @@
-# Use with full_finetune_distributed.py
+# Config for multi-device full finetuning in full_finetune_distributed.py
+
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -8,6 +9,7 @@ batch_size:
 epochs:
 lr:
 seed:
+
 
 # Tokenizer
 tokenizer:
@@ -29,16 +31,19 @@ checkpointer:
     model-00001-of-00004.safetensors,
     model-00002-of-00004.safetensors,
     model-00003-of-00004.safetensors,
-    model-00004-of-00004.safetensors,
+    model-00004-of-00004.safetensors
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
   model_type: LLAMA3
 resume_from_checkpoint: False
 
+# Fine-tuning arguments
+
 optimizer:
   _component_: torch.optim.AdamW
-  lr: ${lr}
+  lr: ${lr}  # 2e-5
+
   foreach: False
 
 loss:

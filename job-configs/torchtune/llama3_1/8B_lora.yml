@@ -1,4 +1,5 @@
-# Use with lora_finetune_distributed.py
+# Config for multi-device LoRA finetuning in lora_finetune_distributed.py
+
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -8,6 +9,7 @@ batch_size:
 epochs:
 lr:
 seed:
+
 
 # Tokenizer
 tokenizer:
@@ -30,7 +32,7 @@ checkpointer:
     model-00001-of-00004.safetensors,
     model-00002-of-00004.safetensors,
     model-00003-of-00004.safetensors,
-    model-00004-of-00004.safetensors,
+    model-00004-of-00004.safetensors
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
@@ -45,10 +47,11 @@ dataset:
 optimizer:
   _component_: torch.optim.AdamW
   weight_decay: 0.01
-  lr: ${lr}
+  lr: ${lr}  # 3e-4
+
 lr_scheduler:
   _component_: torchtune.modules.get_cosine_schedule_with_warmup
-  num_warmup_steps: 2
+  num_warmup_steps: 100
 
 loss:
   _component_: torch.nn.CrossEntropyLoss
@@ -59,4 +62,4 @@ gradient_accumulation_steps: 32
 # Environment
 device: cuda
 dtype: bf16
-enable_activation_checkpointing: True
+enable_activation_checkpointing: False

@@ -12,7 +12,7 @@ TORCHTUNE_RECIPE_CONFIG_SUFFIX = 'recipes/configs'
 TORCHTUNE_RECIPE_MODELS = [
     'llama3_1',
     # 'llama3_2',
-    'mistral'
+    # 'mistral'
 ]
 # List of fields to remove from the torchtune recipe config.
 FIELDS_TO_REMOVE = [
@@ -152,8 +152,8 @@ def _convert_config(src: str, dest: str):
         if current_block_name in BLOCK_NAMES_TO_REMOVE:
             continue
 
-        dest_lines.extend(block)
         dest_lines.append('\n')
+        dest_lines.extend(block)
 
     with open(dest, 'w') as f:
         f.writelines(dest_lines)
