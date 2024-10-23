@@ -7,9 +7,9 @@ mock_user_has_enough_credits: true
 
 # No need to do these unless we're testing the
 # actual sending of data to BQ and PubSub
-send_to_gcs: false
+send_to_gcs: true
 send_to_bq: false
-send_to_pubsub: false
+send_to_pubsub: true
 
 # GCP SA key location
 # Temporarily disabled because the local development service account is out of date with required permissions
