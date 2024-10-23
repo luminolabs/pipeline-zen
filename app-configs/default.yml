@@ -4,7 +4,7 @@ secrets_dir: .secrets
 
 # Workflows
 send_to_gcs: true
-send_to_bq: true  # enable/disable BigQuery
+send_to_bq: false  # enable/disable BigQuery; temporarily disabled till db migration is complete
 send_to_pubsub: true  # enable/disable PubSub
 
 # Environment management
