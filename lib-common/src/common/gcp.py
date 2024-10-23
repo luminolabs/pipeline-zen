@@ -101,6 +101,9 @@ def upload_directory(local_path: str, bucket: Optional[str] = None, gcs_path: Op
     :param gcs_path: GCS folder to upload to
     :return:
     """
+    if not config.send_to_gcs:
+        return
+
     # Set the bucket to the default results bucket if not provided
     bucket = bucket or get_results_bucket()
     # Instantiate the bucket object
@@ -129,6 +132,9 @@ def upload_file(local_path: str, bucket: Optional[str] = None, gcs_path: Optiona
     :param gcs_path: GCS folder to upload to
     :return:
     """
+    if not config.send_to_gcs:
+        return
+
     # Set the bucket to the default results bucket if not provided
     bucket = bucket or get_results_bucket()
     # Instantiate the bucket object
@@ -172,6 +178,9 @@ def make_object_public(bucket_name, object_name):
     Returns:
         str: The public URL of the object.
     """
+    if not config.send_to_gcs:
+        return
+
     client = storage.Client()
     bucket = client.bucket(bucket_name)
     blob = bucket.blob(object_name)
