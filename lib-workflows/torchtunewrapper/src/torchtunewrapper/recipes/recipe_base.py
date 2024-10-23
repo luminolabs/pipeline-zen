@@ -11,9 +11,9 @@ from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config as tt_config
 
 from common.agent.job_logger import TorchtunewrapperLoggerAgent
-from common.heartbeats import heartbeat_wrapper
 from common.config_manager import config
 from common.gcp import upload_jobs_meta
+from common.heartbeats import heartbeat_wrapper
 from common.utils import is_local_env, get_artifacts
 
 
@@ -171,7 +171,6 @@ class RecipeBase:
 
             # Log per-epoch timestamps
             t_epoch_start = time.perf_counter()
-            epoch_step = 0
 
             for idx, batch in enumerate(self.dataloader):
                 # Both are shape [b, s]
@@ -213,15 +212,14 @@ class RecipeBase:
 
                     # Update the number of steps when the weights are updated
                     self.global_step += 1
-                    epoch_step += 1
 
                     # Log per-step metrics and timestamps
                     time_per_step = time.perf_counter() - t_step_start
                     mem_stats = utils.get_memory_stats(device=self.device)
                     self.job_logger.log_step(
                         gpu_rank=rank,
-                        step_num=epoch_step,
-                        step_len=self.steps_per_epoch,
+                        step_num=self.global_step,
+                        step_len=self.steps_per_epoch * self.total_epochs,
                         step_loss=running_loss.item(),
                         step_lr=(
                             self.optim_ckpt_wrapper.get_optim_key("lr")
