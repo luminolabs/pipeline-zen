@@ -135,8 +135,8 @@ def upload_file(local_path: str, bucket: Optional[str] = None, gcs_path: Optiona
     bucket = storage_client.get_bucket(bucket)
 
     # If the GCS path is not set, use the last two directories of the local path
-    # i.e. go from ./.results/user_id/job_id to user_id/job_id
-    gcs_path = gcs_path or '/'.join(local_path.split('/')[-2:])
+    # i.e. go from ./.results/user_id/job_id/file to user_id/job_id
+    gcs_path = gcs_path or '/'.join(local_path.split('/')[-3:-1])
 
     assert os.path.isfile(local_path)
     remote_path = os.path.join(gcs_path, os.path.basename(local_path))
@@ -151,11 +151,14 @@ def upload_jobs_meta(job_id: str, user_id: str):
     :param job_id: The job id
     :param user_id: The user id
     """
+    logger = setup_logger('upload_jobs_meta', job_id, user_id)
+    logger.info(f'Uploading job metadata to GCS; job_id: {job_id}, user_id: {user_id}')
     # Get the local path to the job metadata
     path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    bucket = get_results_bucket()
     with FileLock(path + '.lock', thread_local=False):
         # Upload the job metadata to GCS
-        upload_file(path)
+        upload_file(path, bucket)
 
 
 def make_object_public(bucket_name, object_name):
