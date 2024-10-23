@@ -1,17 +1,7 @@
-# The following are installed separately in the Dockerfile
-# torch
-# torchvision
-# transformers
-# datasets
-# segmentation_models_pytorch
-
 # GCP libs
 google-cloud-bigquery
 google-cloud-storage
 google-cloud-pubsub
-
-# ML libs
-numpy
 
 # Other libs
 xmltodict

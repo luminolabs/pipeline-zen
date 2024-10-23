@@ -1,3 +1,4 @@
+import ast
 import json
 import logging
 import os
@@ -6,7 +7,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from enum import Enum
 from json import JSONEncoder
-from typing import Optional
+from typing import Optional, Tuple, List
 
 from filelock import FileLock
 from omegaconf import OmegaConf, DictConfig
@@ -18,17 +19,13 @@ from common.config_manager import config
 #################
 
 
-# insert constants here
-# ...
+# Timestamp format to use for logs, results, etc
+SYSTEM_TIMESTAMP_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
 
 
 ##################
 ### TIME UTILS ###
 ##################
-
-
-# Timestamp format to use for logs, results, etc
-system_timestamp_format = '%Y-%m-%dT%H:%M:%SZ'
 
 
 def utcnow() -> datetime:
@@ -38,7 +35,7 @@ def utcnow() -> datetime:
     return datetime.now(tz=timezone.utc).replace(tzinfo=None)
 
 
-def utcnow_str(fmt: str = system_timestamp_format) -> str:
+def utcnow_str(fmt: str = SYSTEM_TIMESTAMP_FORMAT) -> str:
     """
     :param fmt: The format to use for the timestamp
     :return: The current UTC time as a string
@@ -97,13 +94,18 @@ class JsonFormatter(logging.Formatter):
         :param record: The log record to format
         :return: The JSON formatted log record
         """
+        # Convert message to dict if it's a stringified dict
+        msg = record.getMessage()
+        if isinstance(msg, str) and msg.startswith('{') and msg.endswith('}'):
+            msg = ast.literal_eval(msg)
+
         # Define the log record format
         log_record = {
             "env": config.env_name,
             "logger_name": record.name,
             "level": record.levelname,
             "timestamp": utcnow_str(),
-            "message": record.getMessage(),
+            "message": msg,
             "job_id": self.job_id,
             "user_id": self.user_id
         }
@@ -133,7 +135,7 @@ def setup_logger(name: str, job_id: str, user_id: str,
     log_format = logging.Formatter(
         f'{config.env_name} - %(name)s - %(levelname)s - %(asctime)s - %(message)s - '
         f'job_id: {job_id} - user_id: {user_id}',
-        datefmt=system_timestamp_format
+        datefmt=SYSTEM_TIMESTAMP_FORMAT
     )
     # Set the logger format to use the current UTC time
     log_format.converter = lambda *args: utcnow().timetuple()
@@ -270,3 +272,17 @@ def read_job_config_from_file(job_config_name: str,
     except FileNotFoundError:
         # User friendly error
         raise FileNotFoundError(f'job_config_name: {job_config_name} not found under {path}')
+
+
+def get_artifacts(job_id: str, user_id: str) -> Tuple[List[str], List[str]]:
+    """
+    Get the artifacts for a given job
+
+    :param job_id: The job id
+    :param user_id: The user id
+    :return: A dictionary of artifacts
+    """
+    work_dir = get_work_dir(job_id, user_id)
+    weight_files = [f for f in os.listdir(work_dir) if f.endswith('.pt')]
+    other_files = [f for f in os.listdir(work_dir) if f in ['config.json']]
+    return weight_files, other_files

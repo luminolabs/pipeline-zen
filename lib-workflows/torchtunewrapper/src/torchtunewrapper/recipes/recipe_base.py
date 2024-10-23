@@ -6,14 +6,15 @@ from logging import Logger
 from typing import Tuple, Dict, Any
 
 import torch
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DistributedSampler, DataLoader, Dataset
 from torchtune import utils, config as tt_config
 
-from common.agent.model_scores import TorchtunewrapperMetricsAgent
+from common.agent.job_logger import TorchtunewrapperLoggerAgent
 from common.comms import heartbeat_wrapper
 from common.config_manager import config
-from common.utils import is_local_env
+from common.gcp import upload_jobs_meta
+from common.utils import is_local_env, get_artifacts
 
 
 # noinspection PyProtocol
@@ -21,13 +22,13 @@ class RecipeBase:
     def __init__(self,
                  job_id: str, user_id: str,
                  cfg: DictConfig, dataset: Dataset,
-                 logger: Logger, scores_agent: TorchtunewrapperMetricsAgent):
+                 logger: Logger, job_logger: TorchtunewrapperLoggerAgent):
 
         self.job_id = job_id
         self.user_id = user_id
         self.cfg = cfg
         self.logger = logger
-        self.scores_agent = scores_agent
+        self.job_logger = job_logger
         self.dataset = dataset
 
         # Update the application config so that they can be accessed within the thread
@@ -217,7 +218,7 @@ class RecipeBase:
                     # Log per-step metrics and timestamps
                     time_per_step = time.perf_counter() - t_step_start
                     mem_stats = utils.get_memory_stats(device=self.device)
-                    self.scores_agent.log_step(
+                    self.job_logger.log_step(
                         gpu_rank=rank,
                         step_num=epoch_step,
                         step_len=self.steps_per_epoch,
@@ -234,6 +235,9 @@ class RecipeBase:
                         epoch_num=curr_epoch + 1,
                         epoch_len=self.total_epochs, )
 
+                    # Upload jobs-meta.json to GCS
+                    upload_jobs_meta(self.job_id, self.user_id)
+
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
@@ -241,9 +245,12 @@ class RecipeBase:
 
             # Log per-epoch timestamps
             time_per_epoch = time.perf_counter() - t_epoch_start
-            self.scores_agent.log_epoch(gpu_rank=rank, epoch_num=curr_epoch + 1,
-                                        epoch_len=self.total_epochs,
-                                        epoch_time_elapsed_s=time_per_epoch)
+            self.job_logger.log_epoch(gpu_rank=rank, epoch_num=curr_epoch + 1,
+                                      epoch_len=self.total_epochs,
+                                      epoch_time_elapsed_s=time_per_epoch)
+
+            # Upload jobs-meta.json to GCS
+            upload_jobs_meta(self.job_id, self.user_id)
 
             # Update the epoch count
             self.epochs_run += 1
@@ -251,17 +258,38 @@ class RecipeBase:
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:
         self._save_checkpoint()
+        # Upload jobs-meta.json to GCS
+        upload_jobs_meta(self.job_id, self.user_id)
 
     @heartbeat_wrapper('torchtunewrapper', 'setup')
     def setup(self):
+        # Upload jobs-meta.json to GCS
+        upload_jobs_meta(self.job_id, self.user_id)
+        # Log job information
+        self._log_job_info()
         # Common setup
         if not self.tokenizer:
             self.setup_tokenizer()
         # Recipe-specific setup
         return self._setup()
 
+    @heartbeat_wrapper('torchtunewrapper', 'cleanup')
     def cleanup(self):
+        # Log and send weights and other results to listeners
+        self._log_artifacts()
+        # Upload jobs-meta.json to GCS
+        upload_jobs_meta(self.job_id, self.user_id)
+        # Recipe-specific cleanup
+        self._cleanup()
         pass
+
+    def _log_job_info(self):
+        self.job_logger.log_system_specs()
+        self.job_logger.log_job_config(OmegaConf.to_container(self.cfg, resolve=True))
+
+    def _log_artifacts(self):
+        weight_files, other_files = get_artifacts(self.job_id, self.user_id)
+        self.job_logger.log_weights(weight_files, other_files)
 
     @abstractmethod
     def _setup(self):
@@ -269,4 +297,8 @@ class RecipeBase:
 
     @abstractmethod
     def _save_checkpoint(self):
+        pass
+
+    @abstractmethod
+    def _cleanup(self):
         pass

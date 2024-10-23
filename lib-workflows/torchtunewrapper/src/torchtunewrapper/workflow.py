@@ -7,7 +7,6 @@ from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torch.utils.data import Dataset
 from torchtune.datasets import chat_dataset
 
-from common.agent.model_scores import TorchtunewrapperMetricsAgent
 from common.comms import heartbeat_wrapper
 from common.dataset.base import dataset_provider_factory
 from common.model.base import model_provider_factory
@@ -53,7 +52,7 @@ def _download_model(model_base: str, logger: Logger) -> str:
     return model_provider_factory(url=model_base, logger=logger)()
 
 
-def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> dict:
+def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig, logger: Logger) -> bool:
     """
     Trains a model using torchtune recipies
 
@@ -64,15 +63,6 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     :param logger: The logger instance
     :return: The final loss value
     """
-    # A logger for logging scores; also propagates to main logger
-    scores_logger = setup_logger('torchtunewrapper_workflow.metrics', job_id, user_id, add_stdout=False)
-    # Setup logging and bigquery agent for scores
-    scores_agent = TorchtunewrapperMetricsAgent(job_id, user_id, scores_logger)
-
-    # Log a few things about this job
-    scores_logger.info('The job id is: ' + job_id)
-    scores_agent.log_system_specs()
-    scores_agent.log_job_config(dict(job_config))
 
     # Load the dataset
     dataset = _download_dataset(job_config, logger)
@@ -113,11 +103,8 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
         # Run the recipe
         tt_recipe_fn_multi()
 
-    # Save and return the results
-    results = {'see logs': 'see logs for results'}
-    save_job_results(job_id, user_id, results, 'torchtunewrapper')
-    logger.info('The job id was: ' + job_id)
-    return results
+    # Signal that the workflow completed successfully
+    return True
 
 
 def main(job_id: str, user_id: str, job_config_name: str,
@@ -166,7 +153,7 @@ def main(job_id: str, user_id: str, job_config_name: str,
     job_config.setdefault('pytorch_cuda_alloc_conf', pytorch_cuda_alloc_conf)
 
     # Instantiate the main logger
-    logger = setup_logger('torchtunewrapper_workflow', job_id, user_id)
+    logger = setup_logger('torchtunewrapper_wf', job_id, user_id)
 
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1

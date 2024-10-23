@@ -50,5 +50,8 @@ def dataset_provider_factory(url: str,
     if url.startswith('gs://'):
         from common.dataset.gcp_bucket import GcpBucketProvider
         return GcpBucketProvider(url, job_id, user_id, logger)
+    elif url.startswith('file://'):
+        from common.dataset.file_system import FileSystemProvider
+        return FileSystemProvider(url, job_id, user_id, logger)
     else:
         raise ValueError(f'Unknown dataset provider: {url}')

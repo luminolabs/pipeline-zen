@@ -20,7 +20,8 @@ echo "Subscription ID set to $subscription_id"
 send_heartbeat() {
   local status="$1"
   local job_id="$2"
-  local message="{\"job_id\":\"$job_id\",\"status\":\"$status\",\"vm_name\":\"$vm_name\"}"
+  local user_id="$3"
+  local message="{\"job_id\":\"$job_id\",\"user_id\":\"$user_id\",\"status\":\"$status\",\"vm_name\":\"$vm_name\"}"
   echo "Sending heartbeat: $message"
   gcloud pubsub topics publish pipeline-zen-jobs-heartbeats --message="$message" --project="$PROJECT_ID" > /dev/null 2>&1
 }
@@ -75,7 +76,7 @@ run_workflow() {
   # Let the scheduler know that we found a VM;
   # The scheduler will detach the VM from the MIG so that
   # it doesn't get deleted by the MIG scaler while the job is running
-  send_heartbeat "FOUND_VM" "$job_id"
+  send_heartbeat "FOUND_VM" "$job_id" "$user_id"
   # Sleep for 1 minute to allow the scheduler to detach the VM
   sleep 60
 
@@ -104,22 +105,22 @@ run_workflow() {
       else
           echo "Workflow process already stopped."
       fi
-      send_heartbeat "STOPPED" "$job_id"
+      send_heartbeat "STOPPED" "$job_id" "$user_id"
       echo "Sending STOPPED heartbeat..."
       return
     fi
 
-    send_heartbeat "RUNNING" "$job_id"
+    send_heartbeat "RUNNING" "$job_id" "$user_id"
 
     sleep 10  # Send heartbeat every 10 seconds
   done
 
   # Check for .finished file
   if [ -f ".results/$user_id/$job_id/.finished" ]; then
-    send_heartbeat "COMPLETED" "$job_id"
+    send_heartbeat "COMPLETED" "$job_id" "$user_id"
     echo "Job completed successfully."
   else
-    send_heartbeat "FAILED" "$job_id"
+    send_heartbeat "FAILED" "$job_id" "$user_id"
     echo "Job failed. Check logs for details."
   fi
 }
