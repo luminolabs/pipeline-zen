@@ -8,7 +8,7 @@ use_mps: true
 
 # No need to do these unless we're testing the
 # actual sending of data to BQ and PubSub
-send_to_gcs: false
+send_to_gcs: true
 send_to_bq: false
 send_to_pubsub: false
 
