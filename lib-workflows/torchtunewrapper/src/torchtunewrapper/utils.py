@@ -52,7 +52,8 @@ def _deduct_api_user_credits(job_id: str, user_id: str,
     # If user_id is 0 or -1, skip the credit check;
     # user_id=0|-1 is used for jobs that didn't originate from the
     # customer API, and were created internally
-    if user_id in ("0", "-1"):
+    # user_id=0x... is used for protocol jobs, which are paid differently
+    if user_id in ("0", "-1") or user_id.startswith("0x"):
         logger.info(f"Skipping credit check for user_id={user_id}")
         return True
 
