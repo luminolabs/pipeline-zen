@@ -1,5 +1,5 @@
 # Needed for full LLM fine-tuning on single GPU
-bitsandbytes
+bitsandbytes==0.42.0
 
 # Framework for LLM fine-tuning
 #
@@ -11,8 +11,9 @@ bitsandbytes
 # git clone https://github.com/pytorch/ao
 # cd ao
 # git checkout v0.3.1-rc1
-# python setup.py install
+# pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
 # TORCHAO_NIGHTLY=1 python setup.py install
+# pip install "torchtune==0.2.1"
 # ```
 #
 torchtune==0.2.1
