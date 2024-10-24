@@ -2,6 +2,7 @@
 local_env_name: local
 secrets_dir: .secrets
 use_mps: false
+results_bucket_suffix:
 
 # Workflows
 send_to_gcs: true

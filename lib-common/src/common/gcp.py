@@ -79,6 +79,8 @@ def get_results_bucket() -> str:
     # If running locally, use the local dev bucket
     if is_local_env():
         return f'{STORAGE_BUCKET_PREFIX}-{config.local_env_name}'  # ie. 'pipeline-zen-jobs-local'
+    if config.results_bucket_suffix:
+        return f'{STORAGE_BUCKET_PREFIX}-{config.results_bucket_suffix}'
 
     # Get zone, region, and multi-region from metadata
     zone = get_zone_from_metadata()
