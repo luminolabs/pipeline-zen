@@ -18,6 +18,7 @@ echo "PZ_ENV set to $PZ_ENV"
 export PZ_ENV
 export PZ_HUGGINGFACE_TOKEN
 export PZ_CUSTOMER_API_KEY
+export PZ_USE_MPS
 
 # Run the Celery pipeline for the specified workflow
 PYTHONPATH=$paths python lib-celery/src/pipeline/$1_wf.py "${@:2}"

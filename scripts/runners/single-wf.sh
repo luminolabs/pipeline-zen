@@ -15,6 +15,7 @@ echo "PZ_ENV set to $PZ_ENV"
 export PZ_ENV
 export PZ_HUGGINGFACE_TOKEN
 export PZ_CUSTOMER_API_KEY
+export PZ_USE_MPS
 
 # Run the script for the specified workflow
 PYTHONPATH=$paths python lib-workflows/$1/src/$1/cli.py "${@:2}"
