@@ -1,6 +1,7 @@
 # Local development environment
 local_env_name: local
 secrets_dir: .secrets
+use_mps: false
 
 # Workflows
 send_to_gcs: true

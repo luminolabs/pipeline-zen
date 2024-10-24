@@ -54,10 +54,10 @@ class RecipeBase:
         # Other configuration
         self.device = utils.get_device(
             # Use MPS locally since we're all on Apple silicon
-            cfg.get('device', 'cuda') if not is_local_env() else "mps")
+            cfg.get('device', 'cuda') if not config.use_mps else "mps")
         self.dtype = utils.get_dtype(
             # Use fp32 locally since we're all on Apple silicon, and bf* is not supported
-            cfg.dtype if not is_local_env() else "fp32",
+            cfg.dtype if not config.use_mps else "fp32",
             device=self.device)
         self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
         self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)
