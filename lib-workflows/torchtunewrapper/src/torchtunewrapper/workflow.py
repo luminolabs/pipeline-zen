@@ -1,17 +1,29 @@
+import threading
+import time
 from functools import partial
 from logging import Logger
 from typing import Optional
 
-from common.heartbeats import heartbeat_wrapper
 from omegaconf import DictConfig, OmegaConf
 from torch.distributed.launcher import elastic_launch, LaunchConfig
 from torch.utils.data import Dataset
 from torchtune.datasets import chat_dataset
 
 from common.dataset.base import dataset_provider_factory
+from common.gcp import upload_jobs_meta
+from common.heartbeats import heartbeat_wrapper
 from common.model.base import model_provider_factory
 from common.utils import load_job_config, setup_logger, read_job_config_from_file, get_work_dir
 from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
+
+
+def _schedule_upload_jobs_meta(interval: int, job_id: str, user_id: str, logger: Logger):
+    """Runs the function every `interval` seconds."""
+    logger.info(f'Scheduling job metadata upload every {interval} seconds')
+    while True:
+        upload_jobs_meta(job_id, user_id)
+        logger.info(f'Uploaded job metadata to GCS; job_id: {job_id}, user_id: {user_id}')
+        time.sleep(interval)
 
 
 @heartbeat_wrapper('torchtunewrapper', 'download_dataset')
@@ -63,6 +75,11 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     :param logger: The logger instance
     :return: The final loss value
     """
+
+    # Start the background thread to upload job metadata
+    thread = threading.Thread(target=_schedule_upload_jobs_meta, args=(10, job_id, user_id, logger))
+    thread.daemon = True  # Daemon thread stops when the main program exits
+    thread.start()
 
     # Load the dataset
     dataset = _download_dataset(job_config, logger)

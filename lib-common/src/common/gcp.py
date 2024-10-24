@@ -5,6 +5,7 @@ from typing import Optional
 
 import requests
 from filelock import FileLock
+from google.api_core.exceptions import TooManyRequests
 from google.cloud import pubsub_v1, storage, bigquery
 
 from common.config_manager import config
@@ -160,10 +161,16 @@ def upload_jobs_meta(job_id: str, user_id: str):
     logger.info(f'Uploading job metadata to GCS; job_id: {job_id}, user_id: {user_id}')
     # Get the local path to the job metadata
     path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
+    if not os.path.exists(path):
+        logger.warning(f'Job metadata file does not exist (yet): {path}')
+        return
     bucket = get_results_bucket()
     with FileLock(path + '.lock', thread_local=False):
         # Upload the job metadata to GCS
-        upload_file(path, bucket)
+        try:
+            upload_file(path, bucket)
+        except TooManyRequests as e:
+            logger.warning(f'Got too many requests error while uploading job metadata - skipping: {e}')
 
 
 def make_object_public(bucket_name, object_name):

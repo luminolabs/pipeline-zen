@@ -12,7 +12,6 @@ from torchtune import utils, config as tt_config
 
 from common.agent.job_logger import TorchtunewrapperLoggerAgent
 from common.config_manager import config
-from common.gcp import upload_jobs_meta
 from common.heartbeats import heartbeat_wrapper
 from common.utils import is_local_env, get_artifacts
 
@@ -233,9 +232,6 @@ class RecipeBase:
                         epoch_num=curr_epoch + 1,
                         epoch_len=self.total_epochs, )
 
-                    # Upload jobs-meta.json to GCS
-                    upload_jobs_meta(self.job_id, self.user_id)
-
                     # Reset running stats for the next step
                     running_loss = 0
                     num_tokens = 0
@@ -247,22 +243,15 @@ class RecipeBase:
                                       epoch_len=self.total_epochs,
                                       epoch_time_elapsed_s=time_per_epoch)
 
-            # Upload jobs-meta.json to GCS
-            upload_jobs_meta(self.job_id, self.user_id)
-
             # Update the epoch count
             self.epochs_run += 1
 
     @heartbeat_wrapper('torchtunewrapper', 'save_weights')
     def save_checkpoint(self) -> None:
         self._save_checkpoint()
-        # Upload jobs-meta.json to GCS
-        upload_jobs_meta(self.job_id, self.user_id)
 
     @heartbeat_wrapper('torchtunewrapper', 'setup')
     def setup(self):
-        # Upload jobs-meta.json to GCS
-        upload_jobs_meta(self.job_id, self.user_id)
         # Log job information
         self._log_job_info()
         # Common setup
@@ -275,8 +264,6 @@ class RecipeBase:
     def cleanup(self):
         # Log and send weights and other results to listeners
         self._log_artifacts()
-        # Upload jobs-meta.json to GCS
-        upload_jobs_meta(self.job_id, self.user_id)
         # Recipe-specific cleanup
         self._cleanup()
         pass
