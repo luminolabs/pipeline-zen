@@ -64,7 +64,7 @@ resume_from_checkpoint: False
 
 optimizer:
   _component_: torch.optim.AdamW
-  lr: {$lr}
+  lr: ${lr}
   foreach: False
   # Note: highly recommended to use fused=True optimizer flag
   # with CPU offload for faster optimizer step.
