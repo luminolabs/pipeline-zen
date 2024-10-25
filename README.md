@@ -30,7 +30,7 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
-On a Mac, you need to install torchao nightly:
+On a Mac, you need to install torchao nightly, install it outside the `pipeline-zen` repo:
 
 ```bash
 git clone https://github.com/pytorch/ao
