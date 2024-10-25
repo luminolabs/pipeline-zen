@@ -18,10 +18,7 @@ Depending on your machine type and specs, you will probably want to run this wor
 
 ### Setup
 
-Download and copy the GCP service account credentials file to `.secrets` under the repo root.
-[Follow this guide for instructions.](https://www.notion.so/luminoai/Create-a-GCP-credentials-file-for-pipeline-zen-d2a007730f204ae797db8c0174224ddc)
-
-...or use the following command to authenticate with GCP:
+Use the following command to authenticate with GCP:
 
 ```bash
 gcloud auth application-default login
@@ -31,6 +28,17 @@ Install python dependencies:
 
 ```bash
 ./scripts/install-deps.sh
+```
+
+On a Mac, you need to install torchao nightly:
+
+```bash
+git clone https://github.com/pytorch/ao
+cd ao
+git checkout v0.3.1-rc1
+pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
+TORCHAO_NIGHTLY=1 python setup.py install
+pip install "torchtune==0.2.1"
 ```
 
 ### Run the dummy torchtunewrapper workflow
