@@ -1,4 +1,5 @@
-# Use with full_finetune_single_device.py
+# Config for single device full finetuning in full_finetune_single_device.py
+
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -8,6 +9,7 @@ batch_size:
 epochs:
 lr:
 seed:
+
 
 # Tokenizer
 tokenizer:
@@ -29,7 +31,7 @@ checkpointer:
     model-00001-of-00004.safetensors,
     model-00002-of-00004.safetensors,
     model-00003-of-00004.safetensors,
-    model-00004-of-00004.safetensors,
+    model-00004-of-00004.safetensors
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
@@ -39,7 +41,8 @@ resume_from_checkpoint: False
 # Fine-tuning arguments
 optimizer:
   _component_: bitsandbytes.optim.PagedAdamW8bit
-  lr: ${lr}
+  lr: ${lr}  # 2e-5
+
 loss:
   _component_: torch.nn.CrossEntropyLoss
 gradient_accumulation_steps: 1

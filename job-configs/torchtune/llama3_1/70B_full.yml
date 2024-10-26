@@ -1,4 +1,5 @@
-# Use with full_finetune_distributed.py
+# Config for multi-device full finetuning in full_finetune_distributed.py
+
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -8,6 +9,7 @@ batch_size:
 epochs:
 lr:
 seed:
+
 
 # Tokenizer
 tokenizer:
@@ -62,9 +64,12 @@ checkpointer:
   model_type: LLAMA3
 resume_from_checkpoint: False
 
+# Fine-tuning arguments
+
 optimizer:
   _component_: torch.optim.AdamW
-  lr: ${lr}
+  lr: ${lr}  # 2e-5
+
   foreach: False
   # Note: highly recommended to use fused=True optimizer flag
   # with CPU offload for faster optimizer step.
@@ -73,6 +78,7 @@ optimizer:
 loss:
   _component_: torch.nn.CrossEntropyLoss
 gradient_accumulation_steps: 1
+
 
 # Training env
 device: cuda
