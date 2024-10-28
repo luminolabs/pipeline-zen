@@ -11,7 +11,3 @@ use_mps: true
 send_to_gcs: true
 send_to_bq: false
 send_to_pubsub: false
-
-# GCP SA key location
-# Temporarily disabled because the local development service account is out of date with required permissions
-# GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json
