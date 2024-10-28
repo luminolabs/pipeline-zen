@@ -15,7 +15,7 @@ paths=$paths:$PZ_ROOT_DIR/lib-workflows/torchtunewrapper/src
 paths=$paths:$PZ_ROOT_DIR/lib-celery/src
 
 # Export .env environment variables
-eval $(cat ./.env | grep -v '^#' | tr -d '\r')
+eval $(cat $PZ_ROOT_DIR/.env | grep -v '^#' | tr -d '\r')
 echo "PZ_ENV set to $PZ_ENV"
 
 # Export the variables so they're available to the python script
