@@ -4,11 +4,15 @@
 
 set -e  # Exit immediately if a command fails
 
+# Use pipeline-zen root dir if provided
+if [ -z "$PZ_ROOT_DIR" ]; then
+  PZ_ROOT_DIR=$(pwd)
+fi
+
 # Set the paths to the Python modules
-paths=$(pwd)/lib-common/src
-paths=$paths:$(pwd)/lib-workflows/train/src:$(pwd)/lib-workflows/evaluate/src
-paths=$paths:$(pwd)/lib-workflows/torchtunewrapper/src
-paths=$paths:$(pwd)/lib-celery/src
+paths=$PZ_ROOT_DIR/lib-common/src
+paths=$paths:$PZ_ROOT_DIR/lib-workflows/torchtunewrapper/src
+paths=$paths:$PZ_ROOT_DIR/lib-celery/src
 
 # Export .env environment variables
 eval $(cat ./.env | grep -v '^#' | tr -d '\r')
@@ -22,4 +26,4 @@ export PZ_USE_MPS
 export PZ_RESULTS_BUCKET_SUFFIX
 
 # Run the Celery pipeline for the specified workflow
-PYTHONPATH=$paths python lib-celery/src/pipeline/$1_wf.py "${@:2}"
+PYTHONPATH=$paths python $PZ_ROOT_DIR/lib-celery/src/pipeline/$1_wf.py "${@:2}"
