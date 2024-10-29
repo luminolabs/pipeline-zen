@@ -9,6 +9,11 @@ if [ -n "$PZ_ROOT_DIR" ]; then
   cd $PZ_ROOT_DIR
 fi
 
+# Set this to current directory if not set
+if [ -z "$PZ_ENV_DIR" ]; then
+  PZ_ENV_DIR=$(pwd)
+fi
+
 # Set the paths to the Python modules
 paths=./lib-common/src
 paths=$paths:./lib-workflows/torchtunewrapper/src
