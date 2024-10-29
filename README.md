@@ -30,15 +30,16 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
-On a Mac, you need to install torchao nightly, install it outside the `pipeline-zen` repo:
+On a Mac, you to install torchao in a specific way, clone it outside the `pipeline-zen` repo:
 
 ```bash
 git clone https://github.com/pytorch/ao
 cd ao
 git checkout v0.3.1-rc1
-pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
+python setup.py install
 TORCHAO_NIGHTLY=1 python setup.py install
 pip install "torchtune==0.2.1"
+pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
 
 ### Run the dummy torchtunewrapper workflow

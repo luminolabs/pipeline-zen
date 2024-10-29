@@ -8,6 +8,6 @@ pip install -U pip
 
 # Install the required packages
 pip install -Ur lib-common/requirements.txt
-pip install -Ur lib-workflows/torchtunewrapper/requirements.txt
-pip install -Ur lib-workflows/torchtunewrapper/requirements.extra.txt
 pip install -Ur lib-celery/requirements.txt
+pip install -Ur lib-workflows/torchtunewrapper/requirements.extra.txt
+pip install -Ur lib-workflows/torchtunewrapper/requirements.txt
