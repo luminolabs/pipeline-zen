@@ -52,12 +52,9 @@ class RecipeBase:
         self.lora_rank = cfg.model.get('lora_rank', None)
         self.adapter_params = None
         # Other configuration
-        self.device = utils.get_device(
-            # Use MPS locally since we're all on Apple silicon
-            cfg.get('device', 'cuda') if not config.use_mps else "mps")
+        self.device = utils.get_device(config.device)
         self.dtype = utils.get_dtype(
-            # Use fp32 locally since we're all on Apple silicon, and bf* is not supported
-            cfg.dtype if not config.use_mps else "fp32",
+            cfg.dtype if config.device == 'cuda' else "fp32",
             device=self.device)
         self.gradient_accumulation_steps = cfg.get('gradient_accumulation_steps', 1)
         self.fsdp_cpu_offload = cfg.get('fsdp_cpu_offload', False)

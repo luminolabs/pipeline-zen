@@ -224,7 +224,7 @@ def get_vm_name_from_metadata():
     """
     Get the VM name from the metadata server
     """
-    if is_local_env():
+    if not config.is_gcp:
         return None
     print('Fetching the VM name from the metadata server...')
     if config.vm_name:
@@ -240,7 +240,7 @@ def get_zone_from_metadata():
     """
     Get the zone of the VM from the metadata server
     """
-    if is_local_env():
+    if not config.is_gcp:
         return None
     print('Fetching the zone from the metadata server...')
     if config.zone:

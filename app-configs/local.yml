@@ -4,7 +4,7 @@ heartbeat_topic: pipeline-zen-jobs-heartbeats-local
 jobs_meta_topic: pipeline-zen-jobs-meta-local
 customer_api_url: http://localhost:5100/v1
 mock_user_has_enough_credits: true
-use_mps: true
+device: mps
 
 # No need to do these unless we're testing the
 # actual sending of data to BQ and PubSub

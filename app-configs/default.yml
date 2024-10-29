@@ -1,7 +1,7 @@
 # Local development environment
 local_env_name: local
 secrets_dir: .secrets
-use_mps: false
+device: cuda
 results_bucket_suffix:
 
 # Workflows
@@ -29,6 +29,7 @@ job_meta_file: job-meta.json
 celery_broker_url: memory://localhost/
 
 # GCP
+is_gcp: false
 gcp_project: neat-airport-407301
 bq_dataset: pipeline_zen
 heartbeat_topic: pipeline-zen-jobs-heartbeats

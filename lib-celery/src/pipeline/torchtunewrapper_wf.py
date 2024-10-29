@@ -179,7 +179,7 @@ def schedule(*args):
     user_id = args[1]
 
     # On non-local environments, we require the presence of GPUs, unless we're using MPS
-    if config.env_name != 'local' and not config.use_mps:
+    if config.env_name != 'local' and config.device == 'cuda':
         logger = setup_logger('celery_torchtunewrapper_wf', job_id, user_id)
         system_specs = SystemSpecsAgent(logger)
         if system_specs.get_gpu_spec() is None:
