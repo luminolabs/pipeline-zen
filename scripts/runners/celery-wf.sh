@@ -24,6 +24,7 @@ export PZ_HUGGINGFACE_TOKEN
 export PZ_CUSTOMER_API_KEY
 export PZ_USE_MPS
 export PZ_RESULTS_BUCKET_SUFFIX
+export GOOGLE_APPLICATION_CREDENTIALS
 
 # Run the Celery pipeline for the specified workflow
 PYTHONPATH=$paths python $PZ_ROOT_DIR/lib-celery/src/pipeline/$1_wf.py "${@:2}"

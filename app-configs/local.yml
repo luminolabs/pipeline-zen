@@ -11,3 +11,7 @@ use_mps: true
 send_to_gcs: true
 send_to_bq: false
 send_to_pubsub: false
+
+# GCP SA key location
+# Temporarily disabled because the local development service account is out of date with required permissions
+# GCP_APPLICATION_CREDENTIALS: /root/.lumino/pipeline-zen-jobs-gcp-key.json
