@@ -70,7 +70,7 @@ run_workflow() {
   fi
 
   # Extract the keep_alive flag as a file
-  keep_alive=$(echo "$job" | jq -r '.keep_alive')
+  keep_alive=$(echo "$job" | jq -r '.gcp.keep_alive')
   echo "$keep_alive" > .results/.keep_alive
 
   # Let the scheduler know that we found a VM;
