@@ -1,4 +1,4 @@
 GOOGLE_APPLICATION_CREDENTIALS: /root/.lumino/pipeline-zen-jobs-gcp-key.json
 customer_api_url: https://api.luminolabs.ai/v1
 log_stdout: true
-delete_results: true
+delete_results: false
