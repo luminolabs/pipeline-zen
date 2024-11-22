@@ -1,6 +1,7 @@
 import json
 import subprocess
 import traceback
+from json import JSONDecodeError
 from logging import Logger
 from typing import List, Optional
 
@@ -13,6 +14,7 @@ class SystemSpecsAgent:
 
     Note: these commands aren't supported on OSX, but they are on Ubuntu.
     """
+
     def __init__(self, logger: Logger):
         self.logger = logger
 
@@ -57,6 +59,7 @@ class SystemSpecsAgent:
         ex. {'architecture': 'x86_64', 'cpus': '16',
              'model_name': '11th Gen Intel(R) Core(TM) i9-11950H @ 2.60GHz', 'threads_per_core': '2'}
         """
+
         def clean_key(key: str) -> str:
             return key.lower().replace(' ', '_').replace('(', '').replace(')', '').replace(':', '')
 
@@ -66,7 +69,12 @@ class SystemSpecsAgent:
             self.logger.error('`lscpu` command not found')
             return None
 
-        j = json.loads(r.stdout.decode('utf-8'))
+        try:
+            j = json.loads(r.stdout.decode('utf-8'))
+        except JSONDecodeError as e:
+            self.logger.error(f'Got gibberish back from lscpu: {str(e)}')
+            return None
+
         o = {clean_key(x['field']): x for x in j.get('lscpu')}
         x = ('architecture', 'cpus', 'model_name', 'threads_per_core')
         try:
@@ -93,7 +101,7 @@ class SystemSpecsAgent:
 
         s = r.stdout.decode('utf-8')
         v = s.replace('MemTotal:', '').replace('kB', '').strip()
-        g = int(v)/1024/1024
+        g = int(v) / 1024 / 1024
         return f'{g:.2f} GiB'
 
     def get_specs(self) -> dict:

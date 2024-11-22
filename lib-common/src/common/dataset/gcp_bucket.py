@@ -6,6 +6,7 @@ class GcpBucketProvider(BaseDatasetProvider):
     """
     GCP Bucket Dataset Provider
     """
+
     def fetch(self, **kwargs) -> None:
         """
         Fetches the dataset from a Google Cloud Storage bucket.

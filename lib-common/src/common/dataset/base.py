@@ -27,7 +27,7 @@ class BaseDatasetProvider:
         """
         Allows the dataset provider to be called as a function.
 
-        i.e.: dataset_provider = GcpBucketProvider(url, job_id, user_id, logger)()
+        ex: dataset_provider = GcpBucketProvider(url, job_id, user_id, logger)()
         """
         return self.fetch(**kwargs)
 
@@ -38,7 +38,7 @@ class BaseDatasetProvider:
 
         :param kwargs: Additional keyword arguments
         """
-        pass
+        raise NotImplementedError("This method must be implemented in a subclass.")
 
 
 def dataset_provider_factory(url: str,

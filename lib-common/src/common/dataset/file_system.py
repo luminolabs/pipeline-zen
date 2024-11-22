@@ -5,6 +5,7 @@ class FileSystemProvider(BaseDatasetProvider):
     """
     File system Dataset Provider
     """
+
     def fetch(self, **kwargs) -> None:
         """
         Fetches the dataset from a file in the local file system.

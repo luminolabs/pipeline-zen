@@ -13,8 +13,8 @@ class BaseModelProvider:
         :param url: The model uniform resource location
         :param logger: The logger instance
         """
-        self.url = url
-        self.provider = self.url[:2]  # ex. hf://
+        self.url = url  # ex. hf://meta-llama/Meta-Llama-3.1-70B-Instruct
+        self.provider = self.url[:2]  # ex. hf
         self.model_name = self.url[5:]  # ex. meta-llama/Meta-Llama-3.1-70B-Instruct
         self.logger = logger
         self.local_path = self.get_model_cache_dir()
@@ -34,7 +34,7 @@ class BaseModelProvider:
         """
         Allows the model provider to be called as a function.
 
-        i.e.: model_provider = HuggingFaceProvider(url, logger)()
+        ex: model_provider = HuggingFaceProvider(url, logger)()
         """
         return self.fetch(**kwargs)
 
@@ -43,7 +43,7 @@ class BaseModelProvider:
         """
         Downloads the model.
         """
-        pass
+        raise NotImplementedError("This method must be implemented in a subclass.")
 
 
 def model_provider_factory(url: str, logger: Logger) -> BaseModelProvider:
@@ -58,4 +58,4 @@ def model_provider_factory(url: str, logger: Logger) -> BaseModelProvider:
         from common.model.hugging_face import HuggingFaceProvider
         return HuggingFaceProvider(url, logger)
     else:
-        raise ValueError(f'Unknown model base: {url}')
+        raise ValueError(f"Unknown model provider: {url}")
