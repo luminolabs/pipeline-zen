@@ -8,6 +8,7 @@ class HuggingFaceProvider(BaseModelProvider):
     """
     Hugging Face model provider.
     """
+
     def fetch(self, **kwargs) -> str:
         """
         Fetch the model from the Hugging Face Hub.

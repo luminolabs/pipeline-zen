@@ -14,6 +14,7 @@ def heartbeat_wrapper(workflow_name, task_name):
     :param workflow_name: The name of the workflow
     :param task_name: The name of the task
     """
+
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -38,7 +39,9 @@ def heartbeat_wrapper(workflow_name, task_name):
                 job_id, user_id, f"wf-{workflow_name}-{task_name}-total",
                 elapsed_time=(utcnow() - start_time).total_seconds())
             return result
+
         return wrapper
+
     return decorator
 
 

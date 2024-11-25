@@ -1,10 +1,11 @@
 import argparse
+from typing import Tuple
 
 from common.config_manager import is_truthy, config
 from torchtunewrapper.workflow import main
 
 
-def parse_args() -> tuple:
+def parse_args() -> Tuple:
     """
     :return: Parsed command line arguments
     """

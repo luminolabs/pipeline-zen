@@ -62,6 +62,7 @@ class AutoJSONEncoder(JSONEncoder):
     A JSON encoder that automatically serializes objects with a `_json()` method,
     such as `Enums` that implement the `_json()` method.
     """
+
     def default(self, obj):
         # Convert OmegaConf objects to dictionaries
         # before serializing them to JSON strings to avoid errors
