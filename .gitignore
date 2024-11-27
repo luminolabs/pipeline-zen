@@ -20,7 +20,7 @@ Thumbs.db
 .secrets/
 .output.log
 
-# This is the repopack genared file that
+# This is the repomix genared file that
 # is contains the whole repo content for
 # submitting to AIs, like Claude
 pipeline-zen.txt
