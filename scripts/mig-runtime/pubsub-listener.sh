@@ -7,11 +7,13 @@ source ./scripts/utils.sh
 
 echo "Pub/Sub job listener started."
 
-# Set environment name and subscription ID
-subscription_id_suffix="$LOCAL_ENV"  # running locally will listen to a local subscription ID
+# Set environment name and subscription ID;
+subscription_id_suffix="1x$LOCAL_ENV"
+topic_id_suffix="-$LOCAL_ENV"
 vm_name=$(uname -n)
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   subscription_id_suffix=$(get_cluster_name_from_vm_name "$vm_name")
+  topic_id_suffix=""
 fi
 subscription_id="pipeline-zen-jobs-start-$subscription_id_suffix"
 echo "Subscription ID set to $subscription_id"
@@ -23,7 +25,7 @@ send_heartbeat() {
   local user_id="$3"
   local message="{\"job_id\":\"$job_id\",\"user_id\":\"$user_id\",\"status\":\"$status\",\"vm_name\":\"$vm_name\"}"
   echo "Sending heartbeat: $message"
-  gcloud pubsub topics publish pipeline-zen-jobs-heartbeats --message="$message" --project="$PROJECT_ID" > /dev/null 2>&1
+  gcloud pubsub topics publish pipeline-zen-jobs-heartbeats$topic_id_suffix --message="$message" --project="$PROJECT_ID" > /dev/null 2>&1
 }
 
 # Function to check for stop signal
@@ -77,8 +79,9 @@ run_workflow() {
   # The scheduler will detach the VM from the MIG so that
   # it doesn't get deleted by the MIG scaler while the job is running
   send_heartbeat "FOUND_VM" "$job_id" "$user_id"
-  # Sleep for 1 minute to allow the scheduler to detach the VM
-  sleep 60
+
+  # Sleep to allow the scheduler to detach the VM
+  sleep 20
 
   # Run the workflow script
   echo "Running workflow script..."

@@ -18,7 +18,7 @@ Thumbs.db
 .results/
 .logs/
 .secrets/
-.output.log
+output.log
 
 # This is the repomix genared file that
 # is contains the whole repo content for

@@ -37,10 +37,14 @@ fi
 
 echo "Using image: $image_use"
 
-# Build or pull the Docker image
+# Force linux/amd64 platform for Docker for local runs,
+# as there are issues with torchao when running natively on apple silicon
+docker_arch=""
+# Build the Docker image if running locally
 if [[ "$image_use" == "$IMAGE_LOCAL" ]]; then
+  docker_arch="--platform linux/amd64"
   echo "Building local Docker image"
-  docker build -f celery.Dockerfile -t $image_use . > /dev/null 2>&1
+  docker build -f celery.Dockerfile -t $image_use $docker_arch . > /dev/null 2>&1
 fi
 
 # Set GPU options based on OS type
@@ -54,12 +58,14 @@ fi
 echo "Running Docker container with image: $image_use"
 
 # Run the Docker container
-docker run $gpus \
+docker run $docker_arch $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
 -v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$PZ_ENV \
+-e PZ_DEVICE=$PZ_DEVICE \
+-e PZ_RESULTS_BUCKET_SUFFIX=$PZ_RESULTS_BUCKET_SUFFIX \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 -e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
 $image_use python pipeline/$1_wf.py "${@:2}"
