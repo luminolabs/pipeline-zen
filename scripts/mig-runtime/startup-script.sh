@@ -6,8 +6,13 @@ set -e  # Exit immediately if a command fails
 
 echo "MIG startup script started."
 
-# Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
-cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+  # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
+  cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
+fi
+
+# Print current directory
+echo "Current directory: $(pwd)"
 
 # Create directories for logs and results
 mkdir -p .results
@@ -16,14 +21,21 @@ mkdir -p .logs
 # Import shared utility functions
 source ./scripts/utils.sh
 
+
+echo "GOOGLE_APPLICATION_CREDENTIALS set to $GOOGLE_APPLICATION_CREDENTIALS"
+echo "CLOUDSDK_CORE_ACCOUNT set to $CLOUDSDK_CORE_ACCOUNT"
+export CLOUDSDK_CORE_ACCOUNT=$SERVICE_ACCOUNT
+
 # Define the log file path
 log_file="./output.log"
 
 # Redirect both stdout and stderr to the log file and to stdout/stderr
 exec > >(tee -a "$log_file") 2>&1
 
-# Export secrets
-source ./scripts/mig-runtime/export-secrets.sh
+if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+  # Export secrets
+  source ./scripts/mig-runtime/export-secrets.sh
+fi
 
 # Call the pubsub-listener.sh script
 echo "Starting Pub/Sub listener..."

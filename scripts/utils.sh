@@ -1,13 +1,12 @@
 #!/bin/bash
 
-
 #########################
 ### Environment Setup ###
 #########################
 
-
 LOCAL_ENV="local"
 PROJECT_ID="neat-airport-407301"
+SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
 
 if [[ "$PZ_ENV" == "" ]]; then
   PZ_ENV="$LOCAL_ENV"
@@ -16,14 +15,13 @@ fi
 # Export .env environment variables; note, we aren't aware of which environment
 # we're running on before importing PZ_ENV from .env,
 # so we can't cd to /pipeline-zen-jobs conditionally above
+set -o allexport
 eval $(cat ./.env | grep -v '^#' | tr -d '\r')
 echo "PZ_ENV set to $PZ_ENV"
-
 
 ########################
 ### Helper Functions ###
 ########################
-
 
 is_truthy() {
   local value=$1

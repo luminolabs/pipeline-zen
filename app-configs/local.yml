@@ -1,10 +1,18 @@
+# Logging
 log_level: DEBUG
 log_stdout: true
+
+# GCP service account creds key
+GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json
+
+# Fake services
 heartbeat_topic: pipeline-zen-jobs-heartbeats-local
 jobs_meta_topic: pipeline-zen-jobs-meta-local
 customer_api_url: http://localhost:5100/v1
 mock_user_has_enough_credits: true
-device: mps
+# Use CPU for local testing, since we all run on macs;
+# MPS is not supported mainly because of torchao
+device: cpu  # override this in your .env file if needed, ex: `SZ_DEVICE=cuda`
 
 # No need to do these unless we're testing the
 # actual sending of data to BQ and PubSub
