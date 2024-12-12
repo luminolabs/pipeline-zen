@@ -8,7 +8,7 @@ class FileSystemProvider(BaseDatasetProvider):
     File system Dataset Provider
     """
 
-    def fetch(self, **kwargs) -> None:
+    def fetch(self, **kwargs) -> str:
         """
         Fetches the dataset from a file in the local file system.
 

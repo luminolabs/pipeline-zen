@@ -6,8 +6,8 @@ results_bucket_suffix:
 
 # Workflows
 send_to_gcs: true
-send_to_bq: false  # enable/disable BigQuery; temporarily disabled till db migration is complete
-send_to_pubsub: false  # enable/disable PubSub; not in use currently
+send_to_bq: false  # enable/disable BigQuery; TODO: temporarily disabled till db migration is complete
+send_to_pubsub: false  # enable/disable PubSub; not in use in python code currently
 
 # Environment management
 delete_results: false  # Set to true to delete results after uploading

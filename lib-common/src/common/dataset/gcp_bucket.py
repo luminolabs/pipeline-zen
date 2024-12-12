@@ -1,3 +1,4 @@
+from common.config_manager import config
 from common.dataset.base import BaseDatasetProvider
 from common.gcp import download_object
 
@@ -15,11 +16,12 @@ class GcpBucketProvider(BaseDatasetProvider):
         """
         self.logger.info(f"Downloading GCP bucket dataset: {self.url}")
         # Raise an error if the bucket name is not what we expect
-        if not self.url.startswith('gs://lum-pipeline-zen-jobs-us/datasets'):
-            raise ValueError(f'Upload datasets to `gs://lum-pipeline-zen-jobs-us/datasets/<user_id>` only')
+        if not self.url.startswith(f'gs://lum-{config.env_name}-datasets'):
+            raise ValueError(f'Upload datasets to `gs://lum-{config.env_name}-datasets/<user_id>` '
+                             f'only; got {self.url}')
         # Parse the GCS URL to get the bucket name and source blob name
         gs_url = self.url  # ex. gs://bucket-name/path-to-dataset/dataset-name
-        bucket_name = gs_url.split('/')[2]  # ex. lum-pipeline-zen-jobs-us
+        bucket_name = gs_url.split('/')[2]  # ex. lum-dev-pipeline-zen-jobs-us
         source_blob_name = '/'.join(gs_url.split('/')[3:])  # ex. datasets/<user_id>/dataset-name.jsonl
         # Download the dataset from GCS and return the local path
         download_object(bucket_name, source_blob_name, self.local_path)

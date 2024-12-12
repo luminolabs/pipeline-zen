@@ -15,7 +15,7 @@ if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   subscription_id_suffix=$(get_cluster_name_from_vm_name "$vm_name")
   topic_id_suffix=""
 fi
-subscription_id="pipeline-zen-jobs-start-$subscription_id_suffix"
+subscription_id="pipeline-zen-jobs-start-runner-$subscription_id_suffix"
 echo "Subscription ID set to $subscription_id"
 
 # Function to send heartbeat and status update
@@ -31,18 +31,18 @@ send_heartbeat() {
 # Function to check for stop signal
 check_stop_signal() {
   local job_id="$1"
-  local response=$(gcloud pubsub subscriptions pull --project="$PROJECT_ID" pipeline-zen-jobs-stop-main --format="json" --limit=1)
+  local response=$(gcloud pubsub subscriptions pull --project="$PROJECT_ID" pipeline-zen-jobs-stop-runner --format="json" --limit=1)
   local ack_id=$(echo "$response" | jq -r '.[0].ackId')
   if [[ "$response" != "[]" ]]; then
     local stop_job_id=$(echo "$response" | jq -r '.[0].message.data' | base64 --decode | jq -r '.job_id')
     if [[ "$stop_job_id" == "$job_id" ]]; then
       echo "Stop signal received for this job."
-      gcloud pubsub subscriptions ack --project="$PROJECT_ID" --ack-ids="$ack_id" pipeline-zen-jobs-stop-main > /dev/null 2>&1
+      gcloud pubsub subscriptions ack --project="$PROJECT_ID" --ack-ids="$ack_id" pipeline-zen-jobs-stop-runner > /dev/null 2>&1
       return 0
     else
       # Negative acknowledgement to return the message to the queue
       echo "Stop signal received for another job - ignoring."
-      gcloud beta pubsub subscriptions modify-message-ack-deadline --project="$PROJECT_ID" --ack-ids="$ack_id" --ack-deadline=0 pipeline-zen-jobs-stop-main > /dev/null 2>&1
+      gcloud beta pubsub subscriptions modify-message-ack-deadline --project="$PROJECT_ID" --ack-ids="$ack_id" --ack-deadline=0 pipeline-zen-jobs-stop-runner > /dev/null 2>&1
     fi
   fi
   return 1
@@ -81,7 +81,7 @@ run_workflow() {
   send_heartbeat "FOUND_VM" "$job_id" "$user_id"
 
   # Sleep to allow the scheduler to detach the VM
-  sleep 20
+  sleep 30
 
   # Run the workflow script
   echo "Running workflow script..."

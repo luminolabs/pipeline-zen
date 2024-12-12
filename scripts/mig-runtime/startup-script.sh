@@ -6,6 +6,9 @@ set -e  # Exit immediately if a command fails
 
 echo "MIG startup script started."
 
+# Sleep for a few seconds to allow the VM to fully start up and drivers to load
+sleep 30
+
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
   cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
@@ -34,7 +37,12 @@ exec > >(tee -a "$log_file") 2>&1
 
 if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
   # Export secrets
-  source ./scripts/mig-runtime/export-secrets.sh
+  echo "Fetching secrets from Secret Manager"
+  SECRET_NAME="pipeline-zen-jobs-config"
+  SECRET_PAYLOAD=$(gcloud secrets versions access latest --secret=$SECRET_NAME --project=$PROJECT_ID)
+  # Parse the secret payload and set environment variables
+  set -o allexport
+  eval "$SECRET_PAYLOAD"
 fi
 
 # Call the pubsub-listener.sh script
