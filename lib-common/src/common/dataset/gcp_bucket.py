@@ -16,8 +16,8 @@ class GcpBucketProvider(BaseDatasetProvider):
         """
         self.logger.info(f"Downloading GCP bucket dataset: {self.url}")
         # Raise an error if the bucket name is not what we expect
-        if not self.url.startswith(f'gs://lum-{config.env_name}-pipeline-zen-datasets'):
-            raise ValueError(f'Upload datasets to `gs://lum-{config.env_name}-pipeline-zen-datasets/<user_id>` '
+        if not self.url.startswith(f'gs://lum-') or self.url.find('-pipeline-zen-datasets') == -1:
+            raise ValueError(f'Upload datasets to `gs://lum-*-pipeline-zen-datasets/*` '
                              f'only; got {self.url}')
         # Parse the GCS URL to get the bucket name and source blob name
         gs_url = self.url  # ex. gs://bucket-name/path-to-dataset/dataset-name
