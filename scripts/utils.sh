@@ -45,32 +45,3 @@ get_region_from_mig_name() {
   REGION=$(echo "$MIG_NAME" | rev | cut -d'-' -f1,2 | rev )
   echo "$REGION"
 }
-
-########################
-### Shared Variables ###
-########################
-
-# Service account to load to the Job VMs
-JOBS_VM_SERVICE_ACCOUNT="pipeline-zen-jobs-dev@neat-airport-407301.iam.gserviceaccount.com"
-# Prefix for most resources created by this script, also used for some folder names
-RESOURCES_PREFIX="pipeline-zen-jobs"
-# Folder where scripts are stored
-SCRIPTS_FOLDER="scripts"
-# Name of the base image to use for the new image
-NEW_IMAGE_NAME="${RESOURCES_PREFIX}-${VERSION_FOR_IMAGE}"
-
-# GPU / CPU configurations, along with the template name to use for each
-CONFIGS=(
-  "count=1,type=nvidia-tesla-v100 n1-highmem-8 $RESOURCES_PREFIX-1xv100"
-  "count=4,type=nvidia-tesla-v100 n1-highmem-16 $RESOURCES_PREFIX-4xv100"
-  "count=8,type=nvidia-tesla-v100 n1-highmem-32 $RESOURCES_PREFIX-8xv100"
-  "count=1,type=nvidia-tesla-a100 a2-highgpu-1g $RESOURCES_PREFIX-1xa100-40gb"
-  "count=2,type=nvidia-tesla-a100 a2-highgpu-2g $RESOURCES_PREFIX-2xa100-40gb"
-  "count=4,type=nvidia-tesla-a100 a2-highgpu-4g $RESOURCES_PREFIX-4xa100-40gb"
-  "count=8,type=nvidia-tesla-a100 a2-highgpu-8g $RESOURCES_PREFIX-8xa100-40gb"
-  "count=1,type=nvidia-a100-80gb a2-ultragpu-1g $RESOURCES_PREFIX-1xa100-80gb"
-  "count=2,type=nvidia-a100-80gb a2-ultragpu-2g $RESOURCES_PREFIX-2xa100-80gb"
-  "count=4,type=nvidia-a100-80gb a2-ultragpu-4g $RESOURCES_PREFIX-4xa100-80gb"
-  "count=8,type=nvidia-a100-80gb a2-ultragpu-8g $RESOURCES_PREFIX-8xa100-80gb"
-  "count=8,type=nvidia-h100-80gb a3-highgpu-8g $RESOURCES_PREFIX-8xh100-80gb"
-)

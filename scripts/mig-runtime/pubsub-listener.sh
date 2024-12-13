@@ -59,16 +59,19 @@ run_workflow() {
   job_id=$(echo "$job" | jq -r '.job_id')
   user_id=$(echo "$job" | jq -r '.user_id')
   workflow=$(echo "$job" | jq -r '.workflow')
-  override_env=$(echo "$job" | jq -r '.override_env')  # Override the environment if specified in the message
+  env=$(echo "$job" | jq -r '.env')  # Override the environment if specified in the message
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
 
   # Override the environment if specified in the message
-  if [[ "$override_env" != "null" ]]; then
+  if [[ "$env" != "null" ]]; then
     # Copy the override environment file to .env
-    echo "Overriding environment variables with $override_env.env"
-    cp ./deploy-artifacts/$override_env.env .env
+    echo "Overriding environment variables with $env.env"
+    cp ./deploy-artifacts/$env.env .env
     # Reload the environment variables
     source ./scripts/utils.sh
+  else
+    echo "No environment override specified."
+    exit 0
   fi
 
   # Extract the keep_alive flag as a file
