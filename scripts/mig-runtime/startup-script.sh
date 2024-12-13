@@ -9,8 +9,8 @@ echo "MIG startup script started."
 # Sleep for a few seconds to allow the VM to fully start up and drivers to load
 sleep 30
 
-# Import shared utility functions
-source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
+# Set the environment
+source ./scripts/utils.sh 2>/dev/null || source /pipeline-zen-jobs/scripts/utils.sh 2>/dev/null
 
 # Create directories for logs and results
 mkdir -p .results

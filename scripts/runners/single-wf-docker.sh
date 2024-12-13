@@ -4,8 +4,11 @@
 
 set -e  # Exit immediately if a command fails
 
-# Import utility functions
-source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
+# Log start of the script
+echo "Begin running the workflow at $(date)"
+
+# Set the environment
+source ./scripts/utils.sh 2>/dev/null || source /pipeline-zen-jobs/scripts/utils.sh 2>/dev/null
 
 # Build the Docker image for the workflow
 docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:$LOCAL_ENV .
@@ -13,11 +16,12 @@ docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workfl
 # Set GPU options based on OS type
 gpus="--gpus all"
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  # There's no implementation on OSX to allow using the GPU with Docker;
-  # this means that MPS will not be used
-  # when running ML workflows on Docker under OSX (ie. the Mac GPU won't be used)
+  echo "Detected macOS. Disabling GPU support for Docker"
   gpus=""
 fi
+
+# Log before running Docker container
+echo "Running Docker container"
 
 # Run the Docker container for the workflow
 docker run $gpus \
@@ -31,3 +35,6 @@ docker run $gpus \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 -e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
 $1-workflow:local python $1/cli.py "${@:2}"
+
+# Log after Docker container finishes
+echo "Workflow finished at $(date)"

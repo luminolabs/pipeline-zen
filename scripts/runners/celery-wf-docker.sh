@@ -1,21 +1,14 @@
 #!/bin/bash
 
 # Run a Celery workflow with the specified arguments using Docker
-# Steps:
-# 1. Log the start of the script
-# 2. Read the version from the VERSION file
-# 3. Define remote and local image names
-# 4. Set the environment and image to use
-# 5. Build or pull the Docker image based on the environment
-# 6. Set GPU options based on OS type
-# 7. Run the Docker container with appropriate volumes and environment variables
-# 8. Log after the Docker container finishes
+
+set -e  # Exit immediately if a command fails
 
 # Log start of the script
 echo "Begin running the Celery workflow at $(date)"
 
-# Import utility functions
-source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
+# Set the environment
+source ./scripts/utils.sh 2>/dev/null || source /pipeline-zen-jobs/scripts/utils.sh 2>/dev/null
 
 # Docker image
 IMAGE_NAME="celery-workflow"

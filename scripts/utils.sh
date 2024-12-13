@@ -10,20 +10,21 @@ is_truthy() {
   echo "0"
 }
 
-# Function to extract cluster name from VM name
-# ex. pipeline-zen-jobs-4xa100-40gb-us-west4-vm-t9sj -> 4xa100-40gb
-get_cluster_name_from_vm_name() {
-    echo "$1" | sed -E 's/^pipeline-zen-jobs-//; s/-[^-]+-[^-]+-[^-]+-[^-]+$//'
-}
-
 # The name of the local environment
 LOCAL_ENV="local"
 IS_GCP="0"
 
+# Where the source code is located
+PIPELINE_ZEN_JOBS_DIR="/pipeline-zen-jobs"
+
+# Check if the folder exists
+if [ -d "$PIPELINE_ZEN_JOBS_DIR" ]; then
+    cd "$PIPELINE_ZEN_JOBS_DIR" || exit 0
+fi
+
 # See if .gcp file exists, which indicates we're running on GCP
 if [ -f ./.gcp ]; then
   IS_GCP="1"
-  cd /pipeline-zen-jobs || exit 0
 fi
 
 if [[ $(is_truthy "$IS_GCP") == "1" ]]; then

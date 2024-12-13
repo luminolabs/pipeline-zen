@@ -4,8 +4,14 @@ set -e  # Exit immediately if a command fails
 
 echo "Pub/Sub job listener started."
 
-# Import utility functions
-source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
+# Function to extract cluster name from VM name
+# ex. pipeline-zen-jobs-4xa100-40gb-us-west4-vm-t9sj -> 4xa100-40gb
+get_cluster_name_from_vm_name() {
+    echo "$1" | sed -E 's/^pipeline-zen-jobs-//; s/-[^-]+-[^-]+-[^-]+-[^-]+$//'
+}
+
+# Set the environment
+source ./scripts/utils.sh 2>/dev/null || source /pipeline-zen-jobs/scripts/utils.sh 2>/dev/null
 
 # Set environment name and subscription ID;
 subscription_id_suffix="1x$LOCAL_ENV"
