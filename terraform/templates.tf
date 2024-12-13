@@ -34,6 +34,7 @@ resource "google_compute_instance_template" "pipeline-zen-jobs" {
 
   metadata = {
     startup-script = "/pipeline-zen-jobs/scripts/mig-runtime/startup-script.sh"
+    PZ_ENV = var.environment  # need this to determine which environment to run in the startup script
   }
 
   scheduling {
