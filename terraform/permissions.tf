@@ -82,6 +82,7 @@ resource "google_storage_bucket_iam_member" "pipeline_zen_jobs_datasets" {
 resource "google_project_iam_member" "pipeline_zen_jobs_project" {
   for_each = toset([
     "roles/logging.logWriter",
+    "roles/monitoring.metricWriter",
     "roles/secretmanager.secretAccessor",
     "roles/secretmanager.viewer",
     "roles/pubsub.publisher",
