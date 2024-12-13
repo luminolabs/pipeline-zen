@@ -9,25 +9,11 @@ echo "MIG startup script started."
 # Sleep for a few seconds to allow the VM to fully start up and drivers to load
 sleep 30
 
-if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
-  # Go to the /pipeline-zen-jobs directory, where we've loaded all necessary files to run the ML pipeline
-  cd /pipeline-zen-jobs || echo "Failed to change directory to /pipeline-zen-jobs - assuming local environment"
-fi
-
-# Print current directory
-echo "Current directory: $(pwd)"
-
-# Create directories for logs and results
-mkdir -p .results
-mkdir -p .logs
-
 # Import shared utility functions
 source ./scripts/utils.sh
 
-
-echo "GOOGLE_APPLICATION_CREDENTIALS set to $GOOGLE_APPLICATION_CREDENTIALS"
-echo "CLOUDSDK_CORE_ACCOUNT set to $CLOUDSDK_CORE_ACCOUNT"
-export CLOUDSDK_CORE_ACCOUNT=$SERVICE_ACCOUNT
+# Create directories for logs and results
+mkdir -p .results
 
 # Define the log file path
 log_file="./output.log"
@@ -35,7 +21,7 @@ log_file="./output.log"
 # Redirect both stdout and stderr to the log file and to stdout/stderr
 exec > >(tee -a "$log_file") 2>&1
 
-if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+if [[ $(is_truthy "$IS_GCP") == "1" ]]; then
   # Export secrets
   echo "Fetching secrets from Secret Manager"
   SECRET_NAME="pipeline-zen-jobs-config"
@@ -50,7 +36,7 @@ echo "Starting Pub/Sub listener..."
 ./scripts/mig-runtime/pubsub-listener.sh
 
 # Don't try to delete a VM if running locally, because there is no VM to delete
-if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+if [[ $(is_truthy "$IS_GCP") == "1" ]]; then
   # Whether to allow the VM to continue to run after job completion
   # This flag is set by the pubsub-listener.sh script
   keep_alive=$(cat .results/.keep_alive || echo "false")

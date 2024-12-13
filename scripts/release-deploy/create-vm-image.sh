@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Create a new VM image for the ML pipeline, using the latest code and Docker image.
-# Won't deploy the image to a MIG or link it to a VM template, it'll just create a new version of the image.
+# Create a new VM and Docker image for the ML pipeline, and load the Docker image to the VM image
+# Won't deploy the VM image to a MIG or link it to a VM template, it'll just create a new version of the image.
 
 set -e  # Exit immediately if a command fails
 
-# Source utility functions and variables
-source ./scripts/utils.sh
+# This is the project we use for building, not running
+PROJECT_ID="neat-airport-407301"
 
 # New version Information (pulled from VERSION file locally)
 VERSION=$(cat VERSION)

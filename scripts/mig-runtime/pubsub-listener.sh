@@ -2,10 +2,10 @@
 
 set -e  # Exit immediately if a command fails
 
+echo "Pub/Sub job listener started."
+
 # Import utility functions
 source ./scripts/utils.sh
-
-echo "Pub/Sub job listener started."
 
 # Set environment name and subscription ID;
 subscription_id_suffix="1x$LOCAL_ENV"
@@ -59,20 +59,7 @@ run_workflow() {
   job_id=$(echo "$job" | jq -r '.job_id')
   user_id=$(echo "$job" | jq -r '.user_id')
   workflow=$(echo "$job" | jq -r '.workflow')
-  env=$(echo "$job" | jq -r '.env')  # Override the environment if specified in the message
   args=$(echo "$job" | jq -r '.args | to_entries | map("--\(.key) \(.value | tostring)") | join(" ")')
-
-  # Override the environment if specified in the message
-  if [[ "$env" != "null" ]]; then
-    # Copy the override environment file to .env
-    echo "Overriding environment variables with $env.env"
-    cp ./deploy-artifacts/$env.env .env
-    # Reload the environment variables
-    source ./scripts/utils.sh
-  else
-    echo "No environment override specified."
-    exit 0
-  fi
 
   # Extract the keep_alive flag as a file
   keep_alive=$(echo "$job" | jq -r '.gcp.keep_alive')
