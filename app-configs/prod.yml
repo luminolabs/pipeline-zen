@@ -1,2 +1,3 @@
+gcp_project: eng-ai-prod
 customer_api_url: https://api.luminolabs.ai/v1
 is_gcp: true

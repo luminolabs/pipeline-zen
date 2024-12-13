@@ -1,2 +1,3 @@
+gcp_project: eng-ai-dev
 customer_api_url: http://localhost:5100/v1
 is_gcp: true

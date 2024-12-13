@@ -52,7 +52,7 @@ All you have to do is set the `--job_config_name` to `llm_dummy`.
 
 ```bash
 ./scripts/runners/celery-wf.sh torchtunewrapper --job_config_name llm_dummy --job_id -1 \
-  --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
+  --dataset_id gs://lum-dev-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 --use_lora false \
   --num_gpus 1 --user_id -1 --lr 1e-2 --seed 1234 
 ````
@@ -66,7 +66,7 @@ not locally; see top of this doc for instructions.
 ./scripts/runners/celery-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_1_8b \
   --job_id llm_llama3_1_8b-experiment1 \
-  --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
+  --dataset_id gs://lum-dev-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true --use_qlora false \
   --lr 3e-4 --seed 42 \

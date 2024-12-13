@@ -53,7 +53,7 @@
       </ENTRIES>
     </EXTENSION>
     <option name="SCRIPT_NAME" value="$PROJECT_DIR$/lib-celery/src/pipeline/torchtunewrapper_wf.py" />
-    <option name="PARAMETERS" value="--job_config_name llm_dummy --job_id llm_dummy_sgpu --dataset_id gs://lum-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl --batch_size 2 --shuffle true --num_epochs 1 --use_lora false --num_gpus 1 --user_id 0 --lr 1e-2 --seed 1234" />
+    <option name="PARAMETERS" value="--job_config_name llm_dummy --job_id llm_dummy_sgpu --dataset_id gs://lum-local-pipeline-zen-datasets/vasilis/text2sql.jsonl --batch_size 2 --shuffle true --num_epochs 1 --use_lora false --num_gpus 1 --user_id 0 --lr 1e-2 --seed 1234" />
     <option name="SHOW_COMMAND_LINE" value="false" />
     <option name="EMULATE_TERMINAL" value="false" />
     <option name="MODULE_MODE" value="false" />

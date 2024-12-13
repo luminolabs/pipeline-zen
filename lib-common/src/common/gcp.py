@@ -15,9 +15,6 @@ from common.utils import setup_logger, is_local_env, get_work_dir
 METADATA_ZONE_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/zone'
 METADATA_NAME_URL = 'http://metadata.google.internal/computeMetadata/v1/instance/name'
 METADATA_HEADERS = {'Metadata-Flavor': 'Google'}
-# The prefix for the storage buckets;
-# the full bucket name will be the prefix + the multi-region
-STORAGE_BUCKET_PREFIX = 'lum-pipeline-zen-jobs'
 # BigQuery timestamp format
 BIGQUERY_TIMESTAMP_FORMAT = '%Y-%m-%d %H:%M:%S'
 
@@ -76,11 +73,13 @@ def get_results_bucket() -> str:
 
     :return: The results bucket name
     """
-    # If running locally, use the local dev bucket
+    bucket_prefix = f'lum-{config.env_name}-pipeline-zen-jobs'
+
+    # If set, use results_bucket_suffix instead of computing it
     if config.results_bucket_suffix:
-        return f'{STORAGE_BUCKET_PREFIX}-{config.results_bucket_suffix}'
-    if is_local_env():
-        return f'{STORAGE_BUCKET_PREFIX}-{config.local_env_name}'  # ie. 'pipeline-zen-jobs-local'
+        return f'{bucket_prefix}-{config.results_bucket_suffix}'
+    elif is_local_env():
+        return f'{bucket_prefix}-us'
 
     # Get zone, region, and multi-region from metadata
     zone = get_zone_from_metadata()
@@ -90,8 +89,8 @@ def get_results_bucket() -> str:
     # Middle East doesn't have a multi-region storage configuration on GCP,
     # so we maintain a regional bucket for `me-west1`.
     if multi_region == 'me':
-        return f'{STORAGE_BUCKET_PREFIX}-{region}'  # regional bucket; ie. 'pipeline-zen-jobs-me-west1'
-    return f'{STORAGE_BUCKET_PREFIX}-{multi_region}'  # multi-region bucket; ie. 'pipeline-zen-jobs-us'
+        return f'{bucket_prefix}-{region}'  # regional bucket; ie. 'pipeline-zen-jobs-me-west1'
+    return f'{bucket_prefix}-{multi_region}'  # multi-region bucket; ie. 'pipeline-zen-jobs-us'
 
 
 def upload_directory(local_path: str, bucket: Optional[str] = None, gcs_path: Optional[str] = None):
@@ -261,7 +260,7 @@ def get_mig_name_from_vm_name(vm_name: str) -> str:
     :param vm_name: The name of the VM
     :return: The name of the MIG
     """
-    return '-'.join(vm_name.split('-')[:-1])
+    return '-'.join(vm_name.split('-')[:-2]) + '-mig'
 
 
 def get_region_from_zone(zone: str) -> str:
@@ -298,4 +297,4 @@ def get_region_from_vm_name(vm_name: str) -> str:
     :param vm_name: The name of the VM
     :return: The region
     """
-    return '-'.join(vm_name.split('-')[-3:-1])
+    return '-'.join(vm_name.split('-')[-4:-2])

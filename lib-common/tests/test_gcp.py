@@ -133,7 +133,7 @@ def test_get_results_bucket_local(mock_config):
 
     result = get_results_bucket()
 
-    assert result == 'lum-pipeline-zen-jobs-local'
+    assert result == 'lum-local-pipeline-zen-jobs-us'
 
 
 def test_get_results_bucket_with_suffix(mock_config):
@@ -142,19 +142,20 @@ def test_get_results_bucket_with_suffix(mock_config):
 
     result = get_results_bucket()
 
-    assert result == 'lum-pipeline-zen-jobs-custom'
+    assert result == 'lum-test-pipeline-zen-jobs-custom'
 
 
 @patch('common.gcp.get_zone_from_metadata')
-def test_get_results_bucket_production(mock_get_zone):
+def test_get_results_bucket_production(mock_get_zone, mock_config):
     """Test getting results bucket name in production environment"""
     mock_get_zone.return_value = 'us-central1-a'
 
     with patch('common.gcp.is_local_env') as mock_is_local_env:
+        mock_config.env_name = 'prod'
         mock_is_local_env.return_value = False
         result = get_results_bucket()
 
-    assert result == 'lum-pipeline-zen-jobs-us'
+    assert result == 'lum-prod-pipeline-zen-jobs-us'
 
 
 def test_upload_directory(mock_storage_client, mock_config):
@@ -260,11 +261,11 @@ def test_get_zone_from_metadata(mock_requests, mock_config):
 # Test Helper Functions
 def test_get_mig_name_from_vm_name():
     """Test extracting MIG name from VM name"""
-    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3'
+    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-vm-asj3'
 
     result = get_mig_name_from_vm_name(vm_name)
 
-    assert result == 'pipeline-zen-jobs-8xa100-40gb-us-central1'
+    assert result == 'pipeline-zen-jobs-8xa100-40gb-us-central1-mig'
 
 
 def test_get_region_from_zone():
@@ -287,7 +288,7 @@ def test_get_multi_region_from_zone():
 
 def test_get_region_from_vm_name():
     """Test extracting region from VM name"""
-    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3'
+    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-vm-asj3'
 
     result = get_region_from_vm_name(vm_name)
 
