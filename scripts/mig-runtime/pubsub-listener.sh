@@ -5,7 +5,7 @@ set -e  # Exit immediately if a command fails
 echo "Pub/Sub job listener started."
 
 # Import utility functions
-source ./scripts/utils.sh
+source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
 
 # Set environment name and subscription ID;
 subscription_id_suffix="1x$LOCAL_ENV"

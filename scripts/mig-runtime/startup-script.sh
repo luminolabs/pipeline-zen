@@ -10,7 +10,7 @@ echo "MIG startup script started."
 sleep 30
 
 # Import shared utility functions
-source ./scripts/utils.sh
+source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
 
 # Create directories for logs and results
 mkdir -p .results

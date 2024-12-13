@@ -15,7 +15,7 @@
 echo "Begin running the Celery workflow at $(date)"
 
 # Import utility functions
-source ./scripts/utils.sh
+source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
 
 # Docker image
 IMAGE_NAME="celery-workflow"

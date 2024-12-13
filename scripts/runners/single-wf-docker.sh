@@ -5,7 +5,7 @@
 set -e  # Exit immediately if a command fails
 
 # Import utility functions
-source ./scripts/utils.sh
+source ./scripts/utils.sh || source /pipeline-zen-jobs/scripts/utils.sh
 
 # Build the Docker image for the workflow
 docker build -f workflows.Dockerfile --build-arg TARGET_WORKFLOW=$1 -t $1-workflow:$LOCAL_ENV .
