@@ -133,7 +133,7 @@ def test_get_results_bucket_local(mock_config):
 
     result = get_results_bucket()
 
-    assert result == 'lum-local-pipeline-zen-jobs'
+    assert result == 'lum-local-pipeline-zen-jobs-us'
 
 
 def test_get_results_bucket_with_suffix(mock_config):
@@ -261,11 +261,11 @@ def test_get_zone_from_metadata(mock_requests, mock_config):
 # Test Helper Functions
 def test_get_mig_name_from_vm_name():
     """Test extracting MIG name from VM name"""
-    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3'
+    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-vm-asj3'
 
     result = get_mig_name_from_vm_name(vm_name)
 
-    assert result == 'pipeline-zen-jobs-8xa100-40gb-us-central1'
+    assert result == 'pipeline-zen-jobs-8xa100-40gb-us-central1-mig'
 
 
 def test_get_region_from_zone():
@@ -288,7 +288,7 @@ def test_get_multi_region_from_zone():
 
 def test_get_region_from_vm_name():
     """Test extracting region from VM name"""
-    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-asj3'
+    vm_name = 'pipeline-zen-jobs-8xa100-40gb-us-central1-vm-asj3'
 
     result = get_region_from_vm_name(vm_name)
 

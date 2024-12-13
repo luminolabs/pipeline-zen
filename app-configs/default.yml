@@ -30,7 +30,7 @@ celery_broker_url: memory://localhost/
 
 # GCP
 is_gcp: false
-gcp_project: neat-airport-407301
+gcp_project:  # Set this in each app-config file, separately; e.g. `gcp_project: eng-ai-dev`
 bq_dataset: pipeline_zen
 heartbeat_topic: pipeline-zen-jobs-heartbeats
 jobs_meta_topic: pipeline-zen-jobs-meta

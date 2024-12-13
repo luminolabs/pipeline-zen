@@ -4,7 +4,7 @@ resource "google_pubsub_topic" "pipeline_zen_jobs_start" {
 }
 
 resource "google_pubsub_subscription" "pipeline_zen_jobs_start" {
-  for_each = local.machine_types
+  for_each = toset(concat(tolist(keys(local.machine_types)), ["1xlocal", "2xlocal"]))
 
   name  = "pipeline-zen-jobs-start-runner-${each.key}"
   topic = google_pubsub_topic.pipeline_zen_jobs_start.name
@@ -41,12 +41,16 @@ resource "google_pubsub_subscription" "pipeline_zen_jobs_stop_runner" {
 }
 
 resource "google_pubsub_topic" "pipeline_zen_jobs_heartbeats" {
-  name = "pipeline-zen-jobs-heartbeats"
+  for_each = toset(["pipeline-zen-jobs-heartbeats", "pipeline-zen-jobs-heartbeats-local"])
+
+  name = each.key
   project = var.project_id
 }
 
 # Create jobs metadata topic
 resource "google_pubsub_topic" "pipeline_zen_jobs_meta" {
-  name = "pipeline-zen-jobs-meta"
+  for_each = toset(["pipeline-zen-jobs-meta", "pipeline-zen-jobs-meta-local"])
+
+  name = each.key
   project = var.project_id
 }

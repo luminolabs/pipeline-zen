@@ -63,10 +63,18 @@ resource "google_project_iam_custom_role" "template_creator" {
   project = var.project_id
 }
 
-resource "google_storage_bucket_iam_member" "pipeline_zen_jobs_storage" {
+resource "google_storage_bucket_iam_member" "pipeline_zen_jobs_results" {
   for_each = local.buckets
 
-  bucket = google_storage_bucket.pipeline_zen[each.key].name
+  bucket = google_storage_bucket.pipeline_zen_results[each.key].name
+  role   = "roles/storage.objectAdmin"
+  member = "serviceAccount:${google_service_account.pipeline_zen_jobs.email}"
+}
+
+resource "google_storage_bucket_iam_member" "pipeline_zen_jobs_datasets" {
+  for_each = google_storage_bucket.pipeline_zen_datasets
+
+  bucket = each.value.name
   role   = "roles/storage.objectAdmin"
   member = "serviceAccount:${google_service_account.pipeline_zen_jobs.email}"
 }

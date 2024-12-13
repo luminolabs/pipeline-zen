@@ -79,7 +79,7 @@ def get_results_bucket() -> str:
     if config.results_bucket_suffix:
         return f'{bucket_prefix}-{config.results_bucket_suffix}'
     elif is_local_env():
-        return f'{bucket_prefix}'
+        return f'{bucket_prefix}-us'
 
     # Get zone, region, and multi-region from metadata
     zone = get_zone_from_metadata()
@@ -260,7 +260,7 @@ def get_mig_name_from_vm_name(vm_name: str) -> str:
     :param vm_name: The name of the VM
     :return: The name of the MIG
     """
-    return '-'.join(vm_name.split('-')[:-1])
+    return '-'.join(vm_name.split('-')[:-2]) + '-mig'
 
 
 def get_region_from_zone(zone: str) -> str:
@@ -297,4 +297,4 @@ def get_region_from_vm_name(vm_name: str) -> str:
     :param vm_name: The name of the VM
     :return: The region
     """
-    return '-'.join(vm_name.split('-')[-3:-1])
+    return '-'.join(vm_name.split('-')[-4:-2])

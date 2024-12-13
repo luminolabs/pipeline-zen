@@ -15,7 +15,7 @@ def mock_logger():
 @pytest.fixture
 def valid_bucket_provider(mock_logger):
     return GcpBucketProvider(
-        url="gs://lum-local-datasets/user123/dataset.jsonl",
+        url="gs://lum-local-pipeline-zen-datasets/user123/dataset.jsonl",
         job_id="test-job",
         user_id="test-user",
         logger=mock_logger
@@ -34,7 +34,7 @@ def invalid_bucket_provider(mock_logger):
 
 def test_bucket_provider_init(valid_bucket_provider):
     """Test GcpBucketProvider initialization"""
-    assert valid_bucket_provider.url == "gs://lum-local-datasets/user123/dataset.jsonl"
+    assert valid_bucket_provider.url == "gs://lum-local-pipeline-zen-datasets/user123/dataset.jsonl"
     assert valid_bucket_provider.job_id == "test-job"
     assert valid_bucket_provider.user_id == "test-user"
     assert valid_bucket_provider.local_path == os.path.join(get_work_dir("test-job", "test-user"), "dataset.jsonl")
@@ -47,14 +47,14 @@ def test_bucket_provider_fetch_valid_bucket(valid_bucket_provider, mock_logger):
 
         # Verify download was called with correct parameters
         mock_download.assert_called_once_with(
-            'lum-local-datasets',
+            'lum-local-pipeline-zen-datasets',
             'user123/dataset.jsonl',
             valid_bucket_provider.local_path
         )
 
         # Verify log message
         mock_logger.info.assert_called_once_with(
-            'Downloading GCP bucket dataset: gs://lum-local-datasets/user123/dataset.jsonl'
+            'Downloading GCP bucket dataset: gs://lum-local-pipeline-zen-datasets/user123/dataset.jsonl'
         )
 
         # Verify correct local path is returned
@@ -63,7 +63,7 @@ def test_bucket_provider_fetch_valid_bucket(valid_bucket_provider, mock_logger):
 
 def test_bucket_provider_fetch_invalid_bucket(invalid_bucket_provider):
     """Test fetch from invalid bucket raises ValueError"""
-    with pytest.raises(ValueError, match=r'Upload datasets to `gs://lum-local-datasets/<user_id>` only'):
+    with pytest.raises(ValueError, match=r'Upload datasets to `gs://lum-local-pipeline-zen-datasets/<user_id>` only'):
         invalid_bucket_provider.fetch()
 
 
@@ -89,9 +89,9 @@ def test_bucket_provider_download_error(mock_download, valid_bucket_provider):
 def test_bucket_provider_with_different_paths(mock_logger):
     """Test provider handles different bucket paths correctly"""
     test_cases = [
-        "gs://lum-local-datasets/user123/data.jsonl",
-        "gs://lum-local-datasets/user123/subfolder/data.jsonl",
-        "gs://lum-local-datasets/user123/deep/nested/data.jsonl"
+        "gs://lum-local-pipeline-zen-datasets/user123/data.jsonl",
+        "gs://lum-local-pipeline-zen-datasets/user123/subfolder/data.jsonl",
+        "gs://lum-local-pipeline-zen-datasets/user123/deep/nested/data.jsonl"
     ]
 
     for test_path in test_cases:
@@ -104,7 +104,7 @@ def test_bucket_provider_with_different_paths(mock_logger):
         with patch('common.dataset.gcp_bucket.download_object') as mock_download:
             provider.fetch()
             mock_download.assert_called_once_with(
-                'lum-local-datasets',
+                'lum-local-pipeline-zen-datasets',
                 '/'.join(test_path.split('/')[3:]),
                 provider.local_path
             )
