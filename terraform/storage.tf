@@ -1,4 +1,8 @@
 locals {
+  # Other terraform projects use this, so if you change it,
+  # make sure to update the other projects
+  # - scheduler-zen
+  # -
   buckets = {
     us = {
       name_suffix = "us"
