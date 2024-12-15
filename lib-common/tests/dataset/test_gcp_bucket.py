@@ -63,7 +63,8 @@ def test_bucket_provider_fetch_valid_bucket(valid_bucket_provider, mock_logger):
 
 def test_bucket_provider_fetch_invalid_bucket(invalid_bucket_provider):
     """Test fetch from invalid bucket raises ValueError"""
-    with pytest.raises(ValueError, match=r'Upload datasets to `gs://lum-local-pipeline-zen-datasets/<user_id>` only'):
+    with pytest.raises(ValueError, match='Upload datasets to `gs://lum-\*-pipeline-zen-datasets/\*` only; '
+                                         'got gs://invalid-bucket/datasets/user123/dataset.jsonl'):
         invalid_bucket_provider.fetch()
 
 

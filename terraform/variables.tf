@@ -27,9 +27,3 @@ variable "resources_project_id" {
   type        = string
   default     = "neat-airport-407301"
 }
-
-variable "artifact_repository_name" {
-  description = "The name of the artifact repository"
-  type        = string
-  default     = "lum-docker-images"
-}
