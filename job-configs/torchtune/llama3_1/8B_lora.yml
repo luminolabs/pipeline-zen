@@ -51,13 +51,13 @@ optimizer:
 
 lr_scheduler:
   _component_: torchtune.modules.get_cosine_schedule_with_warmup
-  num_warmup_steps: 100
+  num_warmup_steps: 2
 
 loss:
   _component_: torch.nn.CrossEntropyLoss
 
 # Training
-gradient_accumulation_steps: 32
+gradient_accumulation_steps: 8
 
 # Environment
 device: cuda
