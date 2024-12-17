@@ -1,7 +1,8 @@
 locals {
-  # Other terraform projects use this, so if you change it,
-  # make sure to update the other projects
+  # Other terraform projects reference these buckets, so if you change this config,
+  # make sure to update the other projects as well.
   # - scheduler-zen
+  # - lumino-api
   # -
   buckets = {
     us = {

@@ -67,7 +67,7 @@ def add_parser_args(parser: argparse.ArgumentParser):
                         help="The number of GPUs to use for training; default is 1")
 
     parser.add_argument('-pca', '--pytorch_cuda_alloc_conf', type=str, required=False,
-                        help="The PyTorch CUDA allocation configuration; default is `expandable_segments:True`")
+                        help="The PyTorch CUDA allocation configuration")
 
 
 if __name__ == '__main__':

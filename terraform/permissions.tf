@@ -26,43 +26,6 @@ resource "google_project_iam_custom_role" "vm_deleter" {
   project = var.project_id
 }
 
-resource "google_project_iam_custom_role" "image_creator" {
-  role_id     = "image_creator"
-  title       = "Image Creator"
-  description = "Grants permission to create images, instance templates, and disks, and start/stop instances for image creation"
-  permissions = [
-    "compute.projects.get",
-    "compute.instances.start",
-    "compute.instances.stop",
-    "compute.instances.get",
-    "compute.instances.getGuestAttributes",
-    "compute.instances.setMetadata",
-    "compute.disks.useReadOnly",
-    "compute.disks.use",
-    "compute.disks.get",
-    "compute.images.create",
-    "compute.images.get",
-    "compute.globalOperations.get"
-  ]
-  project = var.project_id
-}
-
-resource "google_project_iam_custom_role" "template_creator" {
-  role_id     = "template_creator"
-  title       = "Template Creator"
-  description = "Grants permission to create instance templates"
-  permissions = [
-    "compute.images.get",
-    "compute.instanceTemplates.create",
-    "compute.instanceTemplates.get",
-    "compute.networks.get",
-    "compute.networks.use",
-    "compute.disks.use",
-    "compute.zoneOperations.get"
-  ]
-  project = var.project_id
-}
-
 resource "google_storage_bucket_iam_member" "pipeline_zen_jobs_results" {
   for_each = local.buckets
 
@@ -99,7 +62,7 @@ resource "google_project_iam_member" "pipeline_zen_jobs_custom_roles" {
   for_each = toset([
     google_project_iam_custom_role.bucket_lister.role_id,
     google_project_iam_custom_role.vm_deleter.role_id
-    ])
+  ])
 
   project = var.project_id
   role    = "projects/${var.project_id}/roles/${each.key}"

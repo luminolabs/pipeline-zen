@@ -174,7 +174,7 @@ resource "google_compute_region_instance_group_manager" "pipeline_zen_jobs" {
   target_size        = 0
 
   version {
-    instance_template = google_compute_instance_template.pipeline-zen-jobs[each.value.config].id
+    instance_template = google_compute_instance_template.pipeline_zen_jobs[each.value.config].id
   }
 
   distribution_policy_target_shape = "EVEN"
