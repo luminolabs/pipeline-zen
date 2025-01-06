@@ -32,3 +32,5 @@ pipeline-zen.txt
 **/terraform/.terraform.tfstate.lock.info
 **/terraform/terraform.tfstate
 **/terraform/terraform.tfstate.backup
+**/terraform/secrets.tfvars
+**/terraform/*-config.env

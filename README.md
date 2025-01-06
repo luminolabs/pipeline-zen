@@ -3,26 +3,24 @@
 ## Development
 Notes:
 - There is support for single-node and multi-gpu training but not multi-node multi-gpu training yet.
-- Training recipes are under `lib-workflows/torchtunewrapper/recipes/` and are copied, modified, and simplified from the official `torchtune` repo.
+- Training recipes are under `lib-workflows/torchtunewrapper/src/torchtunewrapper/recipes/` and are copied, modified, and simplified from the official `torchtune` repo.
 - Check out [DEPLOY.md](DEPLOY.md) for instructions on how to deploy the pipeline.
 
 ## Running remotely on a VM
 
 ### Postman
 
-Look in Postman for the [Create Job](https://lumino-labs.postman.co/workspace/Scheduler-API~d706ab0f-5da2-4197-89f0-ebaf9c8d4d53/request/37668647-ca3ae092-fd3c-406d-97a3-3de39ffb4af1?action=share&source=copy-link&creator=37668647&active-environment=708ca9aa-c49f-47f0-ad4a-bd37195418cc) template.
+Look in Postman for the `Create Job (GCP)` request under `Scheduler API` to see how to create a job.
 
 ## Running locally
 
-Depending on your machine type and specs, you will probably want to run this workflow remotely, not locally.
+Depending on your machine type and specs, you will most likely want to run this workflow remotely, not locally.
 
 ### Setup
 
-Use the following command to authenticate with GCP:
+Place a Google application default credentials file under `secrets/gcp_key.json`. 
 
-```bash
-gcloud auth application-default login
-```
+Download the key from the GCP console, look for the `pipeline-zen-jobs-dev` service account, and create a key for it.
 
 Install python dependencies:
 
@@ -30,6 +28,7 @@ Install python dependencies:
 ./scripts/install-deps.sh
 ```
 
+Note: This step might not be needed anymore. Proceed without it and see if it works.
 On a Mac, you to install torchao in a specific way, clone it outside the `pipeline-zen` repo:
 
 ```bash
@@ -51,22 +50,25 @@ integration with the scheduler or the protocol.
 All you have to do is set the `--job_config_name` to `llm_dummy`.
 
 ```bash
-./scripts/runners/celery-wf.sh torchtunewrapper --job_config_name llm_dummy --job_id -1 \
-  --dataset_id gs://lum-dev-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
-  --batch_size 2 --shuffle true --num_epochs 1 --use_lora false \
-  --num_gpus 1 --user_id -1 --lr 1e-2 --seed 1234 
+./scripts/runners/celery-wf.sh torchtunewrapper \
+  --job_config_name llm_dummy \
+  --job_id llm_dummy-experiment1 \
+  --dataset_id gs://lum-dev-pipeline-zen-datasets/0ca98b07-9366-4a31-8c83-569961c90294/2024-12-17_21-57-21_text2sql.jsonl \
+  --batch_size 2 --shuffle true --num_epochs 1 \
+  --use_lora true --use_qlora false \
+  --lr 3e-4 --seed 42 \
+  --num_gpus 1
 ````
 
-### Run the torchtunewrapper workflow
+### Run the actual torchtunewrapper workflow
 
-Note: Unless you have a beefy machine, you probably want to run this workflow remotely, 
-not locally; see top of this doc for instructions.
+Note: Don't run this unless you have a machine with NVIDIA GPUs and the necessary drivers and CUDA installed.
 
 ```bash
 ./scripts/runners/celery-wf.sh torchtunewrapper \
   --job_config_name llm_llama3_1_8b \
   --job_id llm_llama3_1_8b-experiment1 \
-  --dataset_id gs://lum-dev-pipeline-zen-jobs-us/datasets/protoml/text2sql.jsonl \
+  --dataset_id gs://lum-dev-pipeline-zen-datasets/0ca98b07-9366-4a31-8c83-569961c90294/2024-12-17_21-57-21_text2sql.jsonl \
   --batch_size 2 --shuffle true --num_epochs 1 \
   --use_lora true --use_qlora false \
   --lr 3e-4 --seed 42 \
