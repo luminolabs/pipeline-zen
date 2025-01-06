@@ -4,6 +4,26 @@ This directory contains the Terraform configuration for Pipeline Zen's cloud inf
 
 The infrastructure is designed to support scalable machine learning job processing across multiple regions and GPU types.
 
+## Directory Structure
+
+```
+terraform/
+├── config-example.env      # Example application configuration variables template
+├── dev.tfvars              # Terraform variables for dev environment
+├── dev-config.env          # Application configuration variables for dev environment (not version controlled)
+├── main.tf                 # Main Terraform configuration file
+├── migs.tf                 # Managed Instance Groups configuration
+├── permissions.tf          # IAM permissions and roles configuration
+├── pubsub.tf               # Pub/Sub topics and subscriptions
+├── README.md               # Documentation for Terraform configuration
+├── secrets.tf              # Secret Manager configuration
+├── secrets.tfvars          # Terraform secrets variables (not version controlled)
+├── secrets-example.tfvars  # Example Terraform secrets variables template
+├── storage.tf              # Storage bucket configuration
+├── templates.tf            # Instance template configuration
+└── variables.tf            # Variable definitions
+```
+
 ## Core Components
 
 ### Managed Instance Groups (MIGs)
