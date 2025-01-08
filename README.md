@@ -18,7 +18,16 @@ Depending on your machine type and specs, you will most likely want to run this 
 
 ### Setup
 
-Place a Google application default credentials file under `secrets/gcp_key.json`. 
+Create .env file in the root directory. Add below keys to .env
+
+```bash
+PZ_ENV=local
+PZ_DEVICE=cpu
+PZ_HUGGINGFACE_TOKEN=<HF-token>
+PZ_CUSTOMER_API_KEY=<api-key>
+```
+
+Place a Google application default credentials file under `secrets/gcp_key.json`.
 
 Download the key from the GCP console, look for the `pipeline-zen-jobs-dev` service account, and create a key for it.
 
@@ -37,6 +46,13 @@ cd ao
 git checkout v0.3.1-rc1
 python setup.py install
 TORCHAO_NIGHTLY=1 python setup.py install
+pip install "torchtune==0.2.1"
+pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
+```
+
+Note: Make sure the virtualenv is active before you run the following commands inside ao directory
+
+```bash
 pip install "torchtune==0.2.1"
 pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
