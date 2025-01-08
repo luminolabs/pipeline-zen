@@ -46,11 +46,9 @@ cd ao
 git checkout v0.3.1-rc1
 python setup.py install
 TORCHAO_NIGHTLY=1 python setup.py install
-pip install "torchtune==0.2.1"
-pip install --pre --upgrade torchao --index-url https://download.pytorch.org/whl/nightly/cpu
 ```
 
-Note: Make sure the virtualenv is active before you run the following commands inside ao directory
+Note: Virtualenv should be active before running the following commands in the ao directory
 
 ```bash
 pip install "torchtune==0.2.1"
