@@ -46,8 +46,8 @@ class RecipeBase(FTRecipeInterface):
         self._init(cfg)
 
     @heartbeat_wrapper('torchtunewrapper', 'load_checkpoint')
-    def load_checkpoint(self, cfg_checkpointer: DictConfig):
-        self._load_checkpoint(self.cfg.checkpointer)
+    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
+        return self._load_checkpoint(self.cfg.checkpointer)
 
     @heartbeat_wrapper('torchtunewrapper', 'setup')
     def setup(self) -> None:
