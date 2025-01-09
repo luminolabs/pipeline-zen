@@ -3,6 +3,13 @@
 ## Update VERSION file
 Make sure the `VERSION` file is updated with the new version number. This version number will be used to tag the Docker image and name the VM image.
 
+## Prerequisites
+The release is being prepared in a VM in GCP Compute Engine. Make sure you have the following:
+- Access to `gha-jobs-vm-image-creator` VM in GCP Compute Engine under the `neat-airport-407301` project
+- On the VM:
+  - An `~/.ssh/id_rsa` password protected private ssh key that can access your GitHub account
+  - Your public key set under `~/.ssh/authroized_keys` to be able to ssh to the VM
+
 ## Create a new VM image
 Go to the `pipeline-zen` root folder and run the following command:
 ```bash
@@ -25,6 +32,11 @@ The rest of the deployment process is automated using terraform.
 Applying the terraform scripts will:
 - Create new VM templates in GCP Compute Engine, pointing to the new VM image
 - Update the MIGs with the new VM templates; existing VMs and jobs won't be affected, only new jobs will use the new VM templates
+
+Authenticate to GCP using the following command:
+```bash
+gcloud auth application-default login
+```
 
 Go to the `pipeline-zen` root folder, then to the `terraform` folder and run the following command:
 ```bash
