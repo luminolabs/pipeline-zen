@@ -2,6 +2,9 @@
 # especially for multi-GPU training
 FROM python:3.10-bullseye
 
+# Use to reset the cache
+RUN echo "1"
+
 # Install essentials
 RUN apt update \
 	&& apt install -y \
