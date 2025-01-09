@@ -77,13 +77,13 @@ gradient_accumulation_steps: 1  # Use to increase effective batch size
 device: cuda
 
 # Memory management
+dtype: bf16
 enable_activation_checkpointing: True  # True reduces memory
 enable_activation_offloading: False  # True reduces memory
 custom_sharded_layers: ['tok_embeddings', 'output']  # Layers to shard separately (useful for large vocab size models). Lower Memory, but lower speed.
 fsdp_cpu_offload: True
 compile: False  # torch.compile the model + loss, True increases speed + decreases memory
 optimizer_in_bwd: False  # True saves memory. Requires gradient_accumulation_steps=1
-dtype: bf16
 
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger

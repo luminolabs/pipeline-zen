@@ -1,5 +1,4 @@
-# Config for multi-device full fine-tuning in full_finetune_distributed.py
-
+# Config for single-device LoRA fine-tuning in lora_finetune_single_device.py
 
 # These are set by the job launcher, don't set them manually
 base_model_path:
@@ -17,43 +16,51 @@ tokenizer:
 
 dataset:
   _component_:  # leave empty, this is injected by the job launcher
-  packed: False  # True increases speed
+  packed: False
 
 model:
-  _component_: torchtune.models.llama3_1.llama3_1_8b
+  _component_: torchtune.models.llama3_2.lora_llama3_2_3b
+  lora_attn_modules: [ 'q_proj', 'v_proj', 'output_proj' ]
+  apply_lora_to_mlp: True
+  lora_rank: 64
+  lora_alpha: 128
+  lora_dropout: 0.0
 
 checkpointer:
   _component_: torchtune.training.FullModelHFCheckpointer
   checkpoint_dir: ${base_model_path}
   checkpoint_files: [
-    model-00001-of-00004.safetensors,
-    model-00002-of-00004.safetensors,
-    model-00003-of-00004.safetensors,
-    model-00004-of-00004.safetensors
+    model-00001-of-00002.safetensors,
+    model-00002-of-00002.safetensors
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
-  model_type: LLAMA3
+  model_type: LLAMA3_2
 resume_from_checkpoint: False
+save_adapter_weights_only: True
 
 optimizer:
   _component_: torch.optim.AdamW
-  lr: ${lr}  # 2e-5
   fused: True
+  weight_decay: 0.01
+  lr: ${lr}  # 3e-4
+
+lr_scheduler:
+  _component_: torchtune.training.lr_schedulers.get_cosine_schedule_with_warmup
+  num_warmup_steps: 2
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
 max_steps_per_epoch: null
-compile: False  # torch.compile the model + loss, True increases speed + decreases memory
-optimizer_in_bwd: False  # True saves memory. Requires gradient_accumulation_steps=1
-gradient_accumulation_steps: 1  # Use to increase effective batch size
+gradient_accumulation_steps: 8
 
 device: cuda
 
 # Memory management
 dtype: bf16
-enable_activation_checkpointing: True  # True reduces memory
-enable_activation_offloading: False  # True reduces memory
+enable_activation_checkpointing: True
+enable_activation_offloading: False
+compile: False
 
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
@@ -65,21 +72,20 @@ profiler:
   _component_: torchtune.training.setup_torch_profiler
   enabled: False
 
-  #Output directory of trace artifacts
+  # Output directory of trace artifacts
   output_dir: ${output_dir}/tt_profiling_outputs
 
-  #`torch.profiler.ProfilerActivity` types to trace
+  # `torch.profiler.ProfilerActivity` types to trace
   cpu: True
   cuda: True
 
-  #trace options passed to `torch.profiler.profile`
+  # trace options passed to `torch.profiler.profile`
   profile_memory: False
   with_stack: False
   record_shapes: True
   with_flops: False
 
   # `torch.profiler.schedule` options:
-  # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
   wait_steps: 5
   warmup_steps: 3
   active_steps: 2
