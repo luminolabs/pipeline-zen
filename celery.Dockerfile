@@ -23,7 +23,7 @@ WORKDIR /project
 
 # Install these python libs outside of requirements.txt since they are large libraries
 # and we don't want them to be build every time we add a new entry in requirements.txt
-RUN pip install torch==2.4.1 transformers datasets
+RUN pip install torch==2.5.1 transformers datasets
 
 # Install python libraries needed by the lib-common
 COPY lib-common/requirements.txt ./requirements-lib-common.txt
