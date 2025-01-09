@@ -20,4 +20,5 @@ bitsandbytes
 # because installation fails on OSX and needs special handling.
 # So, we want everything else to be installed first, and let torchtune be the last one,
 # so that we can handle it separately.
+torchao==0.7.0
 torchtune==0.5.0
