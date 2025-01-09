@@ -118,8 +118,11 @@ def get_torchtune_config_filename(model_base: str,
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
         # Llama 3.1 Instruct
-        'hf://meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
-        'hf://meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
+        'hf://meta-llama/Llama-3.1-8B-Instruct': 'llama3_1/8B',
+        'hf://meta-llama/Llama-3.1-70B-Instruct': 'llama3_1/70B',
+        'hf://meta-llama/Llama-3.2-1B-Instruct': 'llama3_2/1B',
+        'hf://meta-llama/Llama-3.2-3B-Instruct': 'llama3_2/3B',
+        'hf://meta-llama/Llama-3.3-70B-Instruct': 'llama3_3/70B',
     }
     # Raise error if model base is not supported
     if model_base not in model_base_to_config_prefix:
