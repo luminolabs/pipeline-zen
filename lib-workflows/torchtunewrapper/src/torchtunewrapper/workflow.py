@@ -40,10 +40,12 @@ def _download_dataset(job_config: DictConfig, logger: Logger) -> Dataset:
     chat_dataset_partial = partial(
         chat_dataset,
         tokenizer=None,
+        source="json",
+        conversation_column="messages",
         conversation_style="openai",
-        chat_format='torchtune.data.ChatMLFormat',
+        # chat_format='torchtune.data.ChatMLFormat',
         split=job_config.get('split', 'train'),
-        max_seq_len=job_config.get('max_seq_len', None),
+        # max_seq_len=job_config.get('max_seq_len', None),
         train_on_input=job_config.get('train_on_input', False),
         packed=job_config.get('packed', False))
 
@@ -53,7 +55,6 @@ def _download_dataset(job_config: DictConfig, logger: Logger) -> Dataset:
                                                 logger=logger)()
     # Instantiate the chat dataset to use the downloaded dataset
     dataset = chat_dataset_partial(
-        source="json",
         data_files=dataset_path
     )
     return dataset

@@ -2,17 +2,16 @@ from typing import Tuple, Dict, Any, List
 
 from datasets import Dataset
 from omegaconf import DictConfig
-from torch.utils.data import DistributedSampler, DataLoader
 from torchtune.data import Message
 from torchtune.modules.tokenizers import ModelTokenizer
 
-from common.heartbeats import heartbeat_wrapper
 from common.utils import get_work_dir
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 from torchtunewrapper.utils import run_recipe
 
 
 class DummyTokenizer(ModelTokenizer):
+    # noinspection PyProtocol
     def tokenize_messages(
             self, messages: List[Message], **kwargs
     ) -> Tuple[List[int], List[bool]]:
@@ -22,53 +21,35 @@ class DummyTokenizer(ModelTokenizer):
 
 
 class Dummy(RecipeBase):
-    def setup_tokenizer(self) -> None:
-        # Simulate setting up tokenizer
-        self.logger.info("Setting up tokenizer")
-        self.tokenizer = DummyTokenizer()
-        self.dataset._tokenizer = self.tokenizer
-        self.logger.info("Tokenizer setup complete")
-        return
 
-    def setup_data(
-            self,
-            shuffle: bool,
-            batch_size: int,
-    ) -> Tuple[DistributedSampler, DataLoader]:
-        # Simulate setting up data
-        self.logger.info("Setting up data")
-        sampler = DistributedSampler(self.dataset)
-        loader = DataLoader(self.dataset, shuffle=shuffle, sampler=sampler, batch_size=batch_size)
-        self.logger.info("Data setup complete")
-        return sampler, loader
+    def _init(self, cfg: DictConfig) -> None:
+        # Simulate initialization
+        self.logger.info("Initialized")
 
-    def load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
+    def _load_checkpoint(self, cfg_checkpointer: DictConfig) -> Dict[str, Any]:
         # Simulate loading checkpoint
         self.logger.info("Loading checkpoint")
         r = {'foo': 'bar'}
         self.logger.info("Checkpoint loaded")
         return r
 
-    @heartbeat_wrapper('torchtunewrapper', 'train')
-    def train(self) -> None:
+    def _train(self) -> None:
         # Simulate training
         self.logger.info("Started training")
         self.logger.info("Training complete")
         return
 
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         # Simulate cleanup
         self.logger.info("Cleaning up")
         self.logger.info("Cleanup complete")
-        pass
 
-    def _setup(self):
+    def _setup(self, cfg: DictConfig) -> None:
         # Simulate setup
         self.logger.info("Setting up")
         self.logger.info("Setup complete")
-        pass
 
-    def _save_checkpoint(self):
+    def _save_checkpoint(self, epoch: int) -> None:
         # Write some dummy files to simulate saving model weights
         self.logger.info("Saving checkpoint")
         work_dir = get_work_dir(self.job_id, self.user_id)

@@ -1,4 +1,0 @@
-# Don't change this file, instead use the CLI interface to set options for the job
-
-name: llm_mistral_7b
-model_base: hf://mistralai/Mistral-7B-Instruct-v0.1
