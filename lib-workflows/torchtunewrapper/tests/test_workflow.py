@@ -35,7 +35,7 @@ def mock_job_config():
     return DictConfig({
         'job_id': 'test-job',
         'user_id': 'test-user',
-        'model_base': 'hf://crumb/nano-mistral',  # Use supported model base
+        'model_base': 'hf://meta-llama/Llama-3.1-8B-Instruct',  # Use supported model base
         'dataset_id': 'test-dataset',
         'num_gpus': 1,
         'use_lora': True,
@@ -219,7 +219,7 @@ def test_main_success(mock_run, mock_load, mock_read_config, mock_setup_logger,
     """Test successful execution of main function"""
     # Setup mocks
     mock_load_config.return_value = DictConfig({
-        'model_base': 'hf://crumb/nano-mistral',  # Use supported model
+        'model_base': 'hf://meta-llama/Llama-3.1-8B-Instruct',  # Use supported model
         'num_gpus': 1
     })
     mock_read_config.return_value = DictConfig({'test': 'config'})
@@ -282,7 +282,7 @@ def test_main_environment_handling(mock_load, mock_load_config, mock_config):
 
     # Setup mocks
     mock_load_config.return_value = DictConfig({
-        'model_base': 'hf://crumb/nano-mistral',
+        'model_base': 'hf://meta-llama/Llama-3.1-8B-Instruct',
         'num_gpus': 1
     })
     mock_load.return_value = {}

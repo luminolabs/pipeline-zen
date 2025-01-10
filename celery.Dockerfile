@@ -2,6 +2,9 @@
 # especially for multi-GPU training
 FROM python:3.10-bullseye
 
+# Use to reset the cache
+RUN echo "1"
+
 # Install essentials
 RUN apt update \
 	&& apt install -y \
@@ -20,7 +23,7 @@ WORKDIR /project
 
 # Install these python libs outside of requirements.txt since they are large libraries
 # and we don't want them to be build every time we add a new entry in requirements.txt
-RUN pip install torch==2.4.1 transformers==4.44.2 datasets==3.0.0
+RUN pip install torch==2.5.1 transformers datasets
 
 # Install python libraries needed by the lib-common
 COPY lib-common/requirements.txt ./requirements-lib-common.txt

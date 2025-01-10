@@ -13,9 +13,9 @@ class BaseModelProvider:
         :param url: The model uniform resource location
         :param logger: The logger instance
         """
-        self.url = url  # ex. hf://meta-llama/Meta-Llama-3.1-70B-Instruct
+        self.url = url  # ex. hf://meta-llama/Llama-3.1-70B-Instruct
         self.provider = self.url[:2]  # ex. hf
-        self.model_name = self.url[5:]  # ex. meta-llama/Meta-Llama-3.1-70B-Instruct
+        self.model_name = self.url[5:]  # ex. meta-llama/Llama-3.1-70B-Instruct
         self.logger = logger
         self.local_path = self.get_model_cache_dir()
 

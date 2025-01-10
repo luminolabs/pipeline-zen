@@ -5,6 +5,7 @@ from typing import Callable, Type
 import requests
 from omegaconf import DictConfig
 from torch.utils.data import Dataset
+from torchtune import config as tt_config
 
 from common.agent.job_logger import TorchtunewrapperLoggerAgent
 from common.config_manager import config
@@ -87,22 +88,23 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
         job_id, user_id,
         agent_logger=setup_logger('torchtunewrapper_logger', job_id, user_id),
         main_logger=logger)
-    # Initialize and set up the recipe
-    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, job_logger_agent)
-    # Set up the tokenizer now so that we can count the tokens in the dataset
-    recipe.setup_tokenizer()
+
+    # Instantiate the tokenizer and set it in the dataset
+    tokenizer = tt_config.instantiate(cfg.tokenizer)
+    dataset._model_transform = tokenizer
     # Count tokens and check if user has enough credits to run the job
-    token_count = _count_dataset_tokens(recipe.dataset)
-    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count, recipe.total_epochs, logger)
+    token_count = _count_dataset_tokens(dataset)
+    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count,
+                                                  cfg.epochs, logger)
     if not has_enough_credits:
         raise PermissionError(f"User does not have enough credits to run the job; "
                               f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")
+
+    # Initialize and set up the recipe, train the model, and save the checkpoint
+    recipe = recipe_class(job_id, user_id, cfg, dataset, logger, job_logger_agent)
     recipe.setup()
-    # Begin training
     recipe.train()
-    # Save weights
-    recipe.save_checkpoint()
-    # Destroy multi-GPU and multi-node process groups
+    recipe.save_checkpoint(cfg.epochs)
     recipe.cleanup()
 
 
@@ -116,12 +118,11 @@ def get_torchtune_config_filename(model_base: str,
     # also serves as a check for supported bases
     model_base_to_config_prefix = {
         # Llama 3.1 Instruct
-        'hf://meta-llama/Meta-Llama-3.1-8B-Instruct': 'llama3_1/8B',
-        'hf://meta-llama/Meta-Llama-3.1-70B-Instruct': 'llama3_1/70B',
-        # Mistral v0.1 Instruct
-        'hf://mistralai/Mistral-7B-Instruct-v0.1': 'mistral/7B',
-        # Dummy
-        'hf://crumb/nano-mistral': 'dummy/nano_mistral',
+        'hf://meta-llama/Llama-3.1-8B-Instruct': 'llama3_1/8B',
+        'hf://meta-llama/Llama-3.1-70B-Instruct': 'llama3_1/70B',
+        'hf://meta-llama/Llama-3.2-1B-Instruct': 'llama3_2/1B',
+        'hf://meta-llama/Llama-3.2-3B-Instruct': 'llama3_2/3B',
+        'hf://meta-llama/Llama-3.3-70B-Instruct': 'llama3_3/70B',
     }
     # Raise error if model base is not supported
     if model_base not in model_base_to_config_prefix:

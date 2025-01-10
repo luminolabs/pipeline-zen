@@ -1,4 +1,4 @@
-# Config for multi-device full finetuning in full_finetune_distributed.py
+# Config for multi-device full fine-tuning in full_finetune_distributed.py
 
 
 # These are set by the job launcher, don't set them manually
@@ -10,17 +10,15 @@ epochs:
 lr:
 seed:
 
-
-# Tokenizer
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
   path: ${base_model_path}/original/tokenizer.model
+  max_seq_len: null
 
-# Dataset
 dataset:
   _component_:  # leave empty, this is injected by the job launcher
+  packed: False  # True increases speed
 
-# Model Arguments
 model:
   _component_: torchtune.models.llama3_1.llama3_1_70b
 
@@ -64,29 +62,55 @@ checkpointer:
   model_type: LLAMA3
 resume_from_checkpoint: False
 
-# Fine-tuning arguments
-
 optimizer:
   _component_: torch.optim.AdamW
   lr: ${lr}  # 2e-5
-
-  foreach: False
   # Note: highly recommended to use fused=True optimizer flag
   # with CPU offload for faster optimizer step.
   fused: True
 
 loss:
-  _component_: torch.nn.CrossEntropyLoss
-gradient_accumulation_steps: 1
+  _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+max_steps_per_epoch: null
+gradient_accumulation_steps: 1  # Use to increase effective batch size
 
-
-# Training env
 device: cuda
 
 # Memory management
-enable_activation_checkpointing: True
-memory_efficient_fsdp_wrap: True
-fsdp_cpu_offload: True
-
-# Reduced precision
 dtype: bf16
+enable_activation_checkpointing: True  # True reduces memory
+enable_activation_offloading: False  # True reduces memory
+custom_sharded_layers: ['tok_embeddings', 'output']  # Layers to shard separately (useful for large vocab size models). Lower Memory, but lower speed.
+fsdp_cpu_offload: True
+compile: False  # torch.compile the model + loss, True increases speed + decreases memory
+optimizer_in_bwd: False  # True saves memory. Requires gradient_accumulation_steps=1
+
+metric_logger:
+  _component_: torchtune.training.metric_logging.DiskLogger
+  log_dir: ${output_dir}/tt_logs
+log_every_n_steps: 1
+log_peak_memory_stats: True
+
+profiler:
+  _component_: torchtune.training.setup_torch_profiler
+  enabled: False
+
+  #Output directory of trace artifacts
+  output_dir: ${output_dir}/tt_profiling_outputs
+
+  #`torch.profiler.ProfilerActivity` types to trace
+  cpu: True
+  cuda: True
+
+  #trace options passed to `torch.profiler.profile`
+  profile_memory: False
+  with_stack: False
+  record_shapes: True
+  with_flops: False
+
+  # `torch.profiler.schedule` options:
+  # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
+  wait_steps: 5
+  warmup_steps: 3
+  active_steps: 2
+  num_cycles: 1

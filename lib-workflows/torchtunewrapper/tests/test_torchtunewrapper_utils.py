@@ -130,7 +130,7 @@ def test_deduct_api_user_credits_failure(mock_post, mock_config, mock_logger):
 def test_run_recipe_insufficient_credits(mock_dataset, mock_logger):
     """Test run_recipe handling of insufficient credits"""
     mock_recipe = MagicMock()
-    mock_cfg = DictConfig({"total_epochs": 1})
+    mock_cfg = DictConfig({"epochs": 1, "tokenizer": {"_component_": "torchtunewrapper.recipes.dummy.DummyTokenizer"}})
 
     with patch('torchtunewrapper.utils._deduct_api_user_credits', return_value=False), \
             pytest.raises(PermissionError, match="User does not have enough credits"):
@@ -143,7 +143,7 @@ def test_run_recipe_success(mock_deduct, mock_thread, mock_dataset, mock_logger)
     """Test successful run_recipe execution"""
     mock_recipe = MagicMock()
     mock_recipe.return_value.total_epochs = 1
-    mock_cfg = DictConfig({"total_epochs": 1})
+    mock_cfg = DictConfig({"epochs": 1, "tokenizer": {"_component_": "torchtunewrapper.recipes.dummy.DummyTokenizer"}})
 
     # Mock the recipe instance
     recipe_instance = MagicMock()
@@ -152,7 +152,6 @@ def test_run_recipe_success(mock_deduct, mock_thread, mock_dataset, mock_logger)
     run_recipe(mock_recipe, "job1", "user1", mock_cfg, mock_dataset)
 
     # Verify setup and execution sequence
-    recipe_instance.setup_tokenizer.assert_called_once()
     recipe_instance.setup.assert_called_once()
     recipe_instance.train.assert_called_once()
     recipe_instance.save_checkpoint.assert_called_once()
@@ -163,33 +162,19 @@ def test_get_torchtune_config_filename():
     """Test torchtune config filename generation"""
     test_cases = [
         {
-            'model_base': 'hf://meta-llama/Meta-Llama-3.1-8B-Instruct',
+            'model_base': 'hf://meta-llama/Llama-3.1-8B-Instruct',
             'use_lora': True,
             'use_qlora': False,
             'use_single_device': True,
             'expected': 'llama3_1/8B_lora_single_device.yml'
         },
         {
-            'model_base': 'hf://meta-llama/Meta-Llama-3.1-70B-Instruct',
+            'model_base': 'hf://meta-llama/Llama-3.1-70B-Instruct',
             'use_lora': False,
             'use_qlora': False,
             'use_single_device': False,
             'expected': 'llama3_1/70B_full.yml'
         },
-        {
-            'model_base': 'hf://mistralai/Mistral-7B-Instruct-v0.1',
-            'use_lora': True,
-            'use_qlora': True,
-            'use_single_device': True,
-            'expected': 'mistral/7B_qlora_single_device.yml'
-        },
-        {
-            'model_base': 'hf://crumb/nano-mistral',
-            'use_lora': True,
-            'use_qlora': False,
-            'use_single_device': False,
-            'expected': 'dummy/nano_mistral_lora.yml'
-        }
     ]
 
     for case in test_cases:

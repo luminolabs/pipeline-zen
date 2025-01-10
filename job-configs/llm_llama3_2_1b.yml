@@ -1,4 +1,4 @@
 # Don't change this file, instead use the CLI interface to set options for the job
 
-name: llm_llama3_1_8b
-model_base: hf://meta-llama/Llama-3.1-8B-Instruct
+name: llm_llama3_2_1b
+model_base: hf://meta-llama/Llama-3.2-1B-Instruct
