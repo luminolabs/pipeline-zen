@@ -39,7 +39,7 @@ self.job_logger.log_step(
     gpu_rank=self.rank,
     step_num=self.global_step,
     step_len=self._steps_per_epoch * self.total_epochs,
-    step_loss=log_dict["loss"],
+    step_loss=float(log_dict["loss"]),
     step_lr=log_dict["lr"],
     step_peak_memory_active=log_dict.get("peak_memory_active"),
     step_peak_memory_alloc=log_dict.get("peak_memory_alloc"),
