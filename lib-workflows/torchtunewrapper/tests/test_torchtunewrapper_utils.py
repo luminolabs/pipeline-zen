@@ -162,14 +162,14 @@ def test_get_torchtune_config_filename():
     """Test torchtune config filename generation"""
     test_cases = [
         {
-            'model_base': 'hf://meta-llama/Meta-Llama-3.1-8B-Instruct',
+            'model_base': 'hf://meta-llama/Llama-3.1-8B-Instruct',
             'use_lora': True,
             'use_qlora': False,
             'use_single_device': True,
             'expected': 'llama3_1/8B_lora_single_device.yml'
         },
         {
-            'model_base': 'hf://meta-llama/Meta-Llama-3.1-70B-Instruct',
+            'model_base': 'hf://meta-llama/Llama-3.1-70B-Instruct',
             'use_lora': False,
             'use_qlora': False,
             'use_single_device': False,
