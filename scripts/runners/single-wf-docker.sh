@@ -34,6 +34,7 @@ docker run $gpus \
 -e PZ_RESULTS_BUCKET_SUFFIX=$PZ_RESULTS_BUCKET_SUFFIX \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 -e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
+-e HF_HUB_ENABLE_HF_TRANSFER=${HF_HUB_ENABLE_HF_TRANSFER:-1} \
 $1-workflow:local python $1/cli.py "${@:2}"
 
 # Log after Docker container finishes

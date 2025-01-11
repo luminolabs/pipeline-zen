@@ -3,11 +3,9 @@
 # Loaded onto MIG VMs to run the Pub/Sub job listener on startup
 
 set -e  # Exit immediately if a command fails
+set -o allexport  # Export all vars so that they are available downstream
 
 echo "MIG startup script started."
-
-# Sleep for a few seconds to allow the VM to fully start up and drivers to load
-sleep 30
 
 # Set the environment
 source ./scripts/utils.sh 2>/dev/null || source /pipeline-zen-jobs/scripts/utils.sh 2>/dev/null
@@ -18,6 +16,11 @@ mkdir -p .results
 # Define the log file path
 log_file="./output.log"
 
+# Sleep for a few seconds to allow the VM to fully start up and drivers to load
+if [[ $(is_truthy "$IS_GCP") == "1" ]]; then
+  sleep 30
+fi
+
 # Redirect both stdout and stderr to the log file and to stdout/stderr
 exec > >(tee -a "$log_file") 2>&1
 
@@ -27,8 +30,11 @@ if [[ $(is_truthy "$IS_GCP") == "1" ]]; then
   SECRET_NAME="pipeline-zen-jobs-config"
   SECRET_PAYLOAD=$(gcloud secrets versions access latest --secret=$SECRET_NAME --project=$PROJECT_ID)
   # Parse the secret payload and set environment variables
-  set -o allexport
   eval "$SECRET_PAYLOAD"
+else
+  # This hugging face configuration is needed locally;
+  # otherwise downloading models fails
+  HF_HUB_ENABLE_HF_TRANSFER=0
 fi
 
 # Call the pubsub-listener.sh script

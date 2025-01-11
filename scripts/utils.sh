@@ -41,6 +41,11 @@ fi
 
 # Set the project ID and service account based on the environment
 PROJECT_ID="eng-ai-$PZ_ENV"
+# If PROJECT_ID == "eng-ai-local" change it to "eng-ai-dev" because we don't have eng-ai-local yet
+if [[ "$PROJECT_ID" == "eng-ai-local" ]]; then
+  PROJECT_ID="eng-ai-dev"
+fi
+# Set the service account to use
 SERVICE_ACCOUNT="pipeline-zen-jobs-sa@$PROJECT_ID.iam.gserviceaccount.com"
 
 # Work with the correct service account in local environment

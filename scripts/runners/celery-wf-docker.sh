@@ -61,6 +61,7 @@ docker run $docker_arch $gpus \
 -e PZ_RESULTS_BUCKET_SUFFIX=$PZ_RESULTS_BUCKET_SUFFIX \
 -e PZ_HUGGINGFACE_TOKEN=$PZ_HUGGINGFACE_TOKEN \
 -e PZ_CUSTOMER_API_KEY=$PZ_CUSTOMER_API_KEY \
+-e HF_HUB_ENABLE_HF_TRANSFER=${HF_HUB_ENABLE_HF_TRANSFER:-1} \
 $image_use python pipeline/$1_wf.py "${@:2}"
 
 # Log after Docker container finishes
