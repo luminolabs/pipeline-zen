@@ -4,7 +4,7 @@ locals {
   # - scheduler-zen
   # - lumino-api
   # -
-  buckets = {
+  env_buckets = {
     us = {
       name_suffix = "us"
       location    = "US"
@@ -25,12 +25,18 @@ locals {
       location    = "ME-WEST1"
       environment = var.environment
     }
+  }
+  local_buckets = var.environment == "dev" ? {
     local = {
       name_suffix = "us"
       location    = "US"
       environment = "local"
     }
-  }
+  } : {}
+  buckets = merge(
+    local.env_buckets,
+    local.local_buckets
+  )
 }
 
 # Create storage buckets for pipeline zen jobs results
@@ -47,7 +53,8 @@ resource "google_storage_bucket" "pipeline_zen_results" {
 
 # Create storage bucket for pipeline zen datasets
 resource "google_storage_bucket" "pipeline_zen_datasets" {
-  for_each = toset([var.environment, "local"])
+  for_each = toset(concat([var.environment],
+    var.environment == "dev" ? ["local"] : []))
 
   name     = "lum-${each.key}-pipeline-zen-datasets"
   location = "US"
