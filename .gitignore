@@ -17,7 +17,6 @@ Thumbs.db
 # Temporary files and folders
 .cache/
 .results/
-.logs/
 .secrets/
 output.log
 

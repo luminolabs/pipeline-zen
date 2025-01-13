@@ -54,7 +54,6 @@ echo "Running Docker container with image: $image_use"
 docker run $docker_arch $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$PZ_ENV \
 -e PZ_DEVICE=$PZ_DEVICE \

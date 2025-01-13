@@ -27,7 +27,6 @@ echo "Running Docker container"
 docker run $gpus \
 -v "$PWD/.cache":/project/.cache \
 -v "$PWD/.results":/project/.results \
--v "$PWD/.logs":/project/.logs \
 -v "$PWD/.secrets":/project/.secrets \
 -e PZ_ENV=$PZ_ENV \
 -e PZ_DEVICE=$PZ_DEVICE \
