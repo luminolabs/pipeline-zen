@@ -32,6 +32,20 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool, job_conf
     return getattr(module, 'recipe_main')
 
 
+def check_api_user_credits(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
+    logger = setup_logger("check_api_user_credits", job_id, user_id)
+    # Instantiate the tokenizer and set it in the dataset
+    tokenizer = tt_config.instantiate(cfg.tokenizer)
+    dataset._model_transform = tokenizer
+    # Count tokens and check if user has enough credits to run the job
+    token_count = _count_dataset_tokens(dataset)
+    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count,
+                                                  cfg.epochs, logger)
+    if not has_enough_credits:
+        raise PermissionError(f"User does not have enough credits to run the job; "
+                              f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")
+
+
 def _count_dataset_tokens(dataset: Dataset) -> int:
     """
     Count the number of tokens in a dataset.
@@ -88,17 +102,6 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
         job_id, user_id,
         agent_logger=setup_logger('torchtunewrapper_logger', job_id, user_id),
         main_logger=logger)
-
-    # Instantiate the tokenizer and set it in the dataset
-    tokenizer = tt_config.instantiate(cfg.tokenizer)
-    dataset._model_transform = tokenizer
-    # Count tokens and check if user has enough credits to run the job
-    token_count = _count_dataset_tokens(dataset)
-    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count,
-                                                  cfg.epochs, logger)
-    if not has_enough_credits:
-        raise PermissionError(f"User does not have enough credits to run the job; "
-                              f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")
 
     # Initialize and set up the recipe, train the model, and save the checkpoint
     recipe = recipe_class(job_id, user_id, cfg, dataset, logger, job_logger_agent)

@@ -14,7 +14,7 @@ from common.gcp import upload_jobs_meta
 from common.heartbeats import heartbeat_wrapper
 from common.model.base import model_provider_factory
 from common.utils import load_job_config, setup_logger, read_job_config_from_file, get_work_dir
-from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename
+from torchtunewrapper.utils import import_torchtune_recipe_fn, get_torchtune_config_filename, check_api_user_credits
 
 
 def _schedule_upload_jobs_meta(interval: int, job_id: str, user_id: str, logger: Logger):
@@ -84,6 +84,10 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
 
     # Load the dataset
     dataset = _download_dataset(job_config, logger)
+
+    # This will raise an exception if the user does not have enough credits,
+    # which will terminate the workflow
+    check_api_user_credits(job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
 
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
