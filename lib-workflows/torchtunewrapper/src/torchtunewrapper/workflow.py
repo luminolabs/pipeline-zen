@@ -85,10 +85,6 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     # Load the dataset
     dataset = _download_dataset(job_config, logger)
 
-    # This will raise an exception if the user does not have enough credits,
-    # which will terminate the workflow
-    check_api_user_credits(job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
-
     # Check if we are using a single device
     is_single_device = job_config['num_gpus'] == 1
 
@@ -96,6 +92,10 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
     model_path = _download_model(job_config['model_base'], logger)
     # Update the base model path in the torchtune configuration
     tt_config = OmegaConf.merge(tt_config, {'base_model_path': model_path})  # path, not name
+
+    # This will raise an exception if the user does not have enough credits,
+    # which will terminate the workflow
+    check_api_user_credits(job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
 
     # Get the torchtune recipe function
     tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device, job_config['name'])
