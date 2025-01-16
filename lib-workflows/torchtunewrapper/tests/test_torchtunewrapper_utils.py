@@ -8,7 +8,7 @@ from torchtunewrapper.utils import (
     _count_dataset_tokens,
     _deduct_api_user_credits,
     run_recipe,
-    get_torchtune_config_filename
+    get_torchtune_config_filename, check_api_user_credits
 )
 
 
@@ -79,25 +79,25 @@ def test_count_dataset_tokens(mock_dataset):
     assert count == 7  # Sum of token lengths: [1,2,3] and [4,5,6,7]
 
 
-def test_deduct_api_user_credits_mock_enabled(mock_config, mock_logger):
+def test_check_api_user_credits_mock_enabled(mock_config, mock_logger):
     """Test credit deduction with mocking enabled"""
     mock_config.mock_user_has_enough_credits = True
-    assert _deduct_api_user_credits("job1", "user1", 1000, 2, mock_logger)
+    assert check_api_user_credits("job1", "user1", None, None, mock_logger)
     mock_logger.info.assert_called_with("Skipping credit check due to config settings")
 
 
-def test_deduct_api_user_credits_api_disabled(mock_config, mock_logger):
+def test_check_api_user_credits_api_disabled(mock_config, mock_logger):
     """Test credit deduction with API disabled"""
     mock_config.customer_api_enabled = False
-    assert _deduct_api_user_credits("job1", "user1", 1000, 2, mock_logger)
+    assert check_api_user_credits("job1", "user1", None, None, mock_logger)
     mock_logger.info.assert_called_with("Skipping credit check due to config settings")
 
 
-def test_deduct_api_user_credits_system_user(mock_config, mock_logger):
+def test_check_api_user_credits_system_user(mock_config, mock_logger):
     """Test credit deduction for system users"""
     system_users = ["0", "-1", "0x123"]
     for user in system_users:
-        assert _deduct_api_user_credits("job1", user, 1000, 2, mock_logger)
+        assert check_api_user_credits("job1", user, None, None, mock_logger)
         mock_logger.info.assert_called_with(f"Skipping credit check for user_id={user}")
 
 
@@ -125,16 +125,6 @@ def test_deduct_api_user_credits_failure(mock_post, mock_config, mock_logger):
 
     assert result is False
     mock_post.assert_called_once()
-
-
-def test_run_recipe_insufficient_credits(mock_dataset, mock_logger):
-    """Test run_recipe handling of insufficient credits"""
-    mock_recipe = MagicMock()
-    mock_cfg = DictConfig({"epochs": 1, "tokenizer": {"_component_": "torchtunewrapper.recipes.dummy.DummyTokenizer"}})
-
-    with patch('torchtunewrapper.utils._deduct_api_user_credits', return_value=False), \
-            pytest.raises(PermissionError, match="User does not have enough credits"):
-        run_recipe(mock_recipe, "job1", "user1", mock_cfg, mock_dataset)
 
 
 @patch('threading.Thread')

@@ -52,7 +52,9 @@ def mock_tt_config():
         'shuffle': True,
         'batch_size': 4,
         'lr': 0.001,
-        'seed': 42
+        'seed': 42,
+        'epochs': 1,
+        "tokenizer": {"_component_": "torchtunewrapper.recipes.dummy.DummyTokenizer"}
     })
 
 
@@ -114,12 +116,13 @@ def test_download_model(mock_provider_factory, mock_logger, mock_config):
 
 
 # Test run function success cases
-@patch('torchtunewrapper.workflow.threading.Thread')
+@patch('torchtunewrapper.workflow.check_api_user_credits')
 @patch('torchtunewrapper.workflow._download_dataset')
 @patch('torchtunewrapper.workflow._download_model')
 @patch('torchtunewrapper.workflow.import_torchtune_recipe_fn')
 def test_run_single_device(mock_import_fn, mock_download_model, mock_download_dataset,
-                           mock_thread, mock_job_config, mock_tt_config, mock_logger, mock_config):
+                           mock_check_credits,
+                           mock_job_config, mock_tt_config, mock_logger, mock_config):
     """Test successful run with single device"""
     # Setup mocks
     mock_dataset = MagicMock()
@@ -130,6 +133,9 @@ def test_run_single_device(mock_import_fn, mock_download_model, mock_download_da
     mock_recipe = MagicMock()
     mock_recipe.__name__ = "test_recipe"
     mock_import_fn.return_value = mock_recipe
+
+    # Mock check credits function
+    mock_check_credits.return_value = True
 
     # Call function
     result = run(
@@ -148,13 +154,14 @@ def test_run_single_device(mock_import_fn, mock_download_model, mock_download_da
     mock_recipe.assert_called_once()
 
 
-@patch('torchtunewrapper.workflow.threading.Thread')
+@patch('torchtunewrapper.workflow.check_api_user_credits')
 @patch('torchtunewrapper.workflow._download_dataset')
 @patch('torchtunewrapper.workflow._download_model')
 @patch('torchtunewrapper.workflow.import_torchtune_recipe_fn')
 @patch('torchtunewrapper.workflow.elastic_launch')
 def test_run_multi_device(mock_elastic_launch, mock_import_fn, mock_download_model,
-                          mock_download_dataset, mock_thread, mock_job_config,
+                          mock_download_dataset, mock_check_credits,
+                          mock_job_config,
                           mock_tt_config, mock_logger, mock_config):
     """Test successful run with multiple devices"""
     # Setup mocks
@@ -166,6 +173,9 @@ def test_run_multi_device(mock_elastic_launch, mock_import_fn, mock_download_mod
     mock_recipe = MagicMock()
     mock_recipe.__name__ = "test_recipe"
     mock_import_fn.return_value = mock_recipe
+
+    # Mock check credits function
+    mock_check_credits.return_value = True
 
     mock_launch_fn = MagicMock()
     mock_elastic_launch.return_value = mock_launch_fn
@@ -191,6 +201,36 @@ def test_run_multi_device(mock_elastic_launch, mock_import_fn, mock_download_mod
     assert launch_config.max_nodes == 1
     assert launch_config.nproc_per_node == 2
     mock_launch_fn.assert_called_once()
+
+
+# Test run function success cases
+@patch('torchtunewrapper.workflow.check_api_user_credits')
+@patch('torchtunewrapper.workflow._download_dataset')
+@patch('torchtunewrapper.workflow._download_model')
+@patch('torchtunewrapper.workflow.import_torchtune_recipe_fn')
+def test_run_insufficient_credits(
+        mock_import_fn, mock_download_model, mock_download_dataset,
+        mock_check_credits,
+        mock_job_config, mock_tt_config, mock_logger, mock_config):
+    """Test handling of insufficient credits"""
+    # Setup mocks
+    mock_dataset = MagicMock()
+    mock_download_dataset.return_value = mock_dataset
+    mock_download_model.return_value = "/test/model/path"
+
+    # Create mock recipe with proper name attribute
+    mock_recipe = MagicMock()
+    mock_recipe.__name__ = "test_recipe"
+    mock_import_fn.return_value = mock_recipe
+
+    # Check credits raises exception
+    mock_check_credits.side_effect = PermissionError("User does not have enough credits")
+
+    with pytest.raises(PermissionError) as exc_info:
+        run(mock_job_config.job_id, mock_job_config.user_id,
+            mock_job_config, mock_tt_config, mock_logger)
+
+    assert str(exc_info.value) == "User does not have enough credits"
 
 
 # Test run function error cases

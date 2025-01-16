@@ -32,8 +32,21 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool, job_conf
     return getattr(module, 'recipe_main')
 
 
-def check_api_user_credits(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset):
-    logger = setup_logger("check_api_user_credits", job_id, user_id)
+def check_api_user_credits(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset, logger: Logger) -> None:
+    # If we're mocking user credits, or calls to Customer API are disabled, return True
+    # This is useful for local testing
+    if config.mock_user_has_enough_credits or not config.customer_api_enabled:
+        logger.info("Skipping credit check due to config settings")
+        return True
+
+    # If user_id is 0 or -1, skip the credit check;
+    # user_id=0|-1 is used for jobs that didn't originate from the
+    # customer API, and were created internally
+    # user_id=0x... is used for protocol jobs, which are paid differently
+    if user_id in ("0", "-1") or user_id.startswith("0x"):
+        logger.info(f"Skipping credit check for user_id={user_id}")
+        return True
+
     # Instantiate the tokenizer and set it in the dataset
     tokenizer = tt_config.instantiate(cfg.tokenizer)
     dataset._model_transform = tokenizer
@@ -58,20 +71,6 @@ def _deduct_api_user_credits(job_id: str, user_id: str,
     """
     Log the number of tokens in the dataset to the API, and check if the user has enough credits to run the job.
     """
-    # If we're mocking user credits, or calls to Customer API are disabled, return True
-    # This is useful for local testing
-    if config.mock_user_has_enough_credits or not config.customer_api_enabled:
-        logger.info("Skipping credit check due to config settings")
-        return True
-
-    # If user_id is 0 or -1, skip the credit check;
-    # user_id=0|-1 is used for jobs that didn't originate from the
-    # customer API, and were created internally
-    # user_id=0x... is used for protocol jobs, which are paid differently
-    if user_id in ("0", "-1") or user_id.startswith("0x"):
-        logger.info(f"Skipping credit check for user_id={user_id}")
-        return True
-
     api_url = f"{config.customer_api_url}{config.customer_api_credits_deduct_endpoint}"
     headers = {
         "x-api-key": f"{config.customer_api_key}",

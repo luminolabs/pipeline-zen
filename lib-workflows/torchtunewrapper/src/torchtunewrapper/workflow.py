@@ -95,7 +95,7 @@ def run(job_id: str, user_id: str, job_config: DictConfig, tt_config: DictConfig
 
     # This will raise an exception if the user does not have enough credits,
     # which will terminate the workflow
-    check_api_user_credits(job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset)
+    check_api_user_credits(job_id=job_id, user_id=user_id, cfg=tt_config, dataset=dataset, logger=logger)
 
     # Get the torchtune recipe function
     tt_recipe_fn_orig = import_torchtune_recipe_fn(job_config['use_lora'], is_single_device, job_config['name'])
