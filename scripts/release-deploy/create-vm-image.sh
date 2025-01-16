@@ -30,7 +30,7 @@ echo "Starting VM image creation process..."
 
 # Start VM
 echo "Starting VM..."
-gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID
 
 # Wait for machine to be ready, give it a few seconds
 echo "Wait 60s to allow VM to start services..."
@@ -38,24 +38,24 @@ sleep 60
 
 echo "Pull latest code from git..."  # TODO: When we have git tags again, we should pull the code from a specific tag
 # Mark the directory as safe for git pull
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command="git config --global --add safe.directory /$RESOURCES_PREFIX"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command="git config --global --add safe.directory /$RESOURCES_PREFIX"
 stty -echo  # Hide the user input, so the password is not displayed; next command asks for ssk key password
 # Pull the latest code from the repository
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command="cd /$RESOURCES_PREFIX && ssh-agent bash -c \"ssh-add ~/.ssh/id_rsa; git -c core.sshCommand='ssh -o StrictHostKeyChecking=no' pull\""
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command="cd /$RESOURCES_PREFIX && ssh-agent bash -c \"ssh-add ~/.ssh/id_rsa; git -c core.sshCommand='ssh -o StrictHostKeyChecking=no' pull\""
 stty echo  # Restore the user input visibility
 
 # Build, tag, and push the Docker image
 echo "Building the Docker image; version $VERSION..."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker build -f celery.Dockerfile -t $DOCKER_IMAGE_NAME:local ."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH"
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker build -f celery.Dockerfile -t $DOCKER_IMAGE_NAME:local ."
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
 
 # Stop VM
 echo "Stopping VM..."
-gcloud compute instances stop $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute instances stop $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID
 
 # Create Image using the VM Disk
 echo "Creating new VM image..."
-gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAME --source-disk-zone $IMAGE_CREATOR_VM_ZONE
+gcloud compute images create $NEW_IMAGE_NAME --source-disk $IMAGE_CREATOR_VM_NAME --source-disk-zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID
 
 echo "New VM image created. Done."
