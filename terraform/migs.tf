@@ -120,7 +120,7 @@ locals {
     # A100-80GB regions
     a100_80gb = {
       "asia-southeast1" = ["asia-southeast1-c"]
-      "europe-west4" = ["europe-west4-a", "europe-west4-b", "europe-west4-c"]
+      "europe-west4" = ["europe-west4-a"]
       "us-central1" = ["us-central1-a", "us-central1-c"]
       "us-east4" = ["us-east4-c"]
       "us-east5" = ["us-east5-b"]
