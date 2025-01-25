@@ -5,7 +5,7 @@ Make sure the `VERSION` file is updated with the new version number. This versio
 
 ## Prerequisites
 The release is being prepared in a VM in GCP Compute Engine. Make sure you have the following:
-- Access to `gha-jobs-vm-image-creator` VM in GCP Compute Engine under the `neat-airport-407301` project
+- Access to `pipeline-zen-jobs-image-creator` VM in GCP Compute Engine under the `neat-airport-407301` project
 - On the VM:
   - An `~/.ssh/id_rsa` password protected private ssh key that can access your GitHub account
   - Your public key set under `~/.ssh/authroized_keys` to be able to ssh to the VM

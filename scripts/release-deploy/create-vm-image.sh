@@ -23,7 +23,7 @@ DOCKER_IMAGE_NAME="celery-workflow"
 # Path to the Docker image containing the ML pipeline, that will be loaded on the VM
 DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/$DOCKER_IMAGE_NAME:${VERSION}"
 # Name of the VM that we will use to create the new image
-IMAGE_CREATOR_VM_NAME="gha-jobs-vm-image-creator"
+IMAGE_CREATOR_VM_NAME="pipeline-zen-jobs-image-creator"
 IMAGE_CREATOR_VM_ZONE="us-central1-a"
 
 echo "Starting VM image creation process..."
