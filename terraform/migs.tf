@@ -88,7 +88,7 @@ locals {
 
     # H100-80GB machine types
     "8xh100-80gb" = {
-      "machine_type" = "a3-highgpu-8g",
+      "machine_type" = "a3-megagpu-8g",
       "accelerator" = {
         "type"  = "nvidia-h100-80gb",
         "count" = 8
@@ -119,15 +119,16 @@ locals {
 
     # A100-80GB regions
     a100_80gb = {
+      "asia-southeast1" = ["asia-southeast1-c"]
+      "europe-west4" = ["europe-west4-a", "europe-west4-b", "europe-west4-c"]
       "us-central1" = ["us-central1-a", "us-central1-c"]
       "us-east4" = ["us-east4-c"]
       "us-east5" = ["us-east5-b"]
-      "asia-southeast1" = ["asia-southeast1-c"]
     }
 
     # H100-80GB regions
     h100_80gb = {
-      "us-central1" = ["us-central1-a", "us-central1-c"]
+      "europe-west4" = ["europe-west4-b", "europe-west4-c"]
     }
   }
 
