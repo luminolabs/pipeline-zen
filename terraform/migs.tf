@@ -90,7 +90,7 @@ locals {
     "8xh100-80gb" = {
       "machine_type" = "a3-megagpu-8g",
       "accelerator" = {
-        "type"  = "nvidia-h100-80gb",
+        "type"  = "nvidia-h100-mega-80gb",
         "count" = 8
       }
     }
