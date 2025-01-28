@@ -291,8 +291,8 @@ def get_artifacts(job_id: str, user_id: str) -> Tuple[List[str], List[str]]:
     # Get the files from all epochs
     weight_files = []
     other_files = []
-    for epoch in epoch_dirs:
-        epoch_dir = os.path.join(work_dir, epoch)
-        weight_files += [(epoch + f) for f in os.listdir(epoch_dir) if f.endswith('.safetensors')]
-        other_files += [(epoch + f) for f in os.listdir(epoch_dir) if f in ['config.json', 'adapter_config.json']]
+    for epoch_dir in epoch_dirs:
+        epoch_path = os.path.join(work_dir, epoch_dir)
+        weight_files += [os.path.join(epoch_dir, f) for f in os.listdir(epoch_path) if f.endswith('.safetensors')]
+        other_files += [os.path.join(epoch_dir, f) for f in os.listdir(epoch_path) if f in ['config.json', 'adapter_config.json']]
     return weight_files, other_files
