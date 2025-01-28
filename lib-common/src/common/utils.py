@@ -284,7 +284,15 @@ def get_artifacts(job_id: str, user_id: str) -> Tuple[List[str], List[str]]:
     :return: A dictionary of artifacts
     """
     work_dir = get_work_dir(job_id, user_id)
-    epoch_dir = os.path.join(work_dir, 'epoch_1')  # Our pipeline only trains for 1 epoch for now
-    weight_files = [f for f in os.listdir(epoch_dir) if f.endswith('.safetensors')]
-    other_files = [f for f in os.listdir(epoch_dir) if f in ['config.json', 'adapter_config.json']]
+    epoch_dirs = [f for f in os.listdir(work_dir) if f.startswith('epoch_')]
+    if not epoch_dirs:
+        return [], []
+
+    # Get the files from all epochs
+    weight_files = []
+    other_files = []
+    for epoch in epoch_dirs:
+        epoch_dir = os.path.join(work_dir, epoch)
+        weight_files += [(epoch + f) for f in os.listdir(epoch_dir) if f.endswith('.safetensors')]
+        other_files += [(epoch + f) for f in os.listdir(epoch_dir) if f in ['config.json', 'adapter_config.json']]
     return weight_files, other_files
