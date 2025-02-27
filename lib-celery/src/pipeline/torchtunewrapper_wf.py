@@ -104,7 +104,11 @@ def upload_results(mark_finished_result: bool, job_id: str, user_id: str):
 def delete_results(_, job_id: str, user_id: str):
     """Deletes the job results and logs directories."""
     work_dir = get_work_dir(job_id, user_id)
-    os.system(f'rm -rf {work_dir}')
+    # Get folders starting with epoch_* and delete them. These are the weights directories.
+    # Maintain other files like logs, flags, etc.
+    for f in os.listdir(work_dir):
+        if f.startswith('epoch_'):
+            os.system(f'rm -rf {work_dir}/{f}')
 
 
 @task_registry.add_task

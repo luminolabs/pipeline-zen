@@ -24,7 +24,7 @@ IMAGE_REMOTE="${IMAGE_REMOTE_PREFIX}:${VERSION}"
 
 # Set the environment and image to use
 image_use=$IMAGE_LOCAL
-if [[ "$PZ_ENV" != "$LOCAL_ENV" ]]; then
+if [[ "$PZ_ENV" != "$LOCAL_ENV" && "$PZ_ENV" != "cpnode" ]]; then
   image_use=$IMAGE_REMOTE
 fi
 

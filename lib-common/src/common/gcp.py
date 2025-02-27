@@ -80,6 +80,8 @@ def get_results_bucket() -> str:
         return f'{bucket_prefix}-{config.results_bucket_suffix}'
     elif is_local_env():
         return f'{bucket_prefix}-us'
+    elif config.env_name == 'cpnode':
+        return 'lum-dev-pipeline-zen-jobs-us'  # Use dev bucket for protocol jobs for now
 
     # Get zone, region, and multi-region from metadata
     zone = get_zone_from_metadata()

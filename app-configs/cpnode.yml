@@ -1,4 +1,4 @@
-GOOGLE_APPLICATION_CREDENTIALS: /root/.lumino/pipeline-zen-jobs-gcp-key.json
-customer_api_url: https://api.luminolabs.ai/v1
+GOOGLE_APPLICATION_CREDENTIALS: .secrets/gcp_key.json
+customer_api_enabled: false  # Disables credit check / assumes end user has enough credits (i.e. over minimum balance)
 log_stdout: true
-delete_results: false
+delete_results: true

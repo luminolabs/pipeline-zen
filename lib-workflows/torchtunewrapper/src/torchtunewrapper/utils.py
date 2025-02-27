@@ -1,4 +1,5 @@
 import importlib
+import os
 from logging import Logger
 from typing import Callable, Type
 
@@ -9,7 +10,7 @@ from torchtune import config as tt_config
 
 from common.agent.job_logger import TorchtunewrapperLoggerAgent
 from common.config_manager import config
-from common.utils import setup_logger
+from common.utils import setup_logger, get_work_dir
 from torchtunewrapper.recipes.recipe_base import RecipeBase
 
 
@@ -33,27 +34,33 @@ def import_torchtune_recipe_fn(use_lora: bool, use_single_device: bool, job_conf
 
 
 def check_api_user_credits(job_id: str, user_id: str, cfg: DictConfig, dataset: Dataset, logger: Logger) -> None:
-    # If we're mocking user credits, or calls to Customer API are disabled, return True
-    # This is useful for local testing
-    if config.mock_user_has_enough_credits or not config.customer_api_enabled:
-        logger.info("Skipping credit check due to config settings")
-        return True
+    # Instantiate the tokenizer and set it in the dataset
+    tokenizer = tt_config.instantiate(cfg.tokenizer)
+    dataset._model_transform = tokenizer
+
+    # Count tokens
+    token_count = _count_dataset_tokens(dataset)
+
+    # Log the number of tokens in the dataset to .token-count file
+    token_count_file = os.path.join(get_work_dir(job_id, user_id), '.token-count')
+    with open(token_count_file, 'w') as f:
+        f.write(str(token_count))
 
     # If user_id is 0 or -1, skip the credit check;
     # user_id=0|-1 is used for jobs that didn't originate from the
     # customer API, and were created internally
-    # user_id=0x... is used for protocol jobs, which are paid differently
-    if user_id in ("0", "-1") or user_id.startswith("0x"):
+    if user_id in ("0", "-1"):
         logger.info(f"Skipping credit check for user_id={user_id}")
-        return True
+        return
 
-    # Instantiate the tokenizer and set it in the dataset
-    tokenizer = tt_config.instantiate(cfg.tokenizer)
-    dataset._model_transform = tokenizer
-    # Count tokens and check if user has enough credits to run the job
-    token_count = _count_dataset_tokens(dataset)
-    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count,
-                                                  cfg.epochs, logger)
+    # If we're mocking user credits, or calls to Customer API are disabled, return True
+    # This is useful for local testing
+    if config.mock_user_has_enough_credits or not config.customer_api_enabled:
+        logger.info("Skipping credit check due to config settings")
+        return
+
+    # Log the token count to the API and check if the user has enough credits
+    has_enough_credits = _deduct_api_user_credits(job_id, user_id, token_count, cfg.epochs, logger)
     if not has_enough_credits:
         raise PermissionError(f"User does not have enough credits to run the job; "
                               f"job_id: {job_id}, user_id: {user_id}, token_count: {token_count}")

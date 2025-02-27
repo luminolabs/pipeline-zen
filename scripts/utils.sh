@@ -16,7 +16,6 @@ IS_GCP="0"
 
 # Where the source code is located
 PIPELINE_ZEN_JOBS_DIR="/pipeline-zen-jobs"
-
 # Check if the folder exists
 if [ -d "$PIPELINE_ZEN_JOBS_DIR" ]; then
     cd "$PIPELINE_ZEN_JOBS_DIR" || exit 0
@@ -27,22 +26,23 @@ if [ -f ./.gcp ]; then
   IS_GCP="1"
 fi
 
-if [[ $(is_truthy "$IS_GCP") == "1" ]]; then
+if [[ $(is_truthy "$IS_GCP") == "1" ]]; then  # If running on GCP, get the environment from the metadata server
   PZ_ENV=$(curl -s -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/attributes/PZ_ENV")
-else
+elif [ -z "$PZ_ENV" ]; then  # If PZ_ENV is not set, default to local
   PZ_ENV=LOCAL_ENV
 fi
 
 # If we're running locally, export variables from the .env file
-if [[ $(is_truthy "$IS_GCP") == "0" ]]; then
+if [[ "$PZ_ENV" == "local" || "$PZ_ENV" == "cpnode" ]]; then
   set -o allexport
   eval $(cat ./.env | grep -v '^#' | tr -d '\r')
 fi
 
 # Set the project ID and service account based on the environment
 PROJECT_ID="eng-ai-$PZ_ENV"
-# If PROJECT_ID == "eng-ai-local" change it to "eng-ai-dev" because we don't have eng-ai-local yet
-if [[ "$PROJECT_ID" == "eng-ai-local" ]]; then
+# If PROJECT_ID == "eng-ai-[local|cpnode]" change it to "eng-ai-dev"
+# because we don't have eng-ai-[local|cpnode] yet
+if [[ "$PZ_ENV" == "local" || "$PZ_ENV" == "cpnode" ]]; then
   PROJECT_ID="eng-ai-dev"
 fi
 # Set the service account to use
