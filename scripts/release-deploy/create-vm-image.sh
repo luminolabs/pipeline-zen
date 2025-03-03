@@ -22,6 +22,8 @@ DOCKER_IMAGE_HOST="$DOCKER_IMAGE_REGION-docker.pkg.dev"
 DOCKER_IMAGE_NAME="celery-workflow"
 # Path to the Docker image containing the ML pipeline, that will be loaded on the VM
 DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/$DOCKER_IMAGE_NAME:${VERSION}"
+# Path to public Docker image repo, used by the protocol (the repo suffix serves as a key that only whitelist CPs will know of)
+DOCKER_IMAGE_PATH_PUBLIC="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images-f0ad091132a3b660e807c360d7410fca2bfb/$DOCKER_IMAGE_NAME:${VERSION}"
 # Name of the VM that we will use to create the new image
 IMAGE_CREATOR_VM_NAME="pipeline-zen-jobs-image-creator"
 IMAGE_CREATOR_VM_ZONE="us-central1-a"
@@ -47,8 +49,9 @@ stty echo  # Restore the user input visibility
 # Build, tag, and push the Docker image
 echo "Building the Docker image; version $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker build -f celery.Dockerfile -t $DOCKER_IMAGE_NAME:local ."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH $DOCKER_IMAGE_PATH_PUBLIC"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH_PUBLIC"
 
 # Stop VM
 echo "Stopping VM..."

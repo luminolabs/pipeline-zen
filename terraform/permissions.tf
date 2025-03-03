@@ -50,7 +50,8 @@ resource "google_project_iam_member" "pipeline_zen_jobs_project" {
     "roles/secretmanager.viewer",
     "roles/pubsub.publisher",
     "roles/pubsub.subscriber",
-    "roles/compute.viewer"
+    "roles/compute.viewer",
+    "roles/opsconfigmonitoring.resourceMetadata.writer"
   ])
 
   project = var.project_id
