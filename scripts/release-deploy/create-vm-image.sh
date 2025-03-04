@@ -49,7 +49,8 @@ stty echo  # Restore the user input visibility
 # Build, tag, and push the Docker image
 echo "Building the Docker image; version $VERSION..."
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker build -f celery.Dockerfile -t $DOCKER_IMAGE_NAME:local ."
-gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH $DOCKER_IMAGE_PATH_PUBLIC"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH"
+gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker tag $DOCKER_IMAGE_NAME:local $DOCKER_IMAGE_PATH_PUBLIC"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH"
 gcloud compute ssh $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_ZONE --project $PROJECT_ID --command "cd /$RESOURCES_PREFIX && docker push $DOCKER_IMAGE_PATH_PUBLIC"
 
