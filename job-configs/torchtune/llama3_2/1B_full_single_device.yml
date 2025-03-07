@@ -9,17 +9,53 @@ epochs:
 lr:
 seed:
 
+mode: exp  # default - exp(experiment)
+# output_dir: ./tmp/llama3_2_1B/full_single_device. # Change it to your preference.
+
+# Model Arguments
+model:
+  _component_: torchtune.models.llama3_2.llama3_2_1b
+
+# Tokenizer
 tokenizer:
   _component_: torchtune.models.llama3.llama3_tokenizer
   path: ${base_model_path}/original/tokenizer.model
   max_seq_len: null
 
+# Needs to be changed - Currently injected from workflow
+  # Dataset - Train
 dataset:
-  _component_:  # leave empty, this is injected by the job launcher
+  _component_: torchtune.datasets.instruct_dataset
+  source: json
+  data_files: ./datasets/processed_text2sql.jsonl
+  column_map:
+    input: question
+    output: answer
+  train_on_input: False
   packed: False
+  split: train  # Default "train" - Entire dataset is used for training. For partial(95% of data) use "train[:95%]"
+# seed: 42
+# shuffle: True
 
-model:
-  _component_: torchtune.models.llama3_2.llama3_2_1b
+# Evaluation - Test/Validate
+validation:
+  enabled: False  # Default - False. Change to True if evaluation is needed
+
+val_dataset:
+  _component_: torchtune.datasets.instruct_dataset
+  source: json
+  data_files: ./datasets/processed_text2sql.jsonl
+  column_map:
+    input: question
+    output: answer
+  train_on_input: False
+  packed: False
+  split: train[5%:]  # Default "train[5%:]" - 5% of dataset is used for test(validation)."
+
+# Padding for batches. (default - right padded for llama3 models).
+collate_fn: torchtune.data.padded_collate_sft
+  # padding_idx: 128004  # Padding index for input ids. Defaults to 0. (Llama3 special token: <|finetune_right_pad_id|>: 128004)
+  # ignore_idx: -100  # Padding index for labels. Defaults to -100. (-100 is ignored by loss function)
 
 checkpointer:
   _component_: torchtune.training.FullModelHFCheckpointer
@@ -27,51 +63,71 @@ checkpointer:
   checkpoint_files: [
     model.safetensors
   ]
-  recipe_checkpoint: null
   output_dir: ${output_dir}
   model_type: LLAMA3_2
 resume_from_checkpoint: False
 
+# Fine-tuning arguments
+# batch_size: 4
+# epochs: 10
 optimizer:
-  _component_: torch.optim.AdamW
+  _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
+  # _component_: torch.optim.Adam
   lr: ${lr}  # 2e-5
+  # betas: (0.9, 0.999)
+  # eps: 1e-08
+
+# Learning rate scheduler
+lr_scheduler:
+  _component_: torchtune.training.get_cosine_schedule_with_warmup
+  num_warmup_steps: 5
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
-max_steps_per_epoch: null
-gradient_accumulation_steps: 1
+  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
+  ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation. 
 
+max_steps_per_epoch: null
+gradient_accumulation_steps: 1  # Use to increase effective batch size
+optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
+clip_grad_norm: null
+compile: True  # torch.compile the model + loss, True increases speed + decreases memory
+
+# Training environment
 device: cuda
 
 # Memory management
-dtype: bf16
-enable_activation_checkpointing: False
-enable_activation_offloading: False
-optimizer_in_bwd: True
-compile: False
+enable_activation_checkpointing: False  # True reduces memory
+enable_activation_offloading: False  # True reduces memory
 
+# Reduced precision
+dtype: bf16
+
+# Logging
 metric_logger:
-  _component_: torchtune.training.metric_logging.DiskLogger
-  log_dir: ${output_dir}/tt_logs
-log_every_n_steps: 1
+  # _component_: torchtune.training.metric_logging.DiskLogger
+  _component_: torchtune.training.metric_logging.StdoutLogger
+  log_dir: ${output_dir}/logs/${mode}/lr-${optimizer.lr}
+log_every_n_steps: 10
 log_peak_memory_stats: True
 
+# Profiler (disabled)
 profiler:
   _component_: torchtune.training.setup_torch_profiler
   enabled: False
 
-  # Output directory of trace artifacts
-  output_dir: ${output_dir}/tt_profiling_outputs
+  #Output directory of trace artifacts
+  output_dir: ${output_dir}/profiling_outputs/${mode}/lr-${optimizer.lr}
 
-  # `torch.profiler.ProfilerActivity` types to trace
+  #`torch.profiler.ProfilerActivity` types to trace
   cpu: True
   cuda: True
 
-  # trace options passed to `torch.profiler.profile`
-  profile_memory: False
-  with_stack: False
+  #trace options passed to `torch.profiler.profile`
+  profile_memory: True
+  with_stack: True
   record_shapes: True
-  with_flops: False
+  with_flops: True
 
   # `torch.profiler.schedule` options:
   # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat

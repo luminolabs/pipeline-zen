@@ -6,7 +6,7 @@
 
 import time
 from functools import partial
-from typing import Any, Dict, Optional, Tuple, Union
+from typing import Any, Dict, Optional, Tuple, Union, List
 from warnings import warn
 
 import torch
@@ -128,9 +128,9 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         self._log_every_n_steps = cfg.get("log_every_n_steps", 1)
         self._log_peak_memory_stats = cfg.get("log_peak_memory_stats", False)
 
-        if self._log_peak_memory_stats and self._device.type != "cuda":
+        if self._log_peak_memory_stats and self._device.type == "cpu":
             log.info(
-                "log_peak_memory_stats was set to True, however, training does not use cuda. Setting log_peak_memory_stats=False."
+                "log_peak_memory_stats was set to True, however, training uses cpu. Setting log_peak_memory_stats=False."
             )
             self._log_peak_memory_stats = False
 
@@ -170,8 +170,8 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
                     "enable_activation_offloading should only be True when enable_activation_checkpointing is True"
                 )
         elif (
-                self._enable_activation_checkpointing
-                and cfg.checkpointer.model_type != "LLAMA3_VISION"
+            self._enable_activation_checkpointing
+            and cfg.checkpointer.model_type != "LLAMA3_VISION"
         ):
             utils.log_rank_zero(
                 log,
@@ -181,7 +181,9 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
 
         # These are public properties which are updated by the checkpoint loader
         # when ``resume_from_checkpoint`` is `True` or validated in tests
-        self.seed = training.set_seed(seed=cfg.seed)
+        self.seed = training.set_seed(
+            seed=cfg.seed, debug_mode=cfg.get("cudnn_deterministic_mode", None)
+        )
         self.epochs_run = 0
         self.total_epochs = cfg.epochs
         self.max_steps_per_epoch = cfg.max_steps_per_epoch
@@ -294,8 +296,12 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
 
         log.info("Loss is initialized.")
 
+        # data
+        # default split - 95% train, 5% test(loosley called validation).
+        
         # sampler and dataloader depend on the tokenizer and loss_fn and should be
         # setup after both of these are initialized
+        # this is the sampler and dataloader for train.
         collate_name = cfg.get("collate_fn", "torchtune.data.padded_collate_sft")
         self._sampler, self._dataloader = self._setup_data(
             cfg_dataset=cfg.dataset,
@@ -303,6 +309,20 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             batch_size=cfg.batch_size,
             collate_fn=collate_name,
         )
+
+        # dataloader for test.
+        # not used in training.
+        self._val_dataloader = None
+        self._validation_loss = None
+        if cfg.validation.enabled:
+            self._validation_loss = []
+            
+            self._val_dataloader = self._setup_validation_data(
+                cfg_dataset=cfg.val_dataset,
+                shuffle=False,
+                batch_size=cfg.batch_size,
+                collate_fn=collate_name,
+            )
 
         # Finally update the recipe state which can only be correctly set after all of the
         # other components have been initialized and updated.
@@ -312,11 +332,11 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         # gradient_accumulation_steps param. This value is used for logging and tracking
         # training state. The computation should happen after the dataloader has been setup
         self._steps_per_epoch = (
-                len(self._dataloader) // self._gradient_accumulation_steps
+            len(self._dataloader) // self._gradient_accumulation_steps
         )
         if (
-                self.max_steps_per_epoch is not None
-                and self.max_steps_per_epoch < self._steps_per_epoch
+            self.max_steps_per_epoch is not None
+            and self.max_steps_per_epoch < self._steps_per_epoch
         ):
             self._steps_per_epoch = self.max_steps_per_epoch
         self.global_step = self.epochs_run * self._steps_per_epoch
@@ -338,7 +358,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         )
 
     def _setup_profiler(
-            self, cfg_profiler: Optional[DictConfig] = None
+        self, cfg_profiler: Optional[DictConfig] = None
     ) -> Union[torch.profiler.profile, DummyProfiler]:
         """
         Parses the `profiler` section of top-level `cfg` and sets up profiler
@@ -388,8 +408,8 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             cfg_profiler["_component_"] = "torchtune.training.setup_torch_profiler"
         else:
             assert (
-                    cfg_profiler.get("_component_")
-                    == "torchtune.training.setup_torch_profiler"
+                cfg_profiler.get("_component_")
+                == "torchtune.training.setup_torch_profiler"
             ), "Only torch profiler supported currently: component must be `torchtune.training.setup_torch_profiler`"
 
         profiler, profiler_cfg = config.instantiate(cfg_profiler)
@@ -405,12 +425,12 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         return profiler
 
     def _setup_model(
-            self,
-            cfg_model: DictConfig,
-            enable_activation_checkpointing: bool,
-            enable_activation_offloading: bool,
-            compile_model: bool,
-            model_state_dict: Dict[str, Any],
+        self,
+        cfg_model: DictConfig,
+        enable_activation_checkpointing: bool,
+        enable_activation_offloading: bool,
+        compile_model: bool,
+        model_state_dict: Dict[str, Any],
     ) -> nn.Module:
         """
         Set up the model including enabling activation checkpointing.
@@ -447,10 +467,10 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         return model
 
     def _setup_optimizer(
-            self,
-            cfg_optimizer: DictConfig,
-            optimizer_in_bwd: bool = False,
-            opt_state_dict: Optional[Dict[str, Any]] = None,
+        self,
+        cfg_optimizer: DictConfig,
+        optimizer_in_bwd: bool = False,
+        opt_state_dict: Optional[Dict[str, Any]] = None,
     ) -> Optional[Optimizer]:
         """
         Set up the optimizer. This method also handles loading the optimizer state_dict, if specified.
@@ -491,10 +511,10 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             return optimizer
 
     def _setup_lr_scheduler(
-            self,
-            cfg_lr_scheduler: Optional[DictConfig],
-            num_training_steps: int,
-            last_epoch: int,
+        self,
+        cfg_lr_scheduler: Optional[DictConfig],
+        num_training_steps: int,
+        last_epoch: int,
     ) -> Optional[Optimizer]:
         """
         Set up the learning rate scheduler based on the provided configuration.
@@ -538,14 +558,14 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         return lr_scheduler
 
     def _setup_data(
-            self,
-            cfg_dataset: DictConfig,
-            shuffle: bool,
-            batch_size: int,
-            collate_fn: str,
+        self,
+        cfg_dataset: DictConfig,
+        shuffle: bool,
+        batch_size: int,
+        collate_fn: str,
     ) -> Tuple[DistributedSampler, DataLoader]:
         """
-        All data related setup happens here. Currently this recipe only supports the
+        All train data related setup happens here. Currently this recipe only supports the
         DistributedSamplers with Map-style Datasets which fit into memory. Other samplers,
         iterable datasets and streaming datasets are not supported.
         """
@@ -558,7 +578,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
                 for single_cfg_dataset in cfg_dataset
             ]
             ds = ConcatDataset(datasets=datasets)
-            packed = False
+            packed = getattr(ds, "packed", False)
         else:
             ds = config.instantiate(cfg_dataset, self._tokenizer)
             packed = cfg_dataset.get("packed", False)
@@ -595,6 +615,56 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
         log.info("Dataset and Sampler are initialized.")
 
         return sampler, dataloader
+
+    def _setup_validation_data(
+        self,
+        cfg_dataset: DictConfig,
+        shuffle: bool,
+        batch_size: int,
+        collate_fn: str,
+    ) -> Tuple[DataLoader]:
+        """
+        All test data related setup happens here. Sampler isn't configured as `shuffle=False` for test.
+        Validation for FFT means test. It is loosely used in this context. This is not used in training.
+        """
+        if isinstance(cfg_dataset, ListConfig):
+            datasets = [
+                config.instantiate(single_cfg_dataset, self._tokenizer)
+                for single_cfg_dataset in cfg_dataset
+            ]
+            ds = ConcatDataset(datasets=datasets)
+            packed = getattr(ds, "packed", False)
+        else:
+            ds = config.instantiate(cfg_dataset, self._tokenizer)
+            packed = cfg_dataset.get("packed", False)
+
+        # Instantiate collate_fn
+        if "left_pad_sequence" in collate_fn:
+            raise RuntimeError("left_pad_sequence collator is only for inference.")
+        collate_fn = _get_component_from_path(collate_fn)
+
+        dataloader = DataLoader(
+            dataset=ds,
+            batch_size=batch_size,
+            shuffle=False,  # No sampler needed
+            drop_last=False,
+            # dropping last avoids shape issues with compile + flex attention
+            # drop_last=True,
+            collate_fn=(
+                partial(
+                    collate_fn,
+                    padding_idx=self._tokenizer.pad_id,
+                    ignore_idx=self._loss_fn.ignore_index,
+                )
+                if not packed
+                else padded_collate_packed
+            ),
+        )
+
+        log.info("Validation/Test dataset initialized.")
+
+        return dataloader
+
 
     def _save_checkpoint(self, epoch: int) -> None:
         """
@@ -660,11 +730,12 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             self._optimizer.zero_grad()
 
         # Initialize tokens count and running loss (for grad accumulation)
-        t_epoch_start = time.perf_counter()
         t0 = time.perf_counter()
+        e0 = t0  # Epoch start time
         running_loss = 0
         num_tokens = 0
-
+        self._train_loss = {}
+    
         self._profiler.start()
         # self.epochs_run should be non-zero when we're resuming from a checkpoint
         for curr_epoch in range(self.epochs_run, self.total_epochs):
@@ -672,29 +743,31 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
             # in case shuffle is True
             self._sampler.set_epoch(curr_epoch)
 
+            epoch_loss = []  # To store losses in the current epoch based on `log_every_n_steps`
+
             pbar = tqdm(total=self._steps_per_epoch)
             for idx, batch in enumerate(self._dataloader):
                 if (
-                        self.max_steps_per_epoch is not None
-                        and (idx // self._gradient_accumulation_steps)
-                        == self.max_steps_per_epoch
+                    self.max_steps_per_epoch is not None
+                    and (idx // self._gradient_accumulation_steps)
+                    == self.max_steps_per_epoch
                 ):
                     break
 
                 # Start tracking CUDA memory for active steps for just the first epoch
                 if (
-                        curr_epoch == 0
-                        and self.profiler_profile_memory
-                        and idx == self.profiler_wait_steps + self.profiler_warmup_steps
+                    curr_epoch == 0
+                    and self.profiler_profile_memory
+                    and idx == self.profiler_wait_steps + self.profiler_warmup_steps
+                    and self._device.type == "cuda"
                 ):
                     torch.cuda.memory._record_memory_history()
-
                 utils.batch_to_device(batch, self._device)
 
                 # Calculate the number of unmasked tokens in the current batch
                 # and increment the total number of tokens seen in the step
                 current_num_tokens = (
-                        batch["labels"] != self._loss_fn.ignore_index
+                    batch["labels"] != self._loss_fn.ignore_index
                 ).sum()
                 num_tokens += current_num_tokens
 
@@ -723,6 +796,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
 
                     loss_to_log = running_loss.item() / num_tokens
                     pbar.update(1)
+
                     pbar.set_description(
                         f"{curr_epoch + 1}|{self.global_step}|Loss: {loss_to_log}"
                     )
@@ -743,6 +817,7 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
                             ),
                             "tokens_per_second_per_gpu": num_tokens / time_per_step,
                         }
+                        epoch_loss.append(loss_to_log.item())  # accumulate step losses in current epoch
                         if self._device.type != "cpu" and self._log_peak_memory_stats:
                             log_dict.update(
                                 training.get_memory_stats(device=self._device)
@@ -776,12 +851,13 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
 
                 # Stop tracking CUDA memory now that active steps are complete
                 if (
-                        curr_epoch == 0
-                        and self.profiler_profile_memory
-                        and idx
-                        == self.profiler_wait_steps
-                        + self.profiler_warmup_steps
-                        + self.profiler_active_steps
+                    curr_epoch == 0
+                    and self.profiler_profile_memory
+                    and idx
+                    == self.profiler_wait_steps
+                    + self.profiler_warmup_steps
+                    + self.profiler_active_steps
+                    and self._device.type == "cuda"
                 ):
                     torch.cuda.memory._record_memory_history(enabled=None)
 
@@ -792,14 +868,72 @@ class FullFinetuneRecipeSingleDevice(RecipeBase):
 
             self.epochs_run += 1
 
+            self._train_loss[f"epoch_{curr_epoch}"] = epoch_loss  # accumulate per epoch train loss
+
+            # ---- Evaluation (Only if validation enabled) ----
+            if self._val_dataloader is not None:
+                self._model.eval()
+                val_loss = 0
+                num_val_tokens = 0
+                with torch.no_grad():
+                    for batch in self._val_dataloader:
+                        utils.batch_to_device(batch, self._device)
+    
+                        current_num_tokens = (batch["labels"] != self._loss_fn.ignore_index).sum()
+                        num_val_tokens += current_num_tokens
+    
+                        loss = self._loss_step(batch) * current_num_tokens
+                        val_loss += loss.item()
+    
+                val_loss_to_log = val_loss / num_val_tokens if num_val_tokens > 0 else 0.0
+                log_dict = {
+                    "validation loss": val_loss_to_log,
+                    # NOTE: for optim in backward, this assumes all optimizers have the same LR. This is currently
+                    # true since we don't expose the ability to configure this yet.
+                    "lr": get_lr(
+                        (
+                            self._optimizer
+                            if not self._optimizer_in_bwd
+                            else self._optim_ckpt_wrapper
+                        ),
+                    ),
+                    "Number of validation tokens": num_val_tokens,
+                    f"Time elapsed to run epoch_{curr_epoch}": time_per_epoch,
+                }
+                log.info(f"Validation Loss after epoch {curr_epoch + 1}: {val_loss_to_log:.4f}")
+                self._metric_logger.log_dict(log_dict, step=self.global_step)
+
+                self._validation_loss.append(val_loss_to_log.item())
+
             # Lumino specific logging / per epoch
-            time_per_epoch = time.perf_counter() - t_epoch_start
-            self.job_logger.log_epoch(gpu_rank=self.rank, epoch_num=self.epochs_run,
-                                      epoch_len=self.total_epochs,
-                                      epoch_time_elapsed_s=time_per_epoch)
-            t_epoch_start = time.perf_counter()
+            time_per_epoch = time.perf_counter() - e0
+
+            self.job_logger.log_epoch(
+                gpu_rank=self.rank,
+                epoch_num=self.epochs_run,
+                epoch_len=self.total_epochs,
+                epoch_time_elapsed_s=e0)
+            
+            # Reset running stats for the next epoch
+            e0 = time.perf_counter()
+
+            self._save_checkpoint(epoch=curr_epoch)
 
         self._profiler.stop()
+
+    @property
+    def train_loss(self) -> Dict[str, List]:
+        """
+            Captures training loss per epoch based on `log_every_n_steps`
+        """
+        return self._train_loss
+
+    @property
+    def validation_loss(self) -> Optional[List]:
+        """
+            Captures test loss per epoch
+        """
+        return self._validation_loss
 
     def _cleanup(self) -> None:
         self._metric_logger.close()
