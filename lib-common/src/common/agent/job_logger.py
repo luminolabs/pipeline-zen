@@ -4,6 +4,8 @@ from copy import deepcopy
 from logging import Logger
 from typing import Optional, Union
 
+import torch
+
 from common.agent.system_specs import SystemSpecsAgent
 from common.config_manager import config
 from common.gcp import publish_to_pubsub, insert_to_biqquery, BIGQUERY_TIMESTAMP_FORMAT, get_results_bucket
