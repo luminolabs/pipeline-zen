@@ -35,8 +35,8 @@ resume_from_checkpoint: False
 
 optimizer:
   # _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
-  # _component_: torch.optim.Adam
-  _component_: torchao.prototype.low_bit_optim.AdamW8bit 
+  _component_: torch.optim.Adam
+  # _component_: torchao.prototype.low_bit_optim.AdamW8bit 
   lr: ${lr}  # 2e-5
 
 # Learning rate scheduler
@@ -55,7 +55,8 @@ gradient_accumulation_steps: 1
 device: cuda
 
 # Memory management
-dtype: bf16
+# dtype: bf16
+dtype: fp16
 enable_activation_checkpointing: False
 enable_activation_offloading: False
 optimizer_in_bwd: True
