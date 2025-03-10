@@ -4,8 +4,6 @@ from copy import deepcopy
 from logging import Logger
 from typing import Optional, Union
 
-import torch
-
 from common.agent.system_specs import SystemSpecsAgent
 from common.config_manager import config
 from common.gcp import publish_to_pubsub, insert_to_biqquery, BIGQUERY_TIMESTAMP_FORMAT, get_results_bucket
@@ -127,9 +125,6 @@ class BaseJobLoggerAgent:
         row['create_ts'] = utcnow_str(fmt=BIGQUERY_TIMESTAMP_FORMAT)
         # JSON fields in BigQuery must be inserted as JSON strings... makes sense
         data = row.get('data')
-        if isinstance(data, torch.Tensor):
-            # Convert tensor to a Python scalar or list
-            data = data.detach().cpu().tolist()   
         if data:
             # If data is not a dict, wrap it in a dict
             if not isinstance(data, dict):
