@@ -59,7 +59,7 @@ dtype: bf16
 enable_activation_checkpointing: False
 enable_activation_offloading: False
 optimizer_in_bwd: True
-compile: False
+compile: True
 
 # Logging
 metric_logger:
@@ -70,7 +70,7 @@ log_peak_memory_stats: True
 
 profiler:
   _component_: torchtune.training.setup_torch_profiler
-  enabled: False
+  enabled: True
 
   # Output directory of trace artifacts
   output_dir: ${output_dir}/tt_profiling_outputs
@@ -80,10 +80,10 @@ profiler:
   cuda: True
 
   # trace options passed to `torch.profiler.profile`
-  profile_memory: False
-  with_stack: False
+  profile_memory: True
+  with_stack: True
   record_shapes: True
-  with_flops: False
+  with_flops: True
 
   # `torch.profiler.schedule` options:
   # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
