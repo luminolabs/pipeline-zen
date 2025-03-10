@@ -70,7 +70,7 @@ log_peak_memory_stats: True
 
 profiler:
   _component_: torchtune.training.setup_torch_profiler
-  enabled: True
+  enabled: False
 
   # Output directory of trace artifacts
   output_dir: ${output_dir}/tt_profiling_outputs
@@ -81,10 +81,9 @@ profiler:
 
   # trace options passed to `torch.profiler.profile`
   profile_memory: True
-  with_stack: True
+  with_stack: False
   record_shapes: True
-  with_flops: True
-
+  with_flops: False
   # `torch.profiler.schedule` options:
   # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
   wait_steps: 5
