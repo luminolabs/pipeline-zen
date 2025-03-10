@@ -127,10 +127,10 @@ class BaseJobLoggerAgent:
         row['create_ts'] = utcnow_str(fmt=BIGQUERY_TIMESTAMP_FORMAT)
         # JSON fields in BigQuery must be inserted as JSON strings... makes sense
         data = row.get('data')
+        if isinstance(data, torch.Tensor):
+            # Convert tensor to a Python scalar or list
+            data = data.detach().cpu().tolist()   
         if data:
-            if isinstance(data, torch.Tensor):
-                # Convert tensor to a Python scalar or list
-                data = data.detach().cpu().tolist()
             # If data is not a dict, wrap it in a dict
             if not isinstance(data, dict):
                 data = {'value': data}
