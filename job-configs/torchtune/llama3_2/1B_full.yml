@@ -34,8 +34,8 @@ checkpointer:
 resume_from_checkpoint: False
 
 optimizer:
-  _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
-  # _component_: torch.optim.Adam
+  # _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
+  _component_: torch.optim.Adam
   lr: ${lr}  # 2e-5
 
 # Learning rate scheduler
