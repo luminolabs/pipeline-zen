@@ -174,19 +174,10 @@ def _read_job_meta_from_file(path: str) -> dict:
     :return: Returns the job meta dictionary for a given job and user
     """
 
-    job_meta_data = {}
     if os.path.exists(path):
-        try: # This block to handle error in single device distributed full fine tuning
-            with open(path, 'r') as f:
-                job_meta_data = json.load(f)
-                # return json.load(f)
-        except json.JSONDecodeError as e:
-            # This line to handle error in single device distributed full fine tuning.
-            # Need to loggeg and fixed in future.
-            job_meta_data = {}
-        f.close()
-    # return {}
-    return job_meta_data
+        with open(path, 'r') as f:
+            return json.load(f)
+    return {}
 
 
 def _write_job_meta_to_file(path: str, job_meta: dict) -> None:
@@ -195,8 +186,6 @@ def _write_job_meta_to_file(path: str, job_meta: dict) -> None:
     """
     with open(path, 'w') as f:
         json.dump(job_meta, f, indent=4)
-    
-    f.close()
 
 
 @contextmanager
@@ -211,13 +200,10 @@ def job_meta_context(job_id: str, user_id: str):
         # job_meta is written back to the file, on `with` block exit
     """
     path = os.path.join(get_work_dir(job_id, user_id), config.job_meta_file)
-    with FileLock(path + '.lock', thread_local=False) as lock:
+    with FileLock(path + '.lock', thread_local=False):
         job_meta = _read_job_meta_from_file(path)
         yield job_meta
         _write_job_meta_to_file(path, job_meta)
-
-    if lock.is_locked:
-        lock.release()
 
 
 #################
