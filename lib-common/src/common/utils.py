@@ -176,9 +176,14 @@ def _read_job_meta_from_file(path: str) -> dict:
 
     job_meta_data = {}
     if os.path.exists(path):
-        with open(path, 'r') as f:
-            job_meta_data = json.load(f)
-            # return json.load(f)
+        try: # This block to handle error in single device distributed full fine tuning
+            with open(path, 'r') as f:
+                job_meta_data = json.load(f)
+                # return json.load(f)
+        except json.JSONDecodeError as e:
+            # This line to handle error in single device distributed full fine tuning.
+            # Need to loggeg and fixed in future.
+            job_meta_data = {}
         f.close()
     # return {}
     return job_meta_data
