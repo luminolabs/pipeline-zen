@@ -19,14 +19,7 @@
       <excludeFolder url="file://$MODULE_DIR$/terraform/.terraform" />
       <excludeFolder url="file://$MODULE_DIR$/terraform/terraform.tfstate.d" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.11 (pipeline-zen)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-  </component>
-  <component name="TemplatesService">
-    <option name="TEMPLATE_FOLDERS">
-      <list>
-        <option value="$MODULE_DIR$/job-configs/templates" />
-      </list>
-    </option>
   </component>
 </module>

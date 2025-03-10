@@ -165,14 +165,17 @@ def test_mark_finished_failure(mock_get_work_dir, tmp_path):
 @patch("pipeline.torchtunewrapper_wf.get_work_dir")
 def test_delete_results(mock_get_work_dir, tmp_path):
     work_dir = tmp_path / TEST_USER_ID / TEST_JOB_ID
-    work_dir.mkdir(parents=True)
+    epoch_dir = work_dir / "epoch_0" / "weights.safetensors"
+    epoch_dir.mkdir(parents=True)
+
     test_file = work_dir / "test.txt"
     test_file.write_text("test content")
 
     mock_get_work_dir.return_value = str(work_dir)
     delete_results(None, TEST_JOB_ID, TEST_USER_ID)
 
-    assert not work_dir.exists()
+    assert work_dir.exists()  # Work dir should still exist so that logs can be retrieved
+    assert not epoch_dir.exists()  # Epoch dir should be deleted to save space on the worker
 
 
 @patch("pipeline.torchtunewrapper_wf.upload_directory")

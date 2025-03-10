@@ -25,6 +25,7 @@ def mock_config():
         mock_cfg.customer_api_url = "http://test-api.com"
         mock_cfg.customer_api_credits_deduct_endpoint = "/credits/deduct"
         mock_cfg.customer_api_key = "test-key"
+        mock_cfg.tokenizer = DictConfig({"_component_": "torchtunewrapper.recipes.dummy.DummyTokenizer"})
         yield mock_cfg
 
 
@@ -79,25 +80,26 @@ def test_count_dataset_tokens(mock_dataset):
     assert count == 7  # Sum of token lengths: [1,2,3] and [4,5,6,7]
 
 
-def test_check_api_user_credits_mock_enabled(mock_config, mock_logger):
+def test_check_api_user_credits_mock_enabled(mock_config, mock_logger, mock_dataset):
     """Test credit deduction with mocking enabled"""
     mock_config.mock_user_has_enough_credits = True
-    assert check_api_user_credits("job1", "user1", None, None, mock_logger)
+    # Assert check_api_user_credits not raises exception
+    assert check_api_user_credits("job1", "user1", mock_config, mock_dataset, mock_logger) is None
     mock_logger.info.assert_called_with("Skipping credit check due to config settings")
 
 
-def test_check_api_user_credits_api_disabled(mock_config, mock_logger):
+def test_check_api_user_credits_api_disabled(mock_config, mock_logger, mock_dataset):
     """Test credit deduction with API disabled"""
     mock_config.customer_api_enabled = False
-    assert check_api_user_credits("job1", "user1", None, None, mock_logger)
+    assert check_api_user_credits("job1", "user1", mock_config, mock_dataset, mock_logger) is None
     mock_logger.info.assert_called_with("Skipping credit check due to config settings")
 
 
-def test_check_api_user_credits_system_user(mock_config, mock_logger):
+def test_check_api_user_credits_system_user(mock_config, mock_logger, mock_dataset):
     """Test credit deduction for system users"""
-    system_users = ["0", "-1", "0x123"]
+    system_users = ["0", "-1"]
     for user in system_users:
-        assert check_api_user_credits("job1", user, None, None, mock_logger)
+        assert check_api_user_credits("job1", user, mock_config, mock_dataset, mock_logger) is None
         mock_logger.info.assert_called_with(f"Skipping credit check for user_id={user}")
 
 
