@@ -56,7 +56,7 @@ device: cuda
 
 # Memory management
 # dtype: bf16
-dtype: fp16
+dtype: fp32
 enable_activation_checkpointing: False
 enable_activation_offloading: False
 optimizer_in_bwd: True
