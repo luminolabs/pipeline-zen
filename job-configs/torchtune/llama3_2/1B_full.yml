@@ -34,10 +34,10 @@ checkpointer:
 resume_from_checkpoint: False
 
 optimizer:
-  # _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
   _component_: torch.optim.Adam
   # _component_: torchao.prototype.low_bit_optim.AdamW8bit 
   lr: ${lr}  # 2e-5
+  fused: True
 
 # Learning rate scheduler
 lr_scheduler:
@@ -55,8 +55,8 @@ gradient_accumulation_steps: 1
 device: cuda
 
 # Memory management
-# dtype: bf16
-dtype: fp32 # To increase speed use this if Tesla GPU is used
+dtype: bf16
+# dtype: fp32 # To increase speed use this if Tesla GPU is used
 enable_activation_checkpointing: False
 enable_activation_offloading: False
 optimizer_in_bwd: True
@@ -71,7 +71,7 @@ log_peak_memory_stats: True
 
 profiler:
   _component_: torchtune.training.setup_torch_profiler
-  enabled: True
+  enabled: False
 
   # Output directory of trace artifacts
   output_dir: ${output_dir}/tt_profiling_outputs
@@ -81,10 +81,10 @@ profiler:
   cuda: True
 
   # trace options passed to `torch.profiler.profile`
-  profile_memory: True
-  with_stack: True
+  profile_memory: False
+  with_stack: False
   record_shapes: True
-  with_flops: True
+  with_flops: False
   # `torch.profiler.schedule` options:
   # wait_steps -> wait, warmup_steps -> warmup, active_steps -> active, num_cycles -> repeat
   wait_steps: 5
