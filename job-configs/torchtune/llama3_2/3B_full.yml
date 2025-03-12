@@ -57,6 +57,7 @@ device: cuda
 dtype: bf16  # Use fp32 to increase training speed if Tesla T4/V100 GPU is used
 enable_activation_checkpointing: True
 enable_activation_offloading: True
+compile: False
 optimizer_in_bwd: True
 
 metric_logger:
