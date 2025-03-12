@@ -49,15 +49,15 @@ loss:
 
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1  # Use to increase effective batch size
-optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
-compile: True  # torch.compile the model + loss, True increases speed + decreases memory
 
 device: cuda
 
 # Memory management
 dtype: bf16
-enable_activation_checkpointing: False  # True reduces memory
-enable_activation_offloading: False  # True reduces memory
+enable_activation_checkpointing: True  # True reduces memory
+enable_activation_offloading: True  # True reduces memory
+optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
+compile: True  # torch.compile the model + loss, True increases speed + decreases memory
 
 # Logging
 metric_logger:
