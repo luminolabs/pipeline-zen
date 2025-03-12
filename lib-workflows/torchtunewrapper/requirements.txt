@@ -21,6 +21,5 @@ bitsandbytes
 # So, we want everything else to be installed first, and let torchtune be the last one,
 # so that we can handle it separately.
 
---find-links https://download.pytorch.org/whl/cu121
 torchao==0.7.0
 torchtune==0.5.0
