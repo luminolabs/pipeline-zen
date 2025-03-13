@@ -26,7 +26,7 @@ checkpointer:
   checkpoint_dir: ${base_model_path}
   checkpoint_files: [
     model-00001-of-00002.safetensors,
-    model-00002-of-00002.safetensors
+    model-00002-of-00002.safetensors,
   ]
   recipe_checkpoint: null
   output_dir: ${output_dir}
@@ -34,29 +34,39 @@ checkpointer:
 resume_from_checkpoint: False
 
 optimizer:
-  _component_: torch.optim.AdamW
+  _component_: bitsandbytes.optim.PagedAdamW8bit
   lr: ${lr}  # 2e-5
+
+# Learning rate scheduler
+lr_scheduler:
+  _component_: torchtune.training.get_cosine_schedule_with_warmup
+  num_warmup_steps: 5
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
+  ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation. 
+
 max_steps_per_epoch: null
-gradient_accumulation_steps: 1
+gradient_accumulation_steps: 1  # Use to increase effective batch size
 
 device: cuda
 
 # Memory management
 dtype: bf16
-enable_activation_checkpointing: True
-enable_activation_offloading: False
-optimizer_in_bwd: True
-compile: False
+enable_activation_checkpointing: True  # True reduces memory
+enable_activation_offloading: True  # True reduces memory
+optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
+compile: True  # torch.compile the model + loss, True increases speed + decreases memory
 
+# Logging
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
   log_dir: ${output_dir}/tt_logs
-log_every_n_steps: 1
+log_every_n_steps: 10
 log_peak_memory_stats: True
 
+# Profiler (disabled)
 profiler:
   _component_: torchtune.training.setup_torch_profiler
   enabled: False

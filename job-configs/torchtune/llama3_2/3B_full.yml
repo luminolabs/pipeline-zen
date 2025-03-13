@@ -38,24 +38,32 @@ optimizer:
   lr: ${lr}  # 2e-5
   fused: True
 
+# Learning rate scheduler
+lr_scheduler:
+  _component_: torchtune.training.get_cosine_schedule_with_warmup
+  num_warmup_steps: 5
+
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
+  ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation. 
+
 max_steps_per_epoch: null
-gradient_accumulation_steps: 8
+gradient_accumulation_steps: 1
 
 device: cuda
 
 # Memory management
-dtype: bf16
+dtype: bf16  # Use fp32 to increase training speed if Tesla T4/V100 GPU is used
 enable_activation_checkpointing: True
-enable_activation_offloading: False
+enable_activation_offloading: True
 compile: False
-optimizer_in_bwd: False
+optimizer_in_bwd: True
 
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
   log_dir: ${output_dir}/tt_logs
-log_every_n_steps: 1
+log_every_n_steps: 10
 log_peak_memory_stats: True
 
 profiler:

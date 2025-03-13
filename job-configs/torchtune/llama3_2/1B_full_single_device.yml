@@ -33,11 +33,20 @@ checkpointer:
 resume_from_checkpoint: False
 
 optimizer:
-  _component_: torch.optim.AdamW
+  _component_: bitsandbytes.optim.PagedAdamW8bit # Quantized - Memory efficient
+  # _component_: torch.optim.Adam
   lr: ${lr}  # 2e-5
+
+# Learning rate scheduler
+lr_scheduler:
+  _component_: torchtune.training.get_cosine_schedule_with_warmup
+  num_warmup_steps: 5
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
+  ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation. 
+
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1
 
@@ -50,10 +59,11 @@ enable_activation_offloading: False
 optimizer_in_bwd: True
 compile: False
 
+# Logging
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
   log_dir: ${output_dir}/tt_logs
-log_every_n_steps: 1
+log_every_n_steps: 10
 log_peak_memory_stats: True
 
 profiler:
