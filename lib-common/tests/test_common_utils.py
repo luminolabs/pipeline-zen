@@ -173,12 +173,16 @@ def test_read_job_config_from_file_not_found(mock_config):
 def test_get_artifacts(mock_get_work_dir, mock_listdir):
     """Test getting job artifacts"""
     mock_get_work_dir.return_value = "/test/path"
-    mock_listdir.return_value = ["model.pt", "config.json", "logs.txt"]
+    mock_listdir.side_effect = [
+        ["epoch_0"],  # First call
+        ["model.safetensors"],  # Second call
+        ["config.json"]  # Third call
+    ]
 
     weight_files, other_files = get_artifacts(TEST_JOB_ID, TEST_USER_ID)
 
-    assert weight_files == ["model.pt"]
-    assert other_files == ["config.json"]
+    assert weight_files == ["epoch_0/model.safetensors"]
+    assert other_files == ["epoch_0/config.json"]
 
 
 # Error Cases
