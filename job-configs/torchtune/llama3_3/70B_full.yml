@@ -66,8 +66,16 @@ optimizer:
   lr: ${lr}  # 2e-5
   fused: True
 
+# Learning rate scheduler
+lr_scheduler:
+  _component_: torchtune.training.get_cosine_schedule_with_warmup
+  num_warmup_steps: 5
+
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
+  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
+  ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation.
+
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1
 
@@ -79,18 +87,18 @@ enable_activation_checkpointing: True
 enable_activation_offloading: False
 custom_sharded_layers: [ 'tok_embeddings', 'output' ]
 fsdp_cpu_offload: True
-compile: False
-optimizer_in_bwd: False
+compile: True
+optimizer_in_bwd: True
 
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
   log_dir: ${output_dir}/tt_logs
-log_every_n_steps: 1
+log_every_n_steps: 10
 log_peak_memory_stats: True
 
 profiler:
   _component_: torchtune.training.setup_torch_profiler
-  enabled: False
+  enabled: True
 
   # Output directory of trace artifacts
   output_dir: ${output_dir}/tt_profiling_outputs
@@ -100,10 +108,10 @@ profiler:
   cuda: True
 
   # trace options passed to `torch.profiler.profile`
-  profile_memory: False
-  with_stack: False
+  profile_memory: True
+  with_stack: True
   record_shapes: True
-  with_flops: False
+  with_flops: True
 
   # `torch.profiler.schedule` options
   wait_steps: 5
