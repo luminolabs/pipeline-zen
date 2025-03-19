@@ -26,7 +26,7 @@ DOCKER_IMAGE_PATH="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images/$DOCKER_IM
 DOCKER_IMAGE_PATH_PUBLIC="$DOCKER_IMAGE_HOST/${PROJECT_ID}/lum-docker-images-f0ad091132a3b660e807c360d7410fca2bfb/$DOCKER_IMAGE_NAME:${VERSION}"
 # Name of the VM that we will use to create the new image
 IMAGE_CREATOR_VM_NAME="pipeline-zen-jobs-image-creator"
-IMAGE_CREATOR_VM_ZONE="us-central1-a"
+IMAGE_CREATOR_VM_ZONE="us-central1-f"
 
 echo "Starting VM image creation process..."
 
