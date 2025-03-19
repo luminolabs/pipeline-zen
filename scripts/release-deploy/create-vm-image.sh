@@ -36,7 +36,7 @@ gcloud compute instances start $IMAGE_CREATOR_VM_NAME --zone $IMAGE_CREATOR_VM_Z
 
 # Wait for machine to be ready, give it a few seconds
 echo "Wait 60s to allow VM to start services..."
-sleep 60
+#sleep 60
 
 echo "Pull latest code from git..."  # TODO: When we have git tags again, we should pull the code from a specific tag
 # Mark the directory as safe for git pull
