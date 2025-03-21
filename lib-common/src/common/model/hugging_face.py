@@ -1,3 +1,5 @@
+import time
+
 import huggingface_hub
 
 from common.config_manager import config
@@ -22,5 +24,13 @@ class HuggingFaceProvider(BaseModelProvider):
         # Set the model download location to the local path
         kwargs['cache_dir'] = self.local_path
         # Download the model from the Hugging Face Hub and return the local path
-        path = huggingface_hub.snapshot_download(self.model_name, **kwargs)
-        return path
+
+        # retry 5 times
+        for i in range(5):
+            try:
+                path = huggingface_hub.snapshot_download(self.model_name, **kwargs)
+                return path
+            except Exception as e:
+                self.logger.error(f"Error downloading model: {e}")
+                self.logger.info(f"Retrying in 10 seconds...")
+                time.sleep(10)
