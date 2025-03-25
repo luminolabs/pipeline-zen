@@ -113,7 +113,7 @@ def run_recipe(recipe_class: Type[RecipeBase], job_id: str, user_id: str, cfg: D
     recipe = recipe_class(job_id, user_id, cfg, dataset, logger, job_logger_agent)
     recipe.setup()
     recipe.train()
-    recipe.save_checkpoint(cfg.epochs)
+    # recipe.save_checkpoint(cfg.epochs)  # To checkpoint only on last epoch (Enable this and don't forget to disable checkpoint in train function of every recipe class) 
     recipe.cleanup()
 
 

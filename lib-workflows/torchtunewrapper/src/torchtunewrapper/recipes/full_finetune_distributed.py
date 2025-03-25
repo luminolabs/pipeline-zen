@@ -951,6 +951,7 @@ class FullFinetuneRecipeDistributed(RecipeBase):
                                       epoch_len=self.total_epochs,
                                       epoch_time_elapsed_s=time_per_epoch)
             t_epoch_start = time.perf_counter()
+            self._save_checkpoint(epoch=curr_epoch+1) # Checkpoint on every epoch
 
         self._profiler.stop()
 
