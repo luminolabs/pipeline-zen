@@ -54,7 +54,10 @@ loss:
 max_steps_per_epoch: null
 gradient_accumulation_steps: 1  # Use to increase effective batch size
 optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
-compile: True  # torch.compile the model + loss, True increases speed + decreases memory
+
+# set to compile: False until we figure out why compile fails outside of docker
+# i.e. on protocol nodes
+compile: False
 
 device: cuda
 

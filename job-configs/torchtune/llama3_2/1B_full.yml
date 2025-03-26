@@ -58,7 +58,10 @@ dtype: bf16  # Use fp32 to increase training speed if Tesla T4/V100 GPU is used
 enable_activation_checkpointing: False
 enable_activation_offloading: False
 optimizer_in_bwd: True
-compile: True
+
+# set to compile: False until we figure out why compile fails outside of docker
+# i.e. on protocol nodes
+compile: False
 
 # Logging
 metric_logger:

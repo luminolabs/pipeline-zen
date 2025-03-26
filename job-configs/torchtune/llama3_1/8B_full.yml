@@ -52,9 +52,12 @@ loss:
   ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation. 
 
 max_steps_per_epoch: null
-compile: True # torch.compile the model + loss, True increases speed + decreases memory
 optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
 gradient_accumulation_steps: 1  # Use to increase effective batch size
+
+# set to compile: False until we figure out why compile fails outside of docker
+# i.e. on protocol nodes
+compile: False # torch.compile the model + loss, True increases speed + decreases memory
 
 device: cuda
 

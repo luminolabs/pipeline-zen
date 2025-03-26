@@ -57,7 +57,10 @@ dtype: bf16
 enable_activation_checkpointing: True  # True reduces memory
 enable_activation_offloading: True  # True reduces memory
 optimizer_in_bwd: True  # True saves memory. Requires gradient_accumulation_steps=1
-compile: True  # torch.compile the model + loss, True increases speed + decreases memory
+
+# set to compile: False until we figure out why compile fails outside of docker
+# i.e. on protocol nodes
+compile: False
 
 # Logging
 metric_logger:
