@@ -73,11 +73,10 @@ lr_scheduler:
 
 loss:
   _component_: torchtune.modules.loss.CEWithChunkedOutputLoss
-  num_output_chunks: 16  # (default: 8) To reduce memory ulitisation during loss computation as bf16 needs to be upcast to fp32
   ignore_index: -100  # (default: -100) To ignore tokens with this value during loss computation.
 
 max_steps_per_epoch: null
-gradient_accumulation_steps: 1
+gradient_accumulation_steps: 2
 
 device: cuda
 
@@ -88,7 +87,7 @@ enable_activation_offloading: True
 custom_sharded_layers: [ 'tok_embeddings', 'output' ]
 fsdp_cpu_offload: True
 compile: True
-optimizer_in_bwd: True
+optimizer_in_bwd: False
 
 metric_logger:
   _component_: torchtune.training.metric_logging.DiskLogger
